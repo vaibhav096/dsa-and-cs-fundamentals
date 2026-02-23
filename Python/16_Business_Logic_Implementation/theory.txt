@@ -1,0 +1,561 @@
+================================================================================
+                    COMPLEX BUSINESS LOGIC IMPLEMENTATION
+================================================================================
+
+Implementing complex business rules, pricing systems, and domain-specific
+logic commonly asked in technical interviews.
+
+================================================================================
+                    SECTION 1: SLAB-BASED PRICING SYSTEMS
+================================================================================
+
+WHAT IS SLAB-BASED PRICING?
+- Different rates for different quantity/amount ranges
+- Progressive pricing where rate changes at breakpoints
+- Common in: taxes, utilities, bulk orders, subscriptions
+
+EXAMPLE: Income Tax Slabs
+
+Income Range              Tax Rate
+$0 - $10,000              0%
+$10,001 - $40,000         10%
+$40,001 - $100,000        20%
+$100,001+                 30%
+
+CALCULATION METHOD:
+
+For income = $75,000:
+
+Slab 1: First $10,000       × 0%  = $0
+Slab 2: Next $30,000        × 10% = $3,000
+Slab 3: Remaining $35,000   × 20% = $7,000
+                                    -------
+Total Tax:                          $10,000
+
+
+KEY IMPLEMENTATION CONCEPTS:
+
+1. CUMULATIVE CALCULATION:
+   - Process each slab in order
+   - Calculate amount falling in each slab
+   - Sum up contributions from all slabs
+
+2. DATA STRUCTURE:
+   - List of tuples: (upper_limit, rate)
+   - Or list of objects with limit, rate
+   - Handle "unlimited" last slab
+
+3. EDGE CASES:
+   - Amount exactly at slab boundary
+   - Amount less than first slab
+   - Amount exceeding all slabs
+
+
+================================================================================
+                    SECTION 2: DISCOUNT SYSTEMS
+================================================================================
+
+TYPES OF DISCOUNTS:
+
+1. PERCENTAGE DISCOUNT
+   - Fixed percentage off total
+   - Example: 20% off
+
+2. FLAT DISCOUNT
+   - Fixed amount off total
+   - Example: $10 off
+
+3. TIERED DISCOUNT
+   - Different discounts at different amounts
+   - Example: 10% off > $100, 15% off > $200
+
+4. BULK/QUANTITY DISCOUNT
+   - Discount based on quantity
+   - Example: Buy 5+ get 10% off
+
+5. COUPON CODE DISCOUNT
+   - Specific discount with code
+   - May have conditions
+
+6. COMBO/BUNDLE DISCOUNT
+   - Discount when buying specific items together
+   - Example: Buy A + B get 20% off
+
+7. LOYALTY DISCOUNT
+   - Based on customer tier/history
+   - First-time, returning customer
+
+8. SEASONAL/TIME-BASED
+   - Happy hour, holiday sales
+   - Time-limited discounts
+
+
+DISCOUNT STACKING RULES:
+
+1. EXCLUSIVE DISCOUNTS:
+   - Only one discount applies
+   - Usually the best one
+
+2. STACKABLE DISCOUNTS:
+   - Multiple discounts combine
+   - Order matters: percentage then flat
+
+3. MAXIMUM DISCOUNT CAP:
+   - Limit total discount
+   - Example: Max 50% off
+
+
+CALCULATION ORDER:
+1. Calculate base price
+2. Apply percentage discounts
+3. Apply flat discounts
+4. Apply minimum price floor
+5. Add taxes/fees
+
+
+================================================================================
+                    SECTION 3: BOOKING & RESERVATION SYSTEMS
+================================================================================
+
+COMMON REQUIREMENTS:
+
+1. AVAILABILITY CHECK:
+   - Check if resource is free for time slot
+   - Handle overlapping bookings
+   - Consider buffer time
+
+2. PRICING:
+   - Different rates for different times
+   - Peak/off-peak pricing
+   - Duration-based pricing
+
+3. CANCELLATION POLICY:
+   - Full refund window
+   - Partial refund window
+   - No refund window
+
+4. OVERBOOKING:
+   - Allow controlled overbooking
+   - Handle conflicts gracefully
+
+
+TIME SLOT MANAGEMENT:
+
+1. DISCRETE SLOTS:
+   - Fixed time slots (9am, 10am, 11am)
+   - Easy to manage
+   - Less flexible
+
+2. CONTINUOUS TIME:
+   - Any start time, variable duration
+   - More complex overlap checking
+   - More flexible
+
+
+OVERLAP DETECTION:
+
+Two bookings (A, B) overlap if:
+- A.start < B.end AND A.end > B.start
+
+Non-overlapping:
+- A ends before B starts: A.end <= B.start
+- A starts after B ends: A.start >= B.end
+
+
+================================================================================
+                    SECTION 4: INVENTORY MANAGEMENT
+================================================================================
+
+KEY CONCEPTS:
+
+1. STOCK TRACKING:
+   - Current quantity
+   - Reserved quantity
+   - Available = Current - Reserved
+
+2. STOCK OPERATIONS:
+   - Receive (add stock)
+   - Reserve (hold for order)
+   - Release (cancel reservation)
+   - Dispatch (fulfill order)
+
+3. LOW STOCK ALERTS:
+   - Reorder point
+   - Safety stock
+   - Lead time consideration
+
+4. FIFO/LIFO:
+   - First In First Out
+   - Last In First Out
+   - For perishables, use FIFO
+
+
+CONCURRENT ACCESS:
+
+Problem: Two users try to buy last item
+
+Solutions:
+1. Pessimistic locking: Lock item during checkout
+2. Optimistic locking: Check version before update
+3. Reservation system: Temporary hold
+
+
+================================================================================
+                    SECTION 5: ORDER PROCESSING
+================================================================================
+
+ORDER LIFECYCLE:
+
+1. CART → ORDER
+   - Validate items
+   - Check stock
+   - Calculate totals
+   - Create order record
+
+2. PAYMENT PROCESSING
+   - Validate payment method
+   - Process payment
+   - Handle failures
+
+3. FULFILLMENT
+   - Pick items
+   - Pack
+   - Ship
+   - Track
+
+4. COMPLETION
+   - Delivery confirmation
+   - Invoice generation
+   - Review request
+
+
+ORDER STATES:
+
+PENDING → CONFIRMED → PROCESSING → SHIPPED → DELIVERED
+    ↓          ↓           ↓
+CANCELLED  CANCELLED   RETURNED
+
+
+STATE TRANSITIONS:
+
+From PENDING:
+- To CONFIRMED: Payment successful
+- To CANCELLED: Payment failed, user cancelled
+
+From CONFIRMED:
+- To PROCESSING: Start fulfillment
+- To CANCELLED: User cancelled (before processing)
+
+From PROCESSING:
+- To SHIPPED: Items dispatched
+- To CANCELLED: Out of stock (rare)
+
+From SHIPPED:
+- To DELIVERED: Delivery confirmed
+- To RETURNED: Customer refused
+
+From DELIVERED:
+- To RETURNED: Return request
+
+
+================================================================================
+                    SECTION 6: SUBSCRIPTION & BILLING
+================================================================================
+
+SUBSCRIPTION MODELS:
+
+1. FLAT RATE:
+   - Fixed price per period
+   - Example: $10/month
+
+2. USAGE-BASED:
+   - Pay per use
+   - Example: $0.01 per API call
+
+3. TIERED:
+   - Different features at different prices
+   - Example: Basic, Pro, Enterprise
+
+4. FREEMIUM:
+   - Free tier with paid upgrades
+   - Feature or usage limits
+
+5. PER-USER/SEAT:
+   - Price per user
+   - Example: $5/user/month
+
+
+BILLING CONCEPTS:
+
+1. BILLING CYCLE:
+   - Monthly, yearly, custom
+   - Pro-rating for mid-cycle changes
+
+2. TRIAL PERIOD:
+   - Free usage for N days
+   - Credit card required or not
+
+3. GRACE PERIOD:
+   - Time after due date before suspension
+
+4. PRORATION:
+   - Adjust charges for partial periods
+   - Upgrade: charge difference
+   - Downgrade: credit difference
+
+
+PRORATION CALCULATION:
+
+Scenario: Upgrade mid-month from $10/mo to $20/mo on day 15 of 30-day month
+
+Method 1: Immediate full charge
+- Charge full $20 now, next billing = day 15
+
+Method 2: Prorated charge
+- Remaining days = 15
+- Daily rate old = $10/30 = $0.33
+- Daily rate new = $20/30 = $0.67
+- Refund old = 15 × $0.33 = $5
+- Charge new = 15 × $0.67 = $10
+- Net charge = $10 - $5 = $5
+
+
+================================================================================
+                    SECTION 7: LOYALTY & REWARDS SYSTEMS
+================================================================================
+
+POINT SYSTEMS:
+
+1. EARNING POINTS:
+   - Points per dollar spent
+   - Bonus points for categories
+   - Multiplier events
+
+2. REDEEMING POINTS:
+   - Points to discount conversion
+   - Minimum redemption
+   - Expiry rules
+
+3. TIER SYSTEMS:
+   - Bronze, Silver, Gold, Platinum
+   - Tier benefits
+   - Tier maintenance requirements
+
+
+EXAMPLE IMPLEMENTATION:
+
+Earning Rules:
+- Regular: 1 point per $1
+- Electronics: 2 points per $1
+- Birthday month: 2x multiplier
+
+Tiers:
+- Bronze: 0-999 points/year
+- Silver: 1000-4999 points/year (10% bonus)
+- Gold: 5000+ points/year (20% bonus)
+
+Redemption:
+- 100 points = $1 discount
+- Minimum 500 points to redeem
+
+
+================================================================================
+                    SECTION 8: COMMISSION & PROFIT SHARING
+================================================================================
+
+COMMISSION STRUCTURES:
+
+1. FLAT COMMISSION:
+   - Fixed percentage
+   - Example: 10% of sale
+
+2. TIERED COMMISSION:
+   - Higher rate at higher volumes
+   - Example: 10% up to $10K, 15% above
+
+3. SLIDING SCALE:
+   - Rate changes with performance
+   - Quarterly/annual targets
+
+4. PROFIT SHARING:
+   - Percentage of profit, not revenue
+   - After deducting costs
+
+
+MULTI-LEVEL CALCULATIONS:
+
+Scenario: Platform takes 20%, seller keeps 80%
+
+Sale: $100
+- Platform fee: $20
+- Seller receives: $80
+
+If seller has referrer (gets 5% of seller's sales):
+- Referrer bonus: $100 × 5% = $5
+- Platform keeps: $20 - $5 = $15
+
+
+================================================================================
+                    SECTION 9: TAX CALCULATIONS
+================================================================================
+
+TAX TYPES:
+
+1. SALES TAX:
+   - Percentage of sale
+   - Varies by location
+   - Some items exempt
+
+2. VALUE ADDED TAX (VAT):
+   - Applied at each stage
+   - Business claims input VAT
+
+3. SERVICE TAX:
+   - On services, not goods
+
+4. WITHHOLDING TAX:
+   - Deducted at source
+
+
+LOCATION-BASED TAX:
+
+Factors:
+- Seller location
+- Buyer location
+- Shipping destination
+- Product type
+- Buyer status (business vs consumer)
+
+
+COMPOUND TAX CALCULATION:
+
+Some regions have multiple taxes:
+- Central tax: 9%
+- State tax: 9%
+- Additional cess: 1%
+
+Calculation methods:
+1. Additive: 9% + 9% + 1% = 19% of base
+2. Compound: Tax on tax (rare, complex)
+
+
+================================================================================
+                    SECTION 10: INTERVIEW PROBLEM PATTERNS
+================================================================================
+
+PATTERN 1: SLAB-BASED CALCULATION
+- Income tax
+- Electricity billing
+- Shipping rates by weight
+- Data usage charges
+
+PATTERN 2: MULTI-FACTOR PRICING
+- Price depends on multiple variables
+- Service type + quantity + customer type + day/time
+
+PATTERN 3: DISCOUNT COMBINATION
+- Multiple discount types
+- Priority and stacking rules
+- Maximum discount caps
+
+PATTERN 4: TIME-BASED BOOKING
+- Availability checking
+- Overlap prevention
+- Dynamic pricing
+
+PATTERN 5: STATE MACHINE
+- Order processing
+- Subscription lifecycle
+- Approval workflows
+
+PATTERN 6: HIERARCHICAL CALCULATION
+- Commission with referrers
+- Organization-level discounts
+- Nested categories
+
+
+================================================================================
+                    SECTION 11: BEST PRACTICES
+================================================================================
+
+1. SEPARATE BUSINESS RULES FROM CODE:
+   - Store slabs, rates in configuration
+   - Easy to update without code change
+   - Version control for rule changes
+
+2. USE DECIMAL FOR MONEY:
+   - Never use float for currency
+   - Use Decimal or integer cents
+   - Round at final step only
+
+3. HANDLE EDGE CASES:
+   - Zero amounts
+   - Negative amounts (refunds)
+   - Very large amounts
+   - Boundary conditions
+
+4. AUDIT TRAIL:
+   - Log all calculations
+   - Store breakdown, not just total
+   - Enable debugging and disputes
+
+5. TESTING:
+   - Test boundary conditions
+   - Test combinations
+   - Test with real-world scenarios
+   - Property-based testing
+
+6. IDEMPOTENCY:
+   - Same input → same output
+   - Handle duplicate requests
+   - Transaction safety
+
+
+================================================================================
+                    SECTION 12: COMMON INTERVIEW QUESTIONS
+================================================================================
+
+1. "Design a pricing system for a ride-sharing app"
+   - Base fare + per-mile + per-minute
+   - Surge pricing
+   - Promo codes
+   - Split fare
+
+2. "Implement electricity billing with slab rates"
+   - Different rates for consumption ranges
+   - Fixed charges
+   - Taxes and fees
+
+3. "Design a movie ticket booking system"
+   - Seat selection
+   - Dynamic pricing
+   - Convenience fees
+   - Cancellation policy
+
+4. "Implement a coupon system for e-commerce"
+   - Different coupon types
+   - Validation rules
+   - Usage limits
+   - Stacking rules
+
+5. "Design a hotel pricing system"
+   - Room type pricing
+   - Seasonal rates
+   - Length-of-stay discounts
+   - Package deals
+
+6. "Implement a commission calculation system"
+   - Multi-level commissions
+   - Performance bonuses
+   - Tiered rates
+
+7. "Design a subscription billing system"
+   - Different plans
+   - Proration
+   - Usage metering
+   - Dunning (failed payment handling)
+
+
+================================================================================
+                    END OF BUSINESS LOGIC IMPLEMENTATION
+================================================================================

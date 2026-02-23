@@ -1,0 +1,609 @@
+================================================================================
+                    QUESTION 3 - MOVIE TICKET BOOKING (STEP BY STEP)
+================================================================================
+
+This file teaches you HOW TO THINK through this problem, step by step.
+Follow along and understand the thought process.
+
+================================================================================
+                    STEP 1: READ & EXTRACT REQUIREMENTS (2 mins)
+================================================================================
+
+Before writing ANY code, list what you need:
+
+FROM THE QUESTION:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ REQUIREMENT 1: Four service types (Gold, Silver, Bronze, Premium)           │
+│ REQUIREMENT 2: Each has BASE CHARGE                                         │
+│ REQUIREMENT 3: Each has SLAB-BASED pricing (different rates at different    │
+│                ticket quantities)                                           │
+│ REQUIREMENT 4: Each has SPECIAL DISCOUNT rules (Friday, advance booking)    │
+│ REQUIREMENT 5: CUSTOMER DISCOUNT based on booking history                   │
+│                - 1st booking: 10% off                                       │
+│                - 2nd booking: 5% off                                        │
+│                - 3rd+: no discount                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+EXTRACTED DATA TABLE (copy this from question):
+
+Service   | Base  | Slab 1              | Slab 2              | Special Rule
+----------|-------|---------------------|---------------------|------------------
+Gold      | $10   | $2 (1-5 tickets)    | $1.5 (6-10 tickets) | 10% off Friday
+Silver    | $8    | $2.5 (1-3 tickets)  | $2 (4-6 tickets)    | 5% off if 2+ days advance
+Bronze    | $6    | $3 (1-2 tickets)    | $2.5 (3-4 tickets)  | None
+Premium   | $15   | $1 (1-10 tickets)   | $0.5 (11+ tickets)  | 15% off if 3+ days advance
+
+
+================================================================================
+                    STEP 2: IDENTIFY CLASSES (2 mins)
+================================================================================
+
+Ask: "What are the NOUNS in this problem?"
+
+NOUNS → CLASSES:
+  - Service Type (Gold, Silver, Bronze, Premium)  → ServiceType class
+  - Customer                                       → Customer class
+  - Booking details (day, advance days)           → BookingContext class
+  - The booking system itself                      → BookingSystem class
+
+Ask: "What are the VERBS (actions)?"
+
+VERBS → METHODS:
+  - Calculate slab cost          → calculate_slab_cost()
+  - Apply special discount       → apply_special_discount()
+  - Get customer discount        → get_customer_discount()
+  - Calculate total              → calculate_total()
+
+
+QUICK SKETCH (write this on paper):
+
+    ServiceType (Abstract)
+         ^
+         |
+    ┌────┴────┬─────────┬─────────┐
+    |         |         |         |
+   Gold    Silver    Bronze   Premium
+
+
+    Customer ──────┐
+                   ├──→ BookingSystem ──→ calculates total
+    BookingContext─┘
+
+
+================================================================================
+                    STEP 3: START WITH THE DATA HOLDERS (2 mins)
+================================================================================
+
+Always start with the SIMPLEST classes first - ones that just hold data.
+
+
+# ─────────────────────────────────────────────────────────────
+# CLASS 1: BookingContext - holds booking circumstances
+# ─────────────────────────────────────────────────────────────
+
+class BookingContext:
+    """Holds information about WHEN the booking is made"""
+
+    def __init__(self, day_of_week, days_in_advance):
+        self.day_of_week = day_of_week        # "Monday", "Friday", etc.
+        self.days_in_advance = days_in_advance  # 0, 1, 2, 3...
+
+# WHY this class?
+# - Gold needs to know if it's Friday
+# - Silver needs to know if booked 2+ days advance
+# - Premium needs to know if booked 3+ days advance
+# Instead of passing multiple parameters, we pass ONE object
+
+
+# ─────────────────────────────────────────────────────────────
+# CLASS 2: Customer - holds customer state
+# ─────────────────────────────────────────────────────────────
+
+class Customer:
+    """Tracks customer booking history for discounts"""
+
+    def __init__(self, customer_id):
+        self.customer_id = customer_id
+        self.booking_count = 0    # How many bookings they've made
+
+    def get_discount_rate(self):
+        """
+        1st booking → 10% discount (0.10)
+        2nd booking → 5% discount (0.05)
+        3rd+ booking → 0% discount (0.00)
+        """
+        if self.booking_count == 0:
+            return 0.10
+        elif self.booking_count == 1:
+            return 0.05
+        else:
+            return 0.00
+
+    def record_booking(self):
+        """Call this AFTER a booking is complete"""
+        self.booking_count += 1
+
+# WHY this class?
+# - Need to track how many times each customer has booked
+# - Discount depends on booking history
+# - Need to persist state across multiple bookings
+
+
+================================================================================
+                    STEP 4: BUILD THE SERVICE TYPE (CORE LOGIC) (5 mins)
+================================================================================
+
+This is the HEART of the problem. Take your time here.
+
+
+# ─────────────────────────────────────────────────────────────
+# CLASS 3: ServiceType - Abstract base class
+# ─────────────────────────────────────────────────────────────
+
+from abc import ABC, abstractmethod
+
+class ServiceType(ABC):
+    """
+    Abstract base class for all service types.
+
+    Each service has:
+    - base_charge: Fixed fee
+    - slabs: List of (ticket_limit, rate_per_ticket)
+    """
+
+    def __init__(self, base_charge, slabs):
+        self.base_charge = base_charge
+        self.slabs = slabs  # [(limit1, rate1), (limit2, rate2), ...]
+
+    def calculate_slab_cost(self, num_tickets):
+        """
+        Calculate cost based on slab pricing.
+
+        Example for Gold (slabs = [(5, 2.0), (5, 1.5)]):
+        - 4 tickets: 4 × $2 = $8
+        - 7 tickets: 5 × $2 + 2 × $1.5 = $10 + $3 = $13
+        """
+        cost = 0
+        remaining = num_tickets
+
+        for (slab_size, rate) in self.slabs:
+            if remaining <= 0:
+                break
+
+            # How many tickets fall in this slab?
+            tickets_in_slab = min(remaining, slab_size)
+
+            # Calculate cost for this slab
+            cost += tickets_in_slab * rate
+
+            # Reduce remaining tickets
+            remaining -= tickets_in_slab
+
+        return cost
+
+    @abstractmethod
+    def apply_special_discount(self, amount, context):
+        """
+        Each service type has different special rules.
+        Override this in child classes.
+        """
+        pass
+
+
+# ─────────────────────────────────────────────────────────────
+# Let's TRACE through slab calculation to understand it:
+# ─────────────────────────────────────────────────────────────
+
+"""
+Example: Gold, 7 tickets
+slabs = [(5, 2.0), (5, 1.5)]
+
+Initial: remaining = 7, cost = 0
+
+Iteration 1 (slab_size=5, rate=2.0):
+    tickets_in_slab = min(7, 5) = 5
+    cost = 0 + 5 × 2.0 = $10
+    remaining = 7 - 5 = 2
+
+Iteration 2 (slab_size=5, rate=1.5):
+    tickets_in_slab = min(2, 5) = 2
+    cost = 10 + 2 × 1.5 = $13
+    remaining = 2 - 2 = 0
+
+Final: cost = $13 ✓
+"""
+
+
+================================================================================
+                    STEP 5: CREATE CONCRETE SERVICE CLASSES (3 mins)
+================================================================================
+
+Now create each service type. They're mostly similar - just different values.
+
+
+# ─────────────────────────────────────────────────────────────
+# CLASS 4: Gold Service
+# ─────────────────────────────────────────────────────────────
+
+class GoldService(ServiceType):
+
+    def __init__(self):
+        # Base: $10, Slabs: $2 for 1-5, $1.5 for 6-10
+        super().__init__(
+            base_charge=10,
+            slabs=[(5, 2.0), (5, 1.5)]
+        )
+
+    def apply_special_discount(self, amount, context):
+        # 10% discount on Fridays
+        if context.day_of_week == "Friday":
+            return amount * 0.90
+        return amount
+
+
+# ─────────────────────────────────────────────────────────────
+# CLASS 5: Silver Service
+# ─────────────────────────────────────────────────────────────
+
+class SilverService(ServiceType):
+
+    def __init__(self):
+        # Base: $8, Slabs: $2.5 for 1-3, $2 for 4-6
+        super().__init__(
+            base_charge=8,
+            slabs=[(3, 2.5), (3, 2.0)]
+        )
+
+    def apply_special_discount(self, amount, context):
+        # 5% discount if booked 2+ days in advance
+        if context.days_in_advance >= 2:
+            return amount * 0.95
+        return amount
+
+
+# ─────────────────────────────────────────────────────────────
+# CLASS 6: Bronze Service
+# ─────────────────────────────────────────────────────────────
+
+class BronzeService(ServiceType):
+
+    def __init__(self):
+        # Base: $6, Slabs: $3 for 1-2, $2.5 for 3-4
+        super().__init__(
+            base_charge=6,
+            slabs=[(2, 3.0), (2, 2.5)]
+        )
+
+    def apply_special_discount(self, amount, context):
+        # No special discount for Bronze
+        return amount
+
+
+# ─────────────────────────────────────────────────────────────
+# CLASS 7: Premium Service
+# ─────────────────────────────────────────────────────────────
+
+class PremiumService(ServiceType):
+
+    def __init__(self):
+        # Base: $15, Slabs: $1 for 1-10, $0.5 for 11+
+        super().__init__(
+            base_charge=15,
+            slabs=[(10, 1.0), (float('inf'), 0.5)]  # inf = unlimited
+        )
+
+    def apply_special_discount(self, amount, context):
+        # 15% discount if booked 3+ days in advance
+        if context.days_in_advance >= 3:
+            return amount * 0.85
+        return amount
+
+
+================================================================================
+                    STEP 6: FACTORY PATTERN (OPTIONAL BUT GOOD) (1 min)
+================================================================================
+
+# ─────────────────────────────────────────────────────────────
+# CLASS 8: ServiceFactory - Creates service objects
+# ─────────────────────────────────────────────────────────────
+
+class ServiceFactory:
+    """Creates the right service based on name"""
+
+    @staticmethod
+    def create(service_name):
+        services = {
+            "Gold": GoldService,
+            "Silver": SilverService,
+            "Bronze": BronzeService,
+            "Premium": PremiumService
+        }
+
+        if service_name not in services:
+            raise ValueError(f"Unknown service: {service_name}")
+
+        return services[service_name]()
+
+# WHY Factory?
+# - Clean way to create objects
+# - Easy to add new service types later
+# - Caller doesn't need to know class names
+
+
+================================================================================
+                    STEP 7: THE MAIN BOOKING SYSTEM (2 mins)
+================================================================================
+
+# ─────────────────────────────────────────────────────────────
+# CLASS 9: BookingSystem - Orchestrates everything
+# ─────────────────────────────────────────────────────────────
+
+class BookingSystem:
+    """Main system that processes bookings"""
+
+    def __init__(self):
+        self.customers = {}  # customer_id → Customer object
+
+    def get_or_create_customer(self, customer_id):
+        """Get existing customer or create new one"""
+        if customer_id not in self.customers:
+            self.customers[customer_id] = Customer(customer_id)
+        return self.customers[customer_id]
+
+    def calculate_total(self, service_name, num_tickets, customer_id, context):
+        """
+        Main calculation method.
+
+        Steps:
+        1. Create service object
+        2. Get customer
+        3. Calculate: base + slab cost
+        4. Apply special discount
+        5. Apply customer discount
+        6. Record booking
+        7. Return total
+        """
+
+        # Step 1: Create service
+        service = ServiceFactory.create(service_name)
+
+        # Step 2: Get customer
+        customer = self.get_or_create_customer(customer_id)
+
+        # Step 3: Base + Slab cost
+        base = service.base_charge
+        slab_cost = service.calculate_slab_cost(num_tickets)
+        subtotal = base + slab_cost
+
+        # Step 4: Apply special discount (Friday, advance booking)
+        after_special = service.apply_special_discount(subtotal, context)
+
+        # Step 5: Apply customer discount
+        customer_discount = customer.get_discount_rate()
+        final = after_special * (1 - customer_discount)
+
+        # Step 6: Record this booking
+        customer.record_booking()
+
+        # Step 7: Return (rounded to 2 decimal places)
+        return round(final, 2)
+
+
+================================================================================
+                    STEP 8: TEST IT (1 min)
+================================================================================
+
+# ─────────────────────────────────────────────────────────────
+# TESTING
+# ─────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    system = BookingSystem()
+
+    # Default context: Not Friday, 0 days advance
+    default_context = BookingContext("Monday", 0)
+
+    # Test 1: Gold, 4 tickets, CUST123 (first booking)
+    cost1 = system.calculate_total("Gold", 4, "CUST123", default_context)
+    print(f"Gold, 4 tickets, CUST123: ${cost1}")
+    # Base $10 + 4×$2 = $18
+    # Customer discount 10%: $18 × 0.9 = $16.20
+
+    # Test 2: Silver, 2 tickets, CUST456 (first booking)
+    cost2 = system.calculate_total("Silver", 2, "CUST456", default_context)
+    print(f"Silver, 2 tickets, CUST456: ${cost2}")
+    # Base $8 + 2×$2.5 = $13
+    # Customer discount 10%: $13 × 0.9 = $11.70
+
+    # Test 3: Bronze, 3 tickets, CUST789 (first booking)
+    cost3 = system.calculate_total("Bronze", 3, "CUST789", default_context)
+    print(f"Bronze, 3 tickets, CUST789: ${cost3}")
+    # Base $6 + (2×$3 + 1×$2.5) = $6 + $8.5 = $14.5
+    # Customer discount 10%: $14.5 × 0.9 = $13.05
+
+    # Test 4: Premium, 10 tickets, CUST123 (second booking!)
+    advance_context = BookingContext("Monday", 3)  # 3 days advance
+    cost4 = system.calculate_total("Premium", 10, "CUST123", advance_context)
+    print(f"Premium, 10 tickets, CUST123: ${cost4}")
+    # Base $15 + 10×$1 = $25
+    # Special discount 15%: $25 × 0.85 = $21.25
+    # Customer discount 5% (2nd booking): $21.25 × 0.95 = $20.19
+
+
+================================================================================
+                    COMPLETE CODE (COPY-PASTE READY)
+================================================================================
+
+from abc import ABC, abstractmethod
+
+
+class BookingContext:
+    def __init__(self, day_of_week, days_in_advance):
+        self.day_of_week = day_of_week
+        self.days_in_advance = days_in_advance
+
+
+class Customer:
+    def __init__(self, customer_id):
+        self.customer_id = customer_id
+        self.booking_count = 0
+
+    def get_discount_rate(self):
+        if self.booking_count == 0:
+            return 0.10
+        elif self.booking_count == 1:
+            return 0.05
+        return 0.00
+
+    def record_booking(self):
+        self.booking_count += 1
+
+
+class ServiceType(ABC):
+    def __init__(self, base_charge, slabs):
+        self.base_charge = base_charge
+        self.slabs = slabs
+
+    def calculate_slab_cost(self, num_tickets):
+        cost = 0
+        remaining = num_tickets
+        for (slab_size, rate) in self.slabs:
+            if remaining <= 0:
+                break
+            tickets_in_slab = min(remaining, slab_size)
+            cost += tickets_in_slab * rate
+            remaining -= tickets_in_slab
+        return cost
+
+    @abstractmethod
+    def apply_special_discount(self, amount, context):
+        pass
+
+
+class GoldService(ServiceType):
+    def __init__(self):
+        super().__init__(10, [(5, 2.0), (5, 1.5)])
+
+    def apply_special_discount(self, amount, context):
+        if context.day_of_week == "Friday":
+            return amount * 0.90
+        return amount
+
+
+class SilverService(ServiceType):
+    def __init__(self):
+        super().__init__(8, [(3, 2.5), (3, 2.0)])
+
+    def apply_special_discount(self, amount, context):
+        if context.days_in_advance >= 2:
+            return amount * 0.95
+        return amount
+
+
+class BronzeService(ServiceType):
+    def __init__(self):
+        super().__init__(6, [(2, 3.0), (2, 2.5)])
+
+    def apply_special_discount(self, amount, context):
+        return amount
+
+
+class PremiumService(ServiceType):
+    def __init__(self):
+        super().__init__(15, [(10, 1.0), (float('inf'), 0.5)])
+
+    def apply_special_discount(self, amount, context):
+        if context.days_in_advance >= 3:
+            return amount * 0.85
+        return amount
+
+
+class ServiceFactory:
+    @staticmethod
+    def create(name):
+        return {
+            "Gold": GoldService,
+            "Silver": SilverService,
+            "Bronze": BronzeService,
+            "Premium": PremiumService
+        }[name]()
+
+
+class BookingSystem:
+    def __init__(self):
+        self.customers = {}
+
+    def get_or_create_customer(self, customer_id):
+        if customer_id not in self.customers:
+            self.customers[customer_id] = Customer(customer_id)
+        return self.customers[customer_id]
+
+    def calculate_total(self, service_name, num_tickets, customer_id, context):
+        service = ServiceFactory.create(service_name)
+        customer = self.get_or_create_customer(customer_id)
+
+        subtotal = service.base_charge + service.calculate_slab_cost(num_tickets)
+        after_special = service.apply_special_discount(subtotal, context)
+        final = after_special * (1 - customer.get_discount_rate())
+
+        customer.record_booking()
+        return round(final, 2)
+
+
+================================================================================
+                    WHAT TO WRITE IN 12 MINUTES (REALISTIC)
+================================================================================
+
+You CAN'T write all of this in 12 minutes. Here's what you SHOULD write:
+
+MINUTE 0-2: Quick class sketch
+    - ServiceType (base, slabs, calc_slab, special_discount)
+    - Gold, Silver, Bronze, Premium extend ServiceType
+    - Customer (id, count, get_discount)
+    - BookingSystem (calculate_total)
+
+MINUTE 2-7: Core logic
+    - calculate_slab_cost() with the loop
+    - At least ONE service class (Gold) fully implemented
+    - Customer discount logic
+
+MINUTE 7-10: Remaining services
+    - Copy-paste Gold, change values for Silver/Bronze/Premium
+    - Even if incomplete, show you understand the pattern
+
+MINUTE 10-12: Main calculation
+    - calculate_total() showing the ORDER of operations:
+      1. base + slab
+      2. special discount
+      3. customer discount
+
+EVEN IF INCOMPLETE, this structure shows understanding!
+
+
+================================================================================
+                    KEY TAKEAWAYS
+================================================================================
+
+1. EXTRACT REQUIREMENTS FIRST (make a table like I did in Step 1)
+
+2. IDENTIFY CLASSES FROM NOUNS (ServiceType, Customer, BookingContext)
+
+3. START WITH DATA HOLDERS (simple classes first)
+
+4. SLAB CALCULATION IS A PATTERN:
+   - Loop through slabs
+   - Track remaining quantity
+   - Accumulate cost
+
+5. USE INHERITANCE for similar things with different values
+   (Gold, Silver, Bronze, Premium all have same structure)
+
+6. WRITE COMMENTS EVEN IF CODE IS INCOMPLETE
+   Shows you understand what needs to be done
+
+7. TEST WITH ONE EXAMPLE to verify your logic
+
+
+================================================================================
+                    END
+================================================================================

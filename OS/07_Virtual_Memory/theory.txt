@@ -1,0 +1,456 @@
+================================================================================
+                    VIRTUAL MEMORY
+================================================================================
+
+Virtual memory allows execution of processes not completely in memory.
+Programs can be larger than physical memory.
+
+
+================================================================================
+                    1. VIRTUAL MEMORY CONCEPTS
+================================================================================
+
+WHY VIRTUAL MEMORY?
+
+1. Program larger than physical memory can execute
+2. More processes in memory (higher multiprogramming)
+3. Less I/O needed to load program
+4. Process isolation and protection
+
+
+HOW IT WORKS:
+
+- Only needed parts of program loaded
+- Rest kept on disk (swap space)
+- Pages brought in on demand
+- Pages swapped out when memory needed
+
+
+VIRTUAL ADDRESS SPACE:
+
+Logical view of process memory.
+Usually larger than physical memory.
+
+            Virtual                Physical
+          +---------+            +---------+
+          |  Stack  |            |         |
+          |    ↓    |            |  Frame  |
+          |         |            |         |
+          |  (gap)  |            |  Frame  |
+          |         |            |         |
+          |    ↑    |            |  Frame  |
+          |  Heap   |            |         |
+          +---------+            +---------+
+          |  Data   |
+          +---------+
+          |  Code   |
+          +---------+
+
+
+================================================================================
+                    2. DEMAND PAGING
+================================================================================
+
+Pages loaded only when needed (on demand).
+
+PAGE FAULT:
+Access to page not in memory.
+
+PAGE FAULT HANDLING:
+
+1. Check page table - page invalid (not in memory)
+2. Trap to OS (page fault)
+3. Find page on disk
+4. Find free frame (or use replacement)
+5. Load page from disk to frame
+6. Update page table (valid bit = 1)
+7. Restart instruction
+
+
+PAGE TABLE ENTRY:
+
+| Frame Number | Valid Bit | Protection | Modified | Referenced |
+
+- Valid Bit: 1 = in memory, 0 = on disk
+- Protection: Read/Write/Execute permissions
+- Modified (Dirty): Page was written to
+- Referenced: Page was accessed
+
+
+PERFORMANCE:
+
+Effective Access Time = (1 - p) × ma + p × page_fault_time
+
+Where:
+- p = page fault rate (0 ≤ p ≤ 1)
+- ma = memory access time
+
+Page fault time includes:
+- Trap to OS
+- Save state
+- Find page on disk
+- Read page (disk I/O) - SLOWEST
+- Update page table
+- Restart process
+
+Example:
+Memory access = 200ns
+Page fault time = 8ms = 8,000,000ns
+Page fault rate = 1/1000 = 0.001
+
+EAT = 0.999 × 200 + 0.001 × 8,000,000
+    = 199.8 + 8000 = 8199.8ns
+
+Huge slowdown! Must minimize page faults.
+
+
+================================================================================
+                    3. COPY-ON-WRITE (COW)
+================================================================================
+
+Optimization for fork().
+
+WITHOUT COW:
+- fork() copies entire parent address space
+- Child may just call exec() immediately
+- Wasted copying
+
+WITH COW:
+- Parent and child share same pages initially
+- Pages marked read-only
+- On write, page fault triggers copy
+- Only modified pages are copied
+
+
+BENEFITS:
+- Faster fork()
+- Less memory usage
+- Efficient for fork() followed by exec()
+
+
+================================================================================
+                    4. PAGE REPLACEMENT
+================================================================================
+
+When memory full and page needed:
+1. Select victim page (page replacement algorithm)
+2. Write to disk if modified (dirty)
+3. Load new page
+4. Update page tables
+
+
+PAGE REPLACEMENT ALGORITHMS:
+
+--------------------------------------------------------------------------------
+4.1 FIFO (First-In-First-Out)
+--------------------------------------------------------------------------------
+
+Replace oldest page in memory.
+
+Example:
+Reference string: 7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1
+Frames = 3
+
+7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1
+-----------------------------------------
+7 7 7 2 2 2 2 4 4 4 0 0 0 0 0 0 0 7 7 7
+  0 0 0 0 3 3 3 2 2 2 2 2 1 1 1 1 1 0 0
+    1 1 1 1 0 0 0 3 3 3 3 3 2 2 2 2 2 1
+-----------------------------------------
+F F F F   F F F F F F     F     F F
+
+F = Page Fault, 15 page faults
+
+Simple but not optimal.
+
+BELADY'S ANOMALY:
+More frames can cause MORE page faults with FIFO!
+
+
+--------------------------------------------------------------------------------
+4.2 OPTIMAL (OPT / MIN)
+--------------------------------------------------------------------------------
+
+Replace page that will not be used for longest time.
+Theoretical best - requires future knowledge.
+
+Example (same reference string, 3 frames):
+
+7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1
+-----------------------------------------
+7 7 7 2 2 2 2 2 2 2 2 2 2 2 2 2 2 7 7 7
+  0 0 0 0 0 0 4 4 4 0 0 0 0 0 0 0 0 0 0
+    1 1 1 3 3 3 3 3 3 3 3 1 1 1 1 1 1 1
+-----------------------------------------
+F F F F   F   F       F   F       F
+
+9 page faults (optimal)
+
+Used as benchmark to compare other algorithms.
+
+
+--------------------------------------------------------------------------------
+4.3 LRU (Least Recently Used)
+--------------------------------------------------------------------------------
+
+Replace page that hasn't been used for longest time.
+Approximates optimal using past as predictor of future.
+
+Example (same reference string, 3 frames):
+
+7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1
+-----------------------------------------
+7 7 7 2 2 2 2 4 4 4 0 0 0 1 1 1 1 1 1 1
+  0 0 0 0 0 0 0 0 3 3 3 3 3 3 0 0 0 0 0
+    1 1 1 3 3 3 2 2 2 2 2 2 2 2 2 7 7 7
+-----------------------------------------
+F F F F   F   F F F F     F   F   F
+
+12 page faults
+
+IMPLEMENTATION:
+
+1. Counter-based:
+   - Each page has timestamp
+   - On access, update timestamp
+   - Replace lowest timestamp
+   - Expensive: search and update
+
+2. Stack-based:
+   - Keep stack of page numbers
+   - On access, move page to top
+   - Replace bottom of stack
+   - Expensive: stack manipulation
+
+
+--------------------------------------------------------------------------------
+4.4 LRU APPROXIMATION ALGORITHMS
+--------------------------------------------------------------------------------
+
+LRU is expensive. Use reference bit for approximation.
+
+A) ADDITIONAL REFERENCE BITS:
+
+- Keep 8-bit history for each page
+- Periodically shift right, add reference bit at left
+- 11000100 > 01110111 (more recent)
+- Replace lowest value
+
+
+B) SECOND CHANCE (CLOCK):
+
+- FIFO with reference bit
+- If reference bit = 1, give second chance
+  - Set bit to 0, move to next
+- If reference bit = 0, replace
+
+Clock hand moves around circular queue.
+
+    ┌───→ Page 7 (R=1) → Set R=0, skip
+    │     Page 2 (R=0) → REPLACE THIS
+    │     Page 3 (R=1)
+    │     Page 1 (R=0)
+    └─────────────────
+
+
+C) ENHANCED SECOND CHANCE:
+
+Use both reference (R) and modified (M) bits.
+(R, M) classes:
+- (0, 0): Not used, not modified - BEST victim
+- (0, 1): Not used, modified
+- (1, 0): Used, not modified
+- (1, 1): Used, modified - WORST victim
+
+
+--------------------------------------------------------------------------------
+4.5 COUNTING ALGORITHMS
+--------------------------------------------------------------------------------
+
+LFU (Least Frequently Used):
+- Count references to each page
+- Replace page with smallest count
+- Problem: Old popular pages stay forever
+
+MFU (Most Frequently Used):
+- Replace most used page
+- Assumption: Low count = just brought in
+- Not commonly used
+
+
+================================================================================
+                    5. ALLOCATION OF FRAMES
+================================================================================
+
+How many frames to give each process?
+
+
+MINIMUM NUMBER:
+- Defined by instruction set architecture
+- Must be enough to execute one instruction
+
+
+ALLOCATION ALGORITHMS:
+
+1. EQUAL ALLOCATION:
+   m frames, n processes → m/n frames each
+
+   Example: 100 frames, 5 processes → 20 each
+
+
+2. PROPORTIONAL ALLOCATION:
+   Based on process size.
+
+   ai = (si / Σsi) × m
+
+   Where:
+   - ai = frames for process i
+   - si = size of process i
+   - m = total frames
+
+   Example:
+   m = 64 frames
+   P1 size = 10, P2 size = 127
+
+   a1 = (10/137) × 64 ≈ 5
+   a2 = (127/137) × 64 ≈ 59
+
+
+3. PRIORITY-BASED:
+   Higher priority gets more frames.
+
+
+GLOBAL vs LOCAL REPLACEMENT:
+
+GLOBAL:
+- Process can take frame from any process
+- Better throughput
+- Process can't control its own fault rate
+
+LOCAL:
+- Process replaces only its own frames
+- More consistent performance
+- May not use memory efficiently
+
+
+================================================================================
+                    6. THRASHING
+================================================================================
+
+When process spends more time paging than executing.
+
+CAUSE:
+- Too many processes
+- Not enough frames per process
+- Constant page faults
+
+SYMPTOMS:
+- High page fault rate
+- Low CPU utilization
+- OS thinks it needs more processes
+- Makes problem worse!
+
+
+    CPU Utilization
+         ^
+         │         ╱╲
+         │       ╱    ╲
+         │     ╱        ╲
+         │   ╱            ╲
+         │ ╱                ╲ Thrashing
+         +────────────────────→
+              Degree of Multiprogramming
+
+
+WORKING SET MODEL:
+
+Working Set = Set of pages process is currently using.
+
+Definition: Working set at time t with window Δ:
+W(t, Δ) = pages referenced in interval (t-Δ, t)
+
+If process has enough frames for working set, it runs well.
+If not, thrashing occurs.
+
+Working Set Strategy:
+- Compute working set for each process
+- If total working sets > available frames, suspend process
+
+
+PAGE FAULT FREQUENCY (PFF):
+
+- Set upper and lower bounds on fault rate
+- If fault rate > upper bound: allocate more frames
+- If fault rate < lower bound: remove frames
+
+    Fault Rate
+         ^
+         │  Upper ─────────────────
+         │           *  *
+         │        *        *
+         │     *              *
+         │  Lower ─────────────────
+         +────────────────────────→
+              Number of Frames
+
+
+================================================================================
+                    7. MEMORY-MAPPED FILES
+================================================================================
+
+Map file contents directly into virtual address space.
+
+ADVANTAGES:
+- File access via memory operations (faster)
+- Multiple processes can share file mapping
+- Simplifies file I/O
+
+
+HOW IT WORKS:
+1. Initial access causes page fault
+2. Page-sized portion loaded from file
+3. Subsequent accesses are memory operations
+4. Writes update memory (periodic flush to disk)
+
+
+================================================================================
+                    8. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is virtual memory?
+A: Technique allowing process execution when not fully in memory.
+   Programs can be larger than physical memory. Uses paging/swapping.
+
+Q2: What is demand paging?
+A: Load pages only when needed (on page fault).
+   Reduces I/O and memory usage.
+
+Q3: What is a page fault?
+A: Access to page not in memory. OS loads page from disk.
+   Expensive due to disk I/O.
+
+Q4: Explain LRU page replacement.
+A: Replace page not used for longest time.
+   Uses past to predict future. Good but expensive to implement.
+
+Q5: What is Belady's Anomaly?
+A: More frames can cause more page faults with FIFO.
+   Doesn't occur with stack-based algorithms (LRU, OPT).
+
+Q6: What is thrashing?
+A: Process spends more time paging than executing.
+   Caused by too many processes, not enough frames.
+
+Q7: What is working set?
+A: Set of pages process is actively using.
+   Allocate enough frames for working set to avoid thrashing.
+
+Q8: Compare FIFO, LRU, and Optimal.
+A: Optimal: Best, needs future knowledge.
+   LRU: Good approximation using past.
+   FIFO: Simple but can have Belady's anomaly.
+
+
+================================================================================
+                    END OF VIRTUAL MEMORY
+================================================================================

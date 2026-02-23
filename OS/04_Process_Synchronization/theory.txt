@@ -1,0 +1,557 @@
+================================================================================
+                    PROCESS SYNCHRONIZATION
+================================================================================
+
+When multiple processes access shared data concurrently, synchronization
+is needed to maintain data consistency.
+
+
+================================================================================
+                    1. THE CRITICAL SECTION PROBLEM
+================================================================================
+
+RACE CONDITION:
+Multiple processes access shared data simultaneously, and outcome depends
+on the order of execution.
+
+Example:
+Shared: counter = 5
+
+Process 1: counter++      Process 2: counter--
+  Load counter (5)          Load counter (5)
+  Increment (6)             Decrement (4)
+  Store counter (6)         Store counter (4)
+
+Expected: 5  Actual: 4 or 6 (depending on order)
+
+
+CRITICAL SECTION:
+Code segment that accesses shared resources.
+Only one process should execute critical section at a time.
+
+STRUCTURE:
+
+do {
+    [Entry Section]      ← Request to enter
+
+    [Critical Section]   ← Access shared data
+
+    [Exit Section]       ← Release access
+
+    [Remainder Section]  ← Non-critical code
+} while (true);
+
+
+================================================================================
+                    2. REQUIREMENTS FOR SOLUTION
+================================================================================
+
+1. MUTUAL EXCLUSION:
+   - Only one process in critical section at a time
+   - If Pi is in CS, no other Pj can enter
+
+2. PROGRESS:
+   - If no process in CS and some want to enter, selection cannot be postponed indefinitely
+   - Only processes not in remainder section participate in decision
+
+3. BOUNDED WAITING:
+   - Limit on number of times other processes can enter CS after a process requests entry
+   - No starvation
+
+
+================================================================================
+                    3. PETERSON'S SOLUTION
+================================================================================
+
+Software solution for two processes.
+
+Shared Variables:
+int turn;           // Whose turn to enter
+bool flag[2];       // Ready to enter
+
+Process Pi (i = 0 or 1, j = 1-i):
+
+do {
+    flag[i] = true;          // I want to enter
+    turn = j;                // But I'll let you go first
+    while (flag[j] && turn == j)
+        ;                    // Wait
+
+    [Critical Section]
+
+    flag[i] = false;         // I'm done
+
+    [Remainder Section]
+} while (true);
+
+
+WHY IT WORKS:
+
+Mutual Exclusion: If both in CS, both flags true and turn is both i and j - impossible.
+
+Progress: If Pi waiting, either flag[j]=false (enters) or turn=i (enters).
+
+Bounded Waiting: After Pi sets turn=j, Pj enters at most once before Pi.
+
+
+LIMITATION:
+- Only works for 2 processes
+- Busy waiting (spinlock)
+- May not work on modern CPUs (reordering)
+
+
+================================================================================
+                    4. SYNCHRONIZATION HARDWARE
+================================================================================
+
+Hardware support for synchronization.
+
+
+1. DISABLE INTERRUPTS:
+
+disable_interrupts();
+[Critical Section]
+enable_interrupts();
+
+Problems:
+- Only works on single processor
+- User shouldn't control interrupts
+
+
+2. TEST-AND-SET (TAS):
+
+Atomic instruction that:
+- Returns old value
+- Sets new value to TRUE
+
+bool test_and_set(bool *target) {
+    bool rv = *target;
+    *target = true;
+    return rv;
+}
+
+Usage:
+do {
+    while (test_and_set(&lock))
+        ;  // Wait
+
+    [Critical Section]
+
+    lock = false;
+
+    [Remainder Section]
+} while (true);
+
+
+3. COMPARE-AND-SWAP (CAS):
+
+Atomic instruction that:
+- Compares value with expected
+- If equal, sets to new value
+- Returns original value
+
+int compare_and_swap(int *value, int expected, int new_value) {
+    int temp = *value;
+    if (*value == expected)
+        *value = new_value;
+    return temp;
+}
+
+Usage:
+do {
+    while (compare_and_swap(&lock, 0, 1) != 0)
+        ;  // Wait
+
+    [Critical Section]
+
+    lock = 0;
+
+    [Remainder Section]
+} while (true);
+
+
+BOUNDED WAITING WITH TEST-AND-SET:
+
+bool waiting[n];
+bool lock;
+
+do {
+    waiting[i] = true;
+    bool key = true;
+    while (waiting[i] && key)
+        key = test_and_set(&lock);
+    waiting[i] = false;
+
+    [Critical Section]
+
+    j = (i + 1) % n;
+    while (j != i && !waiting[j])
+        j = (j + 1) % n;
+
+    if (j == i)
+        lock = false;
+    else
+        waiting[j] = false;
+
+    [Remainder Section]
+} while (true);
+
+
+================================================================================
+                    5. MUTEX LOCKS
+================================================================================
+
+Simplest synchronization tool.
+Binary lock (locked/unlocked).
+
+Operations:
+- acquire(): Get lock (blocks if unavailable)
+- release(): Release lock
+
+IMPLEMENTATION:
+
+acquire() {
+    while (!available)
+        ;  // Busy wait (spinlock)
+    available = false;
+}
+
+release() {
+    available = true;
+}
+
+
+Usage:
+
+acquire(mutex);
+[Critical Section]
+release(mutex);
+
+
+SPINLOCK vs BLOCKING:
+
+Spinlock:
+- CPU keeps checking (busy wait)
+- Good for short critical sections
+- Wastes CPU on uniprocessor
+
+Blocking:
+- Process sleeps, woken when available
+- Good for long critical sections
+- Context switch overhead
+
+
+================================================================================
+                    6. SEMAPHORES
+================================================================================
+
+More sophisticated synchronization tool.
+Integer variable accessed via atomic operations.
+
+Types:
+1. Binary Semaphore (0 or 1) - like mutex
+2. Counting Semaphore (any integer)
+
+
+OPERATIONS:
+
+wait(S) / P(S) / down(S):
+    while (S <= 0)
+        ;  // Wait
+    S--;
+
+signal(S) / V(S) / up(S):
+    S++;
+
+
+IMPLEMENTATION WITH BLOCKING:
+
+typedef struct {
+    int value;
+    struct process *list;  // Waiting queue
+} semaphore;
+
+wait(semaphore *S) {
+    S->value--;
+    if (S->value < 0) {
+        add this process to S->list;
+        block();
+    }
+}
+
+signal(semaphore *S) {
+    S->value++;
+    if (S->value <= 0) {
+        remove process P from S->list;
+        wakeup(P);
+    }
+}
+
+
+USAGE EXAMPLES:
+
+1. Mutual Exclusion (Binary Semaphore):
+
+semaphore mutex = 1;
+
+Process:
+wait(mutex);
+[Critical Section]
+signal(mutex);
+
+
+2. Synchronization (Execute B after A):
+
+semaphore sync = 0;
+
+Process 1:          Process 2:
+[Statement A]       wait(sync);
+signal(sync);       [Statement B]
+
+
+3. Resource Counting (Counting Semaphore):
+
+semaphore resources = 5;  // 5 available
+
+Process:
+wait(resources);    // Acquire resource
+[Use resource]
+signal(resources);  // Release resource
+
+
+================================================================================
+                    7. CLASSIC SYNCHRONIZATION PROBLEMS
+================================================================================
+
+--------------------------------------------------------------------------------
+7.1 PRODUCER-CONSUMER (Bounded Buffer)
+--------------------------------------------------------------------------------
+
+Producer creates items, Consumer uses items.
+Buffer has limited size.
+
+Shared:
+int buffer[N];
+semaphore mutex = 1;     // Mutual exclusion
+semaphore empty = N;     // Empty slots
+semaphore full = 0;      // Filled slots
+
+Producer:
+do {
+    [Produce item]
+    wait(empty);         // Wait for empty slot
+    wait(mutex);         // Enter CS
+    [Add item to buffer]
+    signal(mutex);       // Exit CS
+    signal(full);        // Increment full count
+} while (true);
+
+Consumer:
+do {
+    wait(full);          // Wait for item
+    wait(mutex);         // Enter CS
+    [Remove item from buffer]
+    signal(mutex);       // Exit CS
+    signal(empty);       // Increment empty count
+    [Consume item]
+} while (true);
+
+
+--------------------------------------------------------------------------------
+7.2 READERS-WRITERS PROBLEM
+--------------------------------------------------------------------------------
+
+Multiple readers can read simultaneously.
+Writers need exclusive access.
+
+First Readers-Writers (Readers Priority):
+
+Shared:
+semaphore rw_mutex = 1;  // Writers mutex
+semaphore mutex = 1;     // Protect read_count
+int read_count = 0;      // Number of readers
+
+Writer:
+do {
+    wait(rw_mutex);
+    [Write data]
+    signal(rw_mutex);
+} while (true);
+
+Reader:
+do {
+    wait(mutex);
+    read_count++;
+    if (read_count == 1)
+        wait(rw_mutex);   // First reader locks
+    signal(mutex);
+
+    [Read data]
+
+    wait(mutex);
+    read_count--;
+    if (read_count == 0)
+        signal(rw_mutex); // Last reader unlocks
+    signal(mutex);
+} while (true);
+
+Problem: Writers may starve.
+
+
+--------------------------------------------------------------------------------
+7.3 DINING PHILOSOPHERS PROBLEM
+--------------------------------------------------------------------------------
+
+5 philosophers around table with 5 chopsticks.
+Need 2 chopsticks to eat.
+Classic deadlock/starvation example.
+
+           P0
+       c4      c0
+     P4          P1
+       c3      c1
+         P3  P2
+           c2
+
+Naive Solution (DEADLOCK POSSIBLE):
+
+semaphore chopstick[5] = {1,1,1,1,1};
+
+Philosopher i:
+do {
+    wait(chopstick[i]);
+    wait(chopstick[(i+1)%5]);
+    [Eat]
+    signal(chopstick[i]);
+    signal(chopstick[(i+1)%5]);
+    [Think]
+} while (true);
+
+Deadlock: All pick up left chopstick simultaneously.
+
+
+Solutions:
+
+1. Allow at most 4 philosophers at table
+2. Pick up both chopsticks atomically
+3. Odd philosophers pick left first, even pick right first
+4. Use a waiter (mutex)
+
+
+================================================================================
+                    8. MONITORS
+================================================================================
+
+High-level synchronization construct.
+Only one process can be active in monitor at a time.
+
+STRUCTURE:
+
+monitor monitor_name {
+    // Shared variables
+
+    procedure P1(...) { ... }
+    procedure P2(...) { ... }
+    ...
+
+    initialization_code(...) { ... }
+}
+
+
+CONDITION VARIABLES:
+
+Used for waiting inside monitor.
+
+Operations:
+- wait(c): Process waits on condition c
+- signal(c): Wake up one waiting process
+
+
+PRODUCER-CONSUMER WITH MONITOR:
+
+monitor ProducerConsumer {
+    int buffer[N];
+    int count = 0;
+    condition not_full, not_empty;
+
+    void produce(item) {
+        while (count == N)
+            wait(not_full);
+        buffer[count++] = item;
+        signal(not_empty);
+    }
+
+    item consume() {
+        while (count == 0)
+            wait(not_empty);
+        item = buffer[--count];
+        signal(not_full);
+        return item;
+    }
+}
+
+
+================================================================================
+                    9. DEADLOCK IN SYNCHRONIZATION
+================================================================================
+
+Improper use of semaphores can cause:
+
+1. DEADLOCK:
+Process 1:         Process 2:
+wait(S);           wait(Q);
+wait(Q);           wait(S);
+...                ...
+signal(S);         signal(Q);
+signal(Q);         signal(S);
+
+
+2. STARVATION:
+Process never gets semaphore due to unfair scheduling.
+
+
+3. PRIORITY INVERSION:
+High priority process waits for low priority process.
+Solution: Priority inheritance.
+
+
+================================================================================
+                    10. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is a race condition?
+A: Multiple processes access shared data concurrently, and outcome
+   depends on execution order. Solved by synchronization.
+
+Q2: What is critical section? What are the requirements?
+A: Code segment accessing shared resources.
+   Requirements: Mutual exclusion, Progress, Bounded waiting.
+
+Q3: What is a semaphore? Types?
+A: Integer variable with atomic wait/signal operations.
+   Binary (0/1) for mutex, Counting for resource management.
+
+Q4: Difference between mutex and semaphore?
+A: Mutex: Binary, owned by thread that locked it.
+   Semaphore: Can be any value, no ownership concept.
+
+Q5: Explain Producer-Consumer problem.
+A: Producer creates items, Consumer uses them, limited buffer.
+   Use: empty (tracks slots), full (tracks items), mutex (protect buffer).
+
+Q6: What is the Dining Philosophers problem?
+A: 5 philosophers, 5 chopsticks, need 2 to eat.
+   Demonstrates deadlock. Solutions: limit diners, order picking.
+
+Q7: What is a monitor?
+A: High-level construct with mutual exclusion built-in.
+   Only one process active at a time. Uses condition variables.
+
+Q8: What is priority inversion?
+A: High priority waits for low priority holding resource.
+   Solution: Priority inheritance - boost low priority temporarily.
+
+
+================================================================================
+                    END OF PROCESS SYNCHRONIZATION
+================================================================================

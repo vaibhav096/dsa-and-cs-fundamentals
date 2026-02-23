@@ -1,0 +1,379 @@
+================================================================================
+                         SORTING ALGORITHMS
+================================================================================
+
+Sorting arranges elements in a specific order (ascending/descending).
+
+
+================================================================================
+                    COMPARISON TABLE
+================================================================================
+
+Algorithm       Best        Average     Worst       Space   Stable
+---------       ----        -------     -----       -----   ------
+Bubble Sort     O(n)        O(n²)       O(n²)       O(1)    Yes
+Selection Sort  O(n²)       O(n²)       O(n²)       O(1)    No
+Insertion Sort  O(n)        O(n²)       O(n²)       O(1)    Yes
+Merge Sort      O(n log n)  O(n log n)  O(n log n)  O(n)    Yes
+Quick Sort      O(n log n)  O(n log n)  O(n²)       O(log n) No
+Heap Sort       O(n log n)  O(n log n)  O(n log n)  O(1)    No
+Counting Sort   O(n+k)      O(n+k)      O(n+k)      O(k)    Yes
+Radix Sort      O(nk)       O(nk)       O(nk)       O(n+k)  Yes
+
+Stable: Maintains relative order of equal elements.
+k: Range of input values (for counting/radix sort)
+
+
+================================================================================
+                    1. BUBBLE SORT
+================================================================================
+
+Compare adjacent elements and swap if out of order.
+Repeat until no swaps needed.
+
+    def bubble_sort(arr):
+        n = len(arr)
+        for i in range(n):
+            swapped = False
+            for j in range(n - 1 - i):
+                if arr[j] > arr[j + 1]:
+                    arr[j], arr[j + 1] = arr[j + 1], arr[j]
+                    swapped = True
+            if not swapped:  # Optimization: already sorted
+                break
+        return arr
+
+Time: O(n²), Best: O(n) when already sorted
+Space: O(1)
+Stable: Yes
+
+When to use: Educational purposes, tiny arrays.
+
+
+================================================================================
+                    2. SELECTION SORT
+================================================================================
+
+Find minimum element, swap with first unsorted position.
+Repeat for remaining elements.
+
+    def selection_sort(arr):
+        n = len(arr)
+        for i in range(n):
+            min_idx = i
+            for j in range(i + 1, n):
+                if arr[j] < arr[min_idx]:
+                    min_idx = j
+            arr[i], arr[min_idx] = arr[min_idx], arr[i]
+        return arr
+
+Time: O(n²) always
+Space: O(1)
+Stable: No (but can be made stable)
+
+When to use: When memory writes are expensive.
+
+
+================================================================================
+                    3. INSERTION SORT
+================================================================================
+
+Build sorted array one element at a time.
+Insert each element into its correct position.
+
+    def insertion_sort(arr):
+        for i in range(1, len(arr)):
+            key = arr[i]
+            j = i - 1
+            while j >= 0 and arr[j] > key:
+                arr[j + 1] = arr[j]
+                j -= 1
+            arr[j + 1] = key
+        return arr
+
+Time: O(n²), Best: O(n) when nearly sorted
+Space: O(1)
+Stable: Yes
+
+When to use:
+- Small arrays
+- Nearly sorted arrays
+- Online sorting (data arriving one at a time)
+
+
+================================================================================
+                    4. MERGE SORT
+================================================================================
+
+Divide array into halves, sort each half, merge them.
+Classic divide and conquer.
+
+    def merge_sort(arr):
+        if len(arr) <= 1:
+            return arr
+
+        mid = len(arr) // 2
+        left = merge_sort(arr[:mid])
+        right = merge_sort(arr[mid:])
+
+        return merge(left, right)
+
+    def merge(left, right):
+        result = []
+        i = j = 0
+
+        while i < len(left) and j < len(right):
+            if left[i] <= right[j]:
+                result.append(left[i])
+                i += 1
+            else:
+                result.append(right[j])
+                j += 1
+
+        result.extend(left[i:])
+        result.extend(right[j:])
+        return result
+
+Time: O(n log n) always
+Space: O(n)
+Stable: Yes
+
+When to use:
+- Guaranteed O(n log n) needed
+- Stability required
+- Linked list sorting (no extra space needed)
+- External sorting (large files)
+
+
+================================================================================
+                    5. QUICK SORT
+================================================================================
+
+Choose pivot, partition array around pivot, recursively sort partitions.
+
+    def quick_sort(arr, low=0, high=None):
+        if high is None:
+            high = len(arr) - 1
+
+        if low < high:
+            pivot_idx = partition(arr, low, high)
+            quick_sort(arr, low, pivot_idx - 1)
+            quick_sort(arr, pivot_idx + 1, high)
+
+        return arr
+
+    def partition(arr, low, high):
+        pivot = arr[high]
+        i = low - 1
+
+        for j in range(low, high):
+            if arr[j] <= pivot:
+                i += 1
+                arr[i], arr[j] = arr[j], arr[i]
+
+        arr[i + 1], arr[high] = arr[high], arr[i + 1]
+        return i + 1
+
+Time: O(n log n) average, O(n²) worst (already sorted + bad pivot)
+Space: O(log n) for recursion stack
+Stable: No
+
+Pivot Selection:
+- Last element (simple but bad for sorted arrays)
+- First element
+- Random element (recommended)
+- Median of three (first, middle, last)
+
+When to use:
+- In-place sorting needed
+- Average case performance matters
+- Arrays (not linked lists)
+
+
+================================================================================
+                    6. HEAP SORT
+================================================================================
+
+Build max heap, repeatedly extract maximum.
+
+    def heap_sort(arr):
+        n = len(arr)
+
+        # Build max heap
+        for i in range(n // 2 - 1, -1, -1):
+            heapify(arr, n, i)
+
+        # Extract elements one by one
+        for i in range(n - 1, 0, -1):
+            arr[0], arr[i] = arr[i], arr[0]
+            heapify(arr, i, 0)
+
+        return arr
+
+    def heapify(arr, n, i):
+        largest = i
+        left = 2 * i + 1
+        right = 2 * i + 2
+
+        if left < n and arr[left] > arr[largest]:
+            largest = left
+        if right < n and arr[right] > arr[largest]:
+            largest = right
+
+        if largest != i:
+            arr[i], arr[largest] = arr[largest], arr[i]
+            heapify(arr, n, largest)
+
+Time: O(n log n) always
+Space: O(1)
+Stable: No
+
+When to use:
+- O(n log n) guaranteed with O(1) space
+- Finding k largest/smallest elements
+
+
+================================================================================
+                    7. COUNTING SORT
+================================================================================
+
+Count occurrences of each element. Works for limited range integers.
+
+    def counting_sort(arr):
+        if not arr:
+            return arr
+
+        min_val, max_val = min(arr), max(arr)
+        range_size = max_val - min_val + 1
+
+        count = [0] * range_size
+        output = [0] * len(arr)
+
+        # Count occurrences
+        for num in arr:
+            count[num - min_val] += 1
+
+        # Cumulative count
+        for i in range(1, range_size):
+            count[i] += count[i - 1]
+
+        # Build output (traverse backwards for stability)
+        for i in range(len(arr) - 1, -1, -1):
+            output[count[arr[i] - min_val] - 1] = arr[i]
+            count[arr[i] - min_val] -= 1
+
+        return output
+
+Time: O(n + k) where k is range
+Space: O(k)
+Stable: Yes
+
+When to use:
+- Known limited range of integers
+- Linear time needed
+
+
+================================================================================
+                    8. RADIX SORT
+================================================================================
+
+Sort by individual digits, from least to most significant.
+
+    def radix_sort(arr):
+        if not arr:
+            return arr
+
+        max_val = max(arr)
+        exp = 1
+
+        while max_val // exp > 0:
+            counting_sort_by_digit(arr, exp)
+            exp *= 10
+
+        return arr
+
+    def counting_sort_by_digit(arr, exp):
+        n = len(arr)
+        output = [0] * n
+        count = [0] * 10
+
+        for num in arr:
+            digit = (num // exp) % 10
+            count[digit] += 1
+
+        for i in range(1, 10):
+            count[i] += count[i - 1]
+
+        for i in range(n - 1, -1, -1):
+            digit = (arr[i] // exp) % 10
+            output[count[digit] - 1] = arr[i]
+            count[digit] -= 1
+
+        for i in range(n):
+            arr[i] = output[i]
+
+Time: O(d * (n + k)) where d = number of digits, k = base (10)
+Space: O(n + k)
+Stable: Yes
+
+When to use:
+- Sorting integers with limited digits
+- Linear time for integers
+
+
+================================================================================
+                    9. PYTHON BUILT-IN SORTING
+================================================================================
+
+Python uses Timsort (hybrid of merge sort and insertion sort).
+
+    # Sort in place
+    arr.sort()                          # Ascending
+    arr.sort(reverse=True)              # Descending
+    arr.sort(key=lambda x: x[1])        # By specific key
+
+    # Return new sorted list
+    sorted_arr = sorted(arr)
+    sorted_arr = sorted(arr, reverse=True)
+    sorted_arr = sorted(arr, key=len)   # By length
+
+Time: O(n log n)
+Space: O(n)
+Stable: Yes
+
+Custom comparator (Python 3):
+    from functools import cmp_to_key
+
+    def compare(a, b):
+        if a < b: return -1
+        if a > b: return 1
+        return 0
+
+    arr.sort(key=cmp_to_key(compare))
+
+
+================================================================================
+                    10. INTERVIEW TIPS
+================================================================================
+
+1. KNOW WHEN TO USE WHAT:
+   - Small n or nearly sorted: Insertion Sort
+   - Guaranteed O(n log n): Merge Sort or Heap Sort
+   - Average case matters: Quick Sort
+   - Integers with limited range: Counting/Radix Sort
+   - In practice: Use built-in sort
+
+2. COMMON QUESTIONS:
+   - Implement merge sort/quick sort
+   - Sort array of 0s, 1s, 2s (Dutch National Flag)
+   - Kth largest/smallest element (partial sorting)
+   - Sort linked list (Merge Sort)
+   - Sort nearly sorted array (Insertion Sort or Heap)
+
+3. STABILITY MATTERS WHEN:
+   - Sorting by multiple keys
+   - Preserving original order for equal elements
+
+================================================================================
+                         END OF SORTING
+================================================================================

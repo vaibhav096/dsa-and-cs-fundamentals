@@ -1,0 +1,463 @@
+================================================================================
+                    OPERATING SYSTEM - INTRODUCTION
+================================================================================
+
+An Operating System (OS) is software that manages computer hardware and
+provides services for running application programs.
+
+
+================================================================================
+                    1. WHAT IS AN OPERATING SYSTEM?
+================================================================================
+
+DEFINITION:
+- Intermediary between user and hardware
+- Resource manager
+- Control program
+- Extended machine (abstraction layer)
+
+
+USER PERSPECTIVE:
+- Interface to use computer
+- Run applications
+- Manage files
+
+
+SYSTEM PERSPECTIVE:
+- Resource allocator (CPU, Memory, I/O)
+- Control program (manages execution)
+- Kernel (core of OS, always running)
+
+
+                    +-------------------+
+                    |   Applications    |
+                    +-------------------+
+                    |  System Programs  |
+                    +-------------------+
+                    |  Operating System |
+                    +-------------------+
+                    |     Hardware      |
+                    +-------------------+
+
+
+================================================================================
+                    2. FUNCTIONS OF OPERATING SYSTEM
+================================================================================
+
+1. PROCESS MANAGEMENT:
+   - Create and delete processes
+   - Suspend and resume processes
+   - Process synchronization
+   - Process communication
+   - Deadlock handling
+
+2. MEMORY MANAGEMENT:
+   - Track memory usage
+   - Allocate/deallocate memory
+   - Virtual memory management
+
+3. FILE SYSTEM MANAGEMENT:
+   - Create and delete files/directories
+   - File organization
+   - File access control
+   - Backup and recovery
+
+4. I/O SYSTEM MANAGEMENT:
+   - Device drivers
+   - Buffering, caching, spooling
+   - Device allocation
+
+5. SECURITY & PROTECTION:
+   - User authentication
+   - Access control
+   - Protect system from malicious programs
+
+6. NETWORKING:
+   - Network communication
+   - Protocol implementation
+   - Resource sharing
+
+
+================================================================================
+                    3. TYPES OF OPERATING SYSTEMS
+================================================================================
+
+1. BATCH OPERATING SYSTEM:
+   - Jobs collected and processed in batches
+   - No direct interaction
+   - Example: Early mainframes
+
+2. TIME-SHARING OS (Multitasking):
+   - Multiple users share system
+   - CPU time divided among users
+   - Quick response time
+   - Example: UNIX
+
+3. DISTRIBUTED OS:
+   - Multiple computers appear as single system
+   - Share resources across network
+   - Example: Amoeba
+
+4. NETWORK OS:
+   - Provides network services
+   - Servers and clients model
+   - Example: Windows Server, Novell NetWare
+
+5. REAL-TIME OS (RTOS):
+   - Strict time constraints
+   - Predictable response time
+   - Hard RTOS: Deadlines must be met (pacemaker)
+   - Soft RTOS: Deadlines preferred but not critical (streaming)
+   - Example: VxWorks, FreeRTOS
+
+6. MULTIPROGRAMMING OS:
+   - Multiple programs in memory
+   - CPU switches between programs
+   - Maximizes CPU utilization
+
+7. MULTIPROCESSING OS:
+   - Multiple CPUs
+   - Parallel processing
+   - Symmetric (SMP) or Asymmetric (AMP)
+
+8. EMBEDDED OS:
+   - For specific devices
+   - Limited resources
+   - Example: Embedded Linux, Android
+
+
+================================================================================
+                    4. COMPUTER SYSTEM ARCHITECTURE
+================================================================================
+
+1. SINGLE PROCESSOR SYSTEMS:
+   - One main CPU
+   - Special-purpose processors (disk controller, keyboard)
+
+2. MULTIPROCESSOR SYSTEMS (Parallel):
+   - Multiple CPUs sharing memory and bus
+
+   Types:
+   a) Symmetric Multiprocessing (SMP):
+      - All processors are equal
+      - Each runs OS code
+      - Common in modern systems
+
+   b) Asymmetric Multiprocessing (AMP):
+      - Master processor schedules
+      - Slave processors execute
+
+   Advantages:
+   - Increased throughput
+   - Economy of scale
+   - Increased reliability
+
+3. CLUSTERED SYSTEMS:
+   - Multiple computers working together
+   - High availability
+   - Types: Asymmetric, Symmetric
+
+
+================================================================================
+                    5. OPERATING SYSTEM STRUCTURE
+================================================================================
+
+1. MONOLITHIC STRUCTURE:
+   - All OS services in single block
+   - Fast but difficult to maintain
+   - Example: Early UNIX
+
+   +---------------------------+
+   |     Application Programs  |
+   +---------------------------+
+   |      Monolithic Kernel    |
+   |  (All services together)  |
+   +---------------------------+
+   |         Hardware          |
+   +---------------------------+
+
+
+2. LAYERED STRUCTURE:
+   - OS divided into layers
+   - Each layer uses services of layer below
+   - Example: THE OS
+
+   +---------------------------+
+   | Layer N: User Interface   |
+   +---------------------------+
+   | Layer N-1: ...            |
+   +---------------------------+
+   | ...                       |
+   +---------------------------+
+   | Layer 1: Memory Mgmt      |
+   +---------------------------+
+   | Layer 0: Hardware         |
+   +---------------------------+
+
+
+3. MICROKERNEL:
+   - Minimal kernel (IPC, scheduling, memory)
+   - Other services in user space
+   - More secure, slower
+   - Example: Mach, QNX
+
+   +--------+  +--------+  +--------+
+   |File Sys|  |Device  |  |Network |  ← User Space
+   +--------+  +--------+  +--------+
+   +---------------------------+
+   |      Microkernel          |      ← Kernel Space
+   |  (IPC, Scheduling, MMU)   |
+   +---------------------------+
+
+
+4. MODULAR STRUCTURE:
+   - Kernel with loadable modules
+   - Best of both worlds
+   - Example: Modern Linux, Solaris
+
+5. HYBRID STRUCTURE:
+   - Combination of approaches
+   - Example: Windows NT, macOS
+
+
+================================================================================
+                    6. SYSTEM CALLS
+================================================================================
+
+Interface between user programs and OS services.
+
+TYPES OF SYSTEM CALLS:
+
+1. PROCESS CONTROL:
+   - fork(), exec(), exit(), wait()
+   - Create, terminate, load programs
+
+2. FILE MANAGEMENT:
+   - open(), read(), write(), close()
+   - create(), delete(), seek()
+
+3. DEVICE MANAGEMENT:
+   - read(), write(), request(), release()
+   - Device allocation
+
+4. INFORMATION MAINTENANCE:
+   - getpid(), alarm(), sleep()
+   - Time, date, system data
+
+5. COMMUNICATION:
+   - pipe(), shmget(), mmap()
+   - Message passing, shared memory
+
+
+SYSTEM CALL EXECUTION:
+
+User Mode → System Call → Trap → Kernel Mode → Execute → Return
+
+1. User program invokes system call
+2. Trap instruction switches to kernel mode
+3. OS handles request
+4. Return to user mode
+
+
+================================================================================
+                    7. OPERATING SYSTEM SERVICES
+================================================================================
+
+1. User Interface:
+   - CLI (Command Line Interface)
+   - GUI (Graphical User Interface)
+   - Touch Screen
+
+2. Program Execution:
+   - Load and run programs
+   - Normal/abnormal termination
+
+3. I/O Operations:
+   - File and device I/O
+   - User cannot directly access I/O
+
+4. File System Manipulation:
+   - Create, delete, read, write files
+   - Directory operations
+
+5. Communications:
+   - Between processes on same/different systems
+   - Shared memory, message passing
+
+6. Error Detection:
+   - CPU, memory, I/O errors
+   - User program errors
+
+7. Resource Allocation:
+   - Allocate CPU, memory, files, I/O
+
+8. Accounting:
+   - Track resource usage
+
+9. Protection and Security:
+   - Control access to resources
+   - Authentication
+
+
+================================================================================
+                    8. KERNEL AND SHELL
+================================================================================
+
+KERNEL:
+- Core of operating system
+- Always in memory
+- Manages CPU, memory, devices
+- Handles system calls
+
+SHELL:
+- Command interpreter
+- Interface between user and kernel
+- Types: sh, bash, csh, PowerShell
+- Interprets user commands
+
+
+USER COMMAND FLOW:
+
+User → Shell → Kernel → Hardware
+
+Example:
+$ ls -l
+1. Shell reads command
+2. Shell creates new process (fork)
+3. New process executes 'ls' (exec)
+4. Kernel handles file system calls
+5. Output displayed
+
+
+================================================================================
+                    9. BOOTING PROCESS
+================================================================================
+
+Steps when computer starts:
+
+1. POWER ON:
+   - Hardware initialization
+
+2. BIOS/UEFI:
+   - Basic Input/Output System
+   - POST (Power-On Self Test)
+   - Find bootable device
+
+3. BOOTLOADER:
+   - GRUB, LILO, Windows Boot Manager
+   - Load kernel into memory
+
+4. KERNEL INITIALIZATION:
+   - Initialize hardware
+   - Mount root file system
+   - Start init/systemd process
+
+5. INIT PROCESS:
+   - First user-space process (PID 1)
+   - Start system services
+   - Launch login prompt
+
+
+================================================================================
+                    10. DUAL MODE OPERATION
+================================================================================
+
+Two modes for CPU protection:
+
+USER MODE (Mode bit = 1):
+- User applications run here
+- Cannot access hardware directly
+- Cannot execute privileged instructions
+
+KERNEL MODE (Mode bit = 0):
+- OS kernel runs here
+- Full hardware access
+- Can execute all instructions
+
+
+MODE SWITCHING:
+
+User Mode → System Call → Kernel Mode
+Kernel Mode → Return → User Mode
+
+
+PRIVILEGED INSTRUCTIONS (Only in Kernel Mode):
+- I/O instructions
+- Halt instruction
+- Turn off interrupts
+- Set timer
+- Clear memory
+- Modify page tables
+
+
+================================================================================
+                    11. INTERRUPTS
+================================================================================
+
+Signal to CPU that event needs attention.
+
+TYPES OF INTERRUPTS:
+
+1. HARDWARE INTERRUPT:
+   - Generated by hardware devices
+   - Keyboard, mouse, disk
+   - Asynchronous
+
+2. SOFTWARE INTERRUPT (Trap):
+   - Generated by programs
+   - System calls, exceptions
+   - Synchronous
+
+
+INTERRUPT HANDLING:
+
+1. Interrupt occurs
+2. CPU stops current execution
+3. Save state (PC, registers)
+4. Find interrupt handler (ISR)
+5. Execute handler
+6. Restore state
+7. Resume execution
+
+
+INTERRUPT VECTOR TABLE:
+Array of pointers to interrupt handlers.
+Index = Interrupt number
+
+
+================================================================================
+                    12. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is an Operating System?
+A: Software that manages hardware and provides services for programs.
+   Acts as intermediary between user and hardware.
+
+Q2: What are the main functions of OS?
+A: Process management, Memory management, File system,
+   I/O management, Security, Networking.
+
+Q3: Difference between kernel and shell?
+A: Kernel: Core of OS, manages hardware, runs in kernel mode.
+   Shell: Command interpreter, interface to kernel, runs in user mode.
+
+Q4: What is a system call?
+A: Interface for programs to request OS services.
+   Switches from user mode to kernel mode.
+
+Q5: Difference between user mode and kernel mode?
+A: User mode: Limited access, cannot access hardware directly.
+   Kernel mode: Full access, can execute privileged instructions.
+
+Q6: What is an interrupt?
+A: Signal to CPU requiring attention. Can be hardware (device)
+   or software (trap/exception). Causes mode switch.
+
+Q7: Types of Operating Systems?
+A: Batch, Time-sharing, Distributed, Real-time, Network,
+   Embedded, Multiprogramming, Multiprocessing.
+
+
+================================================================================
+                    END OF INTRODUCTION
+================================================================================

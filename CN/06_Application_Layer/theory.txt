@@ -1,0 +1,342 @@
+================================================================================
+                    APPLICATION LAYER
+================================================================================
+
+Layer 7 of OSI (Layer 4 of TCP/IP). User interface to network services.
+
+
+================================================================================
+                    1. DNS (Domain Name System)
+================================================================================
+
+Translates domain names to IP addresses.
+
+HIERARCHY:
+
+        . (Root)
+         /|\
+        / | \
+    .com .org .net  (TLD - Top Level Domain)
+     /
+  google
+   /  \
+ www  mail
+
+
+DNS RESOLUTION:
+
+1. User types www.google.com
+2. Check local cache
+3. Query recursive DNS server
+4. Recursive server queries:
+   - Root server → .com location
+   - TLD server → google.com location
+   - Authoritative server → www.google.com IP
+5. Return IP to user
+6. Cache result
+
+
+DNS RECORD TYPES:
+
+| Type  | Purpose                        |
+|-------|--------------------------------|
+| A     | IPv4 address                   |
+| AAAA  | IPv6 address                   |
+| CNAME | Canonical name (alias)         |
+| MX    | Mail exchange server           |
+| NS    | Name server                    |
+| PTR   | Reverse lookup (IP to name)    |
+| TXT   | Text record (SPF, verification)|
+| SOA   | Start of Authority             |
+
+
+DNS QUERY TYPES:
+- Recursive: Server does all work
+- Iterative: Server gives referral
+
+
+================================================================================
+                    2. HTTP (Hypertext Transfer Protocol)
+================================================================================
+
+Protocol for web communication.
+
+
+HTTP REQUEST:
+
+GET /index.html HTTP/1.1
+Host: www.example.com
+User-Agent: Mozilla/5.0
+Accept: text/html
+Connection: keep-alive
+
+
+HTTP RESPONSE:
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 1234
+
+<html>...</html>
+
+
+HTTP METHODS:
+| Method  | Purpose                    | Safe | Idempotent |
+|---------|----------------------------|------|------------|
+| GET     | Retrieve resource          | Yes  | Yes        |
+| POST    | Submit data                | No   | No         |
+| PUT     | Replace resource           | No   | Yes        |
+| DELETE  | Remove resource            | No   | Yes        |
+| PATCH   | Partial update             | No   | No         |
+| HEAD    | GET without body           | Yes  | Yes        |
+| OPTIONS | Get supported methods      | Yes  | Yes        |
+
+
+HTTP STATUS CODES:
+
+1xx: Informational
+- 100 Continue
+
+2xx: Success
+- 200 OK
+- 201 Created
+- 204 No Content
+
+3xx: Redirection
+- 301 Moved Permanently
+- 302 Found (Temporary Redirect)
+- 304 Not Modified
+
+4xx: Client Error
+- 400 Bad Request
+- 401 Unauthorized
+- 403 Forbidden
+- 404 Not Found
+- 405 Method Not Allowed
+
+5xx: Server Error
+- 500 Internal Server Error
+- 502 Bad Gateway
+- 503 Service Unavailable
+
+
+HTTP/1.0 vs HTTP/1.1 vs HTTP/2:
+
+HTTP/1.0:
+- New connection per request
+- No persistent connections
+
+HTTP/1.1:
+- Persistent connections (keep-alive)
+- Pipelining (send multiple requests)
+- Host header required
+- Chunked transfer
+
+HTTP/2:
+- Binary protocol
+- Multiplexing (parallel streams)
+- Header compression
+- Server push
+
+
+HTTPS:
+- HTTP over TLS/SSL
+- Port 443
+- Encrypted communication
+
+
+================================================================================
+                    3. FTP (File Transfer Protocol)
+================================================================================
+
+Transfer files between client and server.
+
+
+TWO CONNECTIONS:
+- Control (Port 21): Commands
+- Data (Port 20): File transfer
+
+
+MODES:
+- Active: Server connects to client
+- Passive: Client connects to server
+
+Active Mode:
+Client → Server:21 (Control)
+Server:20 → Client (Data)
+
+Passive Mode:
+Client → Server:21 (Control)
+Client → Server:xxxxx (Data)
+
+
+COMMANDS:
+- USER: Username
+- PASS: Password
+- LIST: List files
+- RETR: Download file
+- STOR: Upload file
+- QUIT: Close connection
+
+
+================================================================================
+                    4. EMAIL PROTOCOLS
+================================================================================
+
+1. SMTP (Simple Mail Transfer Protocol):
+   - Sending emails
+   - Port 25 (or 587 for submission)
+   - Push protocol
+
+   Client → SMTP Server → Recipient's SMTP Server
+
+   Commands: HELO, MAIL FROM, RCPT TO, DATA, QUIT
+
+
+2. POP3 (Post Office Protocol v3):
+   - Retrieving emails
+   - Port 110 (995 for SSL)
+   - Downloads and deletes from server
+   - Offline access
+
+
+3. IMAP (Internet Message Access Protocol):
+   - Retrieving emails
+   - Port 143 (993 for SSL)
+   - Keeps mail on server
+   - Sync across devices
+   - Folder management
+
+
+================================================================================
+                    5. TELNET AND SSH
+================================================================================
+
+TELNET:
+- Remote terminal access
+- Port 23
+- Unencrypted (insecure)
+- Plain text commands
+
+SSH (Secure Shell):
+- Secure remote access
+- Port 22
+- Encrypted
+- Authentication (password, key)
+- Also: SCP, SFTP for file transfer
+
+
+================================================================================
+                    6. OTHER PROTOCOLS
+================================================================================
+
+SNMP (Simple Network Management Protocol):
+- Network device management
+- Port 161
+- Get/set device parameters
+- Trap messages for alerts
+
+
+NTP (Network Time Protocol):
+- Time synchronization
+- Port 123
+- Hierarchical (stratum levels)
+
+
+LDAP (Lightweight Directory Access Protocol):
+- Directory services
+- Port 389 (636 for SSL)
+- User authentication (Active Directory)
+
+
+================================================================================
+                    7. WEB TECHNOLOGIES
+================================================================================
+
+URL STRUCTURE:
+scheme://user:password@host:port/path?query#fragment
+
+https://www.example.com:443/search?q=test#results
+
+
+COOKIES:
+- Small data stored by browser
+- Session management
+- User tracking
+- Set by: Set-Cookie header
+
+
+SESSIONS:
+- Server-side state
+- Session ID in cookie or URL
+- Stores user data
+
+
+REST (Representational State Transfer):
+- Architectural style for APIs
+- Stateless
+- Resource-based URLs
+- HTTP methods for operations
+
+
+WEBSOCKET:
+- Full-duplex communication
+- Single TCP connection
+- Real-time applications
+- ws:// or wss://
+
+
+================================================================================
+                    8. CDN (Content Delivery Network)
+================================================================================
+
+Distributed servers to deliver content faster.
+
+HOW IT WORKS:
+1. Content cached on edge servers
+2. User request goes to nearest server
+3. If cached, serve immediately
+4. If not, fetch from origin
+
+
+BENEFITS:
+- Faster load times
+- Reduced server load
+- DDoS protection
+- High availability
+
+
+================================================================================
+                    9. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is DNS? How does it work?
+A: Domain Name System. Translates domain names to IP addresses.
+   Hierarchical system with root, TLD, and authoritative servers.
+
+Q2: What are HTTP methods?
+A: GET (retrieve), POST (submit), PUT (replace), DELETE (remove),
+   PATCH (update), HEAD (headers only), OPTIONS (methods).
+
+Q3: Difference between HTTP and HTTPS?
+A: HTTPS is HTTP over TLS/SSL.
+   Encrypted, port 443, secure.
+
+Q4: HTTP status codes?
+A: 2xx: Success (200 OK)
+   3xx: Redirect (301 Moved)
+   4xx: Client error (404 Not Found)
+   5xx: Server error (500 Internal Error)
+
+Q5: Difference between POP3 and IMAP?
+A: POP3: Downloads mail, deletes from server, offline.
+   IMAP: Keeps on server, syncs across devices.
+
+Q6: What is a cookie?
+A: Small data stored by browser. Used for session management,
+   preferences, tracking. Set by server, sent with requests.
+
+
+================================================================================
+                    END OF APPLICATION LAYER
+================================================================================

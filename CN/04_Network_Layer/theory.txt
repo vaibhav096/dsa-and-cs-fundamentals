@@ -1,0 +1,318 @@
+================================================================================
+                    NETWORK LAYER
+================================================================================
+
+Layer 3 of OSI model. Handles routing and logical addressing.
+
+
+================================================================================
+                    1. NETWORK LAYER FUNCTIONS
+================================================================================
+
+1. LOGICAL ADDRESSING:
+   - IP addresses for source and destination
+
+2. ROUTING:
+   - Finding best path to destination
+
+3. FORWARDING:
+   - Moving packets to correct output interface
+
+4. FRAGMENTATION:
+   - Breaking large packets for smaller MTU
+
+
+================================================================================
+                    2. IP ADDRESSING
+================================================================================
+
+IPv4 ADDRESS:
+- 32 bits (4 bytes)
+- Written as: 192.168.1.1 (dotted decimal)
+- Each octet: 0-255
+
+
+CLASSFUL ADDRESSING:
+
+Class | First Bits | Range                  | Default Mask
+──────┼────────────┼────────────────────────┼──────────────
+  A   |    0       | 0.0.0.0 - 127.255.255.255    | /8
+  B   |    10      | 128.0.0.0 - 191.255.255.255  | /16
+  C   |    110     | 192.0.0.0 - 223.255.255.255  | /24
+  D   |    1110    | 224.0.0.0 - 239.255.255.255  | Multicast
+  E   |    1111    | 240.0.0.0 - 255.255.255.255  | Reserved
+
+
+SPECIAL ADDRESSES:
+- 127.x.x.x: Loopback (localhost)
+- 0.0.0.0: This network
+- 255.255.255.255: Limited broadcast
+- Network.255: Directed broadcast
+
+
+PRIVATE IP ADDRESSES:
+- 10.0.0.0 - 10.255.255.255 (Class A)
+- 172.16.0.0 - 172.31.255.255 (Class B)
+- 192.168.0.0 - 192.168.255.255 (Class C)
+
+
+================================================================================
+                    3. SUBNETTING
+================================================================================
+
+Dividing network into smaller subnetworks.
+
+
+SUBNET MASK:
+- Identifies network portion
+- 1s for network, 0s for host
+- Example: 255.255.255.0 = /24
+
+CIDR NOTATION:
+- IP/prefix length
+- Example: 192.168.1.0/24
+
+
+SUBNETTING EXAMPLE:
+
+Given: 192.168.1.0/24, need 4 subnets
+
+1. Need 2 bits for 4 subnets (2² = 4)
+2. New mask: /26 (24 + 2)
+3. Subnets:
+   - 192.168.1.0/26   (0-63)
+   - 192.168.1.64/26  (64-127)
+   - 192.168.1.128/26 (128-191)
+   - 192.168.1.192/26 (192-255)
+
+4. Each subnet:
+   - Network address: First
+   - Broadcast address: Last
+   - Usable hosts: 62 (64-2)
+
+
+QUICK FORMULAS:
+
+Number of subnets = 2^n (n = borrowed bits)
+Hosts per subnet = 2^h - 2 (h = host bits)
+Block size = 256 - subnet mask octet
+
+
+================================================================================
+                    4. IPv4 HEADER
+================================================================================
+
++─────+─────+──────────+────────────────────+
+|Ver  |IHL  |   TOS    |   Total Length     |
+| 4b  | 4b  |    8b    |        16b         |
++─────+─────+──────────+────────────────────+
+|     Identification    |Flags|Frag Offset  |
+|          16b          |  3b |    13b      |
++───────────────────────+─────+─────────────+
+|   TTL   | Protocol   |   Header Checksum  |
+|    8b   |    8b      |        16b         |
++─────────+────────────+────────────────────+
+|           Source IP Address (32b)         |
++───────────────────────────────────────────+
+|        Destination IP Address (32b)       |
++───────────────────────────────────────────+
+|              Options (if any)             |
++───────────────────────────────────────────+
+
+
+FIELDS:
+
+- Version: 4 for IPv4
+- IHL: Header length (in 32-bit words)
+- TOS: Type of Service (QoS)
+- Total Length: Header + data (max 65535)
+- Identification: Fragment ID
+- Flags: DF (Don't Fragment), MF (More Fragments)
+- Fragment Offset: Position in original packet
+- TTL: Time To Live (decremented each hop)
+- Protocol: Upper layer (6=TCP, 17=UDP, 1=ICMP)
+- Header Checksum: Error detection for header
+- Source/Destination IP: 32-bit addresses
+
+
+================================================================================
+                    5. IPv6
+================================================================================
+
+- 128 bits (16 bytes)
+- Written as: 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+- Simplified: 2001:db8:85a3::8a2e:370:7334
+
+ADVANTAGES:
+- Larger address space (2^128)
+- No NAT needed
+- Built-in security (IPsec)
+- No checksum (handled by other layers)
+- No fragmentation by routers
+
+
+================================================================================
+                    6. ROUTING
+================================================================================
+
+Finding path from source to destination.
+
+
+ROUTING ALGORITHMS:
+
+1. DISTANCE VECTOR:
+   - Each router knows distance to neighbors
+   - Share tables with neighbors
+   - Example: RIP (Routing Information Protocol)
+   - Bellman-Ford algorithm
+
+   Problem: Count to infinity
+   Solution: Split horizon, poison reverse
+
+
+2. LINK STATE:
+   - Each router knows entire topology
+   - Flood link state to all
+   - Calculate shortest path (Dijkstra)
+   - Example: OSPF, IS-IS
+
+   Better convergence, more overhead
+
+
+3. PATH VECTOR:
+   - Store entire path (not just distance)
+   - Used in BGP (Border Gateway Protocol)
+   - Avoids loops by checking path
+
+
+ROUTING PROTOCOLS:
+
+Interior Gateway Protocols (IGP):
+- RIP: Distance vector, hop count, max 15
+- OSPF: Link state, cost metric
+- EIGRP: Hybrid (Cisco proprietary)
+
+Exterior Gateway Protocol (EGP):
+- BGP: Between autonomous systems
+
+
+ROUTING TABLE:
+| Destination | Next Hop   | Interface | Metric |
+| 10.0.0.0/8  | 192.168.1.1|   eth0    |   1    |
+| 0.0.0.0/0   | 192.168.1.254| eth0    |   1    | (default)
+
+
+================================================================================
+                    7. ICMP (Internet Control Message Protocol)
+================================================================================
+
+For error reporting and diagnostics.
+
+MESSAGE TYPES:
+
+- Type 0: Echo Reply (ping response)
+- Type 3: Destination Unreachable
+- Type 5: Redirect
+- Type 8: Echo Request (ping)
+- Type 11: Time Exceeded (TTL=0)
+
+
+PING:
+Uses ICMP Echo Request/Reply.
+
+TRACEROUTE:
+- Sends packets with increasing TTL
+- Each router returns Time Exceeded
+- Maps path to destination
+
+
+================================================================================
+                    8. NAT (Network Address Translation)
+================================================================================
+
+Translates private IP to public IP.
+
+TYPES:
+
+1. Static NAT:
+   - One-to-one mapping
+   - Private 10.0.0.1 ↔ Public 203.0.113.1
+
+2. Dynamic NAT:
+   - Pool of public addresses
+   - Assign from pool as needed
+
+3. PAT (Port Address Translation):
+   - Many private to one public
+   - Use different ports
+   - Most common (home routers)
+
+   10.0.0.1:5000 → 203.0.113.1:10001
+   10.0.0.2:5000 → 203.0.113.1:10002
+
+
+================================================================================
+                    9. DHCP (Dynamic Host Configuration Protocol)
+================================================================================
+
+Automatically assigns IP addresses.
+
+DORA PROCESS:
+
+1. DISCOVER:
+   Client broadcasts "Any DHCP server?"
+
+2. OFFER:
+   Server offers IP address
+
+3. REQUEST:
+   Client requests offered IP
+
+4. ACKNOWLEDGE:
+   Server confirms assignment
+
+
+DHCP provides:
+- IP address
+- Subnet mask
+- Default gateway
+- DNS servers
+- Lease time
+
+
+================================================================================
+                    10. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is an IP address?
+A: 32-bit (IPv4) or 128-bit (IPv6) logical address.
+   Identifies device on network. Has network and host portion.
+
+Q2: What is subnetting?
+A: Dividing network into smaller subnetworks.
+   Uses additional bits from host portion for network.
+
+Q3: Difference between IPv4 and IPv6?
+A: IPv4: 32-bit, dotted decimal, NAT needed.
+   IPv6: 128-bit, hex notation, no NAT, built-in security.
+
+Q4: What is NAT?
+A: Network Address Translation. Converts private to public IP.
+   Allows multiple devices to share one public IP.
+
+Q5: What is DHCP?
+A: Dynamic Host Configuration Protocol.
+   Automatically assigns IP, mask, gateway, DNS to devices.
+
+Q6: Difference between routing and forwarding?
+A: Routing: Determining path (control plane).
+   Forwarding: Moving packet to output (data plane).
+
+Q7: Difference between RIP and OSPF?
+A: RIP: Distance vector, hop count (max 15), slow convergence.
+   OSPF: Link state, cost metric, faster convergence.
+
+
+================================================================================
+                    END OF NETWORK LAYER
+================================================================================

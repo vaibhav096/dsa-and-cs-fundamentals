@@ -1,0 +1,837 @@
+================================================================================
+                    SQL (STRUCTURED QUERY LANGUAGE)
+================================================================================
+
+SQL is the standard language for interacting with relational databases.
+It's declarative - you specify WHAT you want, not HOW to get it.
+
+
+================================================================================
+                    1. SQL CATEGORIES
+================================================================================
+
+1. DDL (Data Definition Language):
+   CREATE, ALTER, DROP, TRUNCATE, RENAME
+
+2. DML (Data Manipulation Language):
+   SELECT, INSERT, UPDATE, DELETE
+
+3. DCL (Data Control Language):
+   GRANT, REVOKE
+
+4. TCL (Transaction Control Language):
+   COMMIT, ROLLBACK, SAVEPOINT
+
+
+================================================================================
+                    2. DATA TYPES
+================================================================================
+
+NUMERIC TYPES:
+--------------
+INT / INTEGER      - Whole numbers (-2B to 2B)
+SMALLINT          - Small integers (-32K to 32K)
+BIGINT            - Large integers
+DECIMAL(p,s)      - Fixed precision (p digits, s after decimal)
+NUMERIC(p,s)      - Same as DECIMAL
+FLOAT             - Floating point
+REAL              - Single precision float
+DOUBLE            - Double precision float
+
+STRING TYPES:
+-------------
+CHAR(n)           - Fixed length string (padded with spaces)
+VARCHAR(n)        - Variable length string (max n)
+TEXT              - Large text (no limit)
+NCHAR(n)          - Unicode fixed length
+NVARCHAR(n)       - Unicode variable length
+
+DATE/TIME TYPES:
+----------------
+DATE              - Date (YYYY-MM-DD)
+TIME              - Time (HH:MM:SS)
+DATETIME          - Date and time combined
+TIMESTAMP         - Date/time with timezone
+YEAR              - Year only
+
+OTHER TYPES:
+------------
+BOOLEAN           - TRUE/FALSE
+BLOB              - Binary large object
+CLOB              - Character large object
+JSON              - JSON data
+ENUM              - Enumerated values
+
+
+================================================================================
+                    3. DDL - DATA DEFINITION LANGUAGE
+================================================================================
+
+CREATE DATABASE:
+----------------
+CREATE DATABASE company;
+USE company;
+
+
+CREATE TABLE:
+-------------
+CREATE TABLE employees (
+    emp_id INT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    age INT CHECK (age >= 18),
+    salary DECIMAL(10,2) DEFAULT 50000.00,
+    dept_id INT,
+    hire_date DATE,
+    FOREIGN KEY (dept_id) REFERENCES departments(dept_id)
+);
+
+CREATE TABLE departments (
+    dept_id INT PRIMARY KEY AUTO_INCREMENT,
+    dept_name VARCHAR(50) NOT NULL,
+    location VARCHAR(100)
+);
+
+
+CONSTRAINTS:
+------------
+PRIMARY KEY    - Unique + Not Null identifier
+FOREIGN KEY    - References another table
+UNIQUE         - No duplicate values
+NOT NULL       - Cannot be empty
+CHECK          - Custom condition
+DEFAULT        - Default value if not provided
+AUTO_INCREMENT - Auto-generate sequential numbers
+
+
+ALTER TABLE:
+------------
+-- Add column
+ALTER TABLE employees ADD phone VARCHAR(15);
+
+-- Drop column
+ALTER TABLE employees DROP COLUMN phone;
+
+-- Modify column
+ALTER TABLE employees MODIFY COLUMN name VARCHAR(150);
+
+-- Rename column
+ALTER TABLE employees RENAME COLUMN name TO full_name;
+
+-- Add constraint
+ALTER TABLE employees ADD CONSTRAINT chk_salary CHECK (salary > 0);
+
+-- Drop constraint
+ALTER TABLE employees DROP CONSTRAINT chk_salary;
+
+-- Add foreign key
+ALTER TABLE employees
+ADD CONSTRAINT fk_dept FOREIGN KEY (dept_id) REFERENCES departments(dept_id);
+
+
+DROP TABLE:
+-----------
+DROP TABLE employees;           -- Deletes table and data
+DROP TABLE IF EXISTS employees; -- No error if doesn't exist
+
+
+TRUNCATE TABLE:
+---------------
+TRUNCATE TABLE employees;  -- Deletes all rows, keeps structure
+                          -- Faster than DELETE, cannot rollback
+                          -- Resets AUTO_INCREMENT
+
+
+RENAME TABLE:
+-------------
+RENAME TABLE employees TO staff;
+-- OR
+ALTER TABLE employees RENAME TO staff;
+
+
+================================================================================
+                    4. DML - DATA MANIPULATION LANGUAGE
+================================================================================
+
+INSERT:
+-------
+-- Single row
+INSERT INTO employees (emp_id, name, salary, dept_id)
+VALUES (1, 'John Doe', 60000, 101);
+
+-- Multiple rows
+INSERT INTO employees (emp_id, name, salary, dept_id)
+VALUES
+    (2, 'Jane Smith', 65000, 102),
+    (3, 'Bob Wilson', 55000, 101),
+    (4, 'Alice Brown', 70000, 103);
+
+-- Insert from another table
+INSERT INTO emp_backup
+SELECT * FROM employees WHERE dept_id = 101;
+
+
+SELECT:
+-------
+-- Basic select
+SELECT * FROM employees;
+SELECT name, salary FROM employees;
+
+-- With alias
+SELECT name AS employee_name, salary AS monthly_pay FROM employees;
+
+-- Distinct values
+SELECT DISTINCT dept_id FROM employees;
+
+-- Where clause
+SELECT * FROM employees WHERE salary > 60000;
+SELECT * FROM employees WHERE dept_id = 101 AND salary > 50000;
+SELECT * FROM employees WHERE dept_id = 101 OR dept_id = 102;
+SELECT * FROM employees WHERE NOT dept_id = 101;
+
+-- IN operator
+SELECT * FROM employees WHERE dept_id IN (101, 102, 103);
+
+-- BETWEEN operator
+SELECT * FROM employees WHERE salary BETWEEN 50000 AND 70000;
+
+-- LIKE operator (pattern matching)
+SELECT * FROM employees WHERE name LIKE 'J%';      -- Starts with J
+SELECT * FROM employees WHERE name LIKE '%son';    -- Ends with son
+SELECT * FROM employees WHERE name LIKE '%oh%';    -- Contains oh
+SELECT * FROM employees WHERE name LIKE '_o%';     -- Second char is o
+SELECT * FROM employees WHERE name LIKE 'J___';    -- J followed by 3 chars
+
+-- IS NULL
+SELECT * FROM employees WHERE dept_id IS NULL;
+SELECT * FROM employees WHERE dept_id IS NOT NULL;
+
+-- ORDER BY
+SELECT * FROM employees ORDER BY salary ASC;       -- Ascending (default)
+SELECT * FROM employees ORDER BY salary DESC;      -- Descending
+SELECT * FROM employees ORDER BY dept_id, salary DESC;
+
+-- LIMIT
+SELECT * FROM employees LIMIT 5;                   -- First 5 rows
+SELECT * FROM employees LIMIT 5 OFFSET 10;         -- Skip 10, get 5
+SELECT * FROM employees LIMIT 10, 5;               -- Same as above
+
+
+UPDATE:
+-------
+-- Update single column
+UPDATE employees SET salary = 65000 WHERE emp_id = 1;
+
+-- Update multiple columns
+UPDATE employees
+SET salary = 70000, dept_id = 102
+WHERE emp_id = 1;
+
+-- Update with calculation
+UPDATE employees SET salary = salary * 1.10;  -- 10% raise for all
+
+-- Update with subquery
+UPDATE employees
+SET salary = (SELECT AVG(salary) FROM employees)
+WHERE emp_id = 5;
+
+
+DELETE:
+-------
+-- Delete specific rows
+DELETE FROM employees WHERE emp_id = 1;
+
+-- Delete with condition
+DELETE FROM employees WHERE salary < 30000;
+
+-- Delete all rows (use TRUNCATE instead for better performance)
+DELETE FROM employees;
+
+
+================================================================================
+                    5. AGGREGATE FUNCTIONS
+================================================================================
+
+COUNT() - Number of rows
+SUM()   - Sum of values
+AVG()   - Average value
+MIN()   - Minimum value
+MAX()   - Maximum value
+
+Examples:
+---------
+SELECT COUNT(*) FROM employees;                    -- Total rows
+SELECT COUNT(dept_id) FROM employees;              -- Non-null values
+SELECT COUNT(DISTINCT dept_id) FROM employees;     -- Unique values
+
+SELECT SUM(salary) FROM employees;
+SELECT AVG(salary) FROM employees;
+SELECT MIN(salary), MAX(salary) FROM employees;
+
+
+GROUP BY:
+---------
+-- Group rows and apply aggregate
+SELECT dept_id, COUNT(*) AS emp_count, AVG(salary) AS avg_salary
+FROM employees
+GROUP BY dept_id;
+
+-- Multiple columns
+SELECT dept_id, job_title, COUNT(*)
+FROM employees
+GROUP BY dept_id, job_title;
+
+
+HAVING:
+-------
+-- Filter groups (WHERE filters rows, HAVING filters groups)
+SELECT dept_id, AVG(salary) AS avg_sal
+FROM employees
+GROUP BY dept_id
+HAVING AVG(salary) > 60000;
+
+-- Combined example
+SELECT dept_id, COUNT(*) AS emp_count
+FROM employees
+WHERE salary > 40000
+GROUP BY dept_id
+HAVING COUNT(*) >= 3
+ORDER BY emp_count DESC;
+
+
+QUERY EXECUTION ORDER:
+----------------------
+1. FROM      - Tables to query
+2. WHERE     - Filter rows
+3. GROUP BY  - Group rows
+4. HAVING    - Filter groups
+5. SELECT    - Select columns
+6. DISTINCT  - Remove duplicates
+7. ORDER BY  - Sort results
+8. LIMIT     - Limit rows
+
+
+================================================================================
+                    6. JOINS
+================================================================================
+
+Combine rows from multiple tables based on related columns.
+
+Sample Tables:
+EMPLOYEES(emp_id, name, dept_id)
+DEPARTMENTS(dept_id, dept_name)
+
+
+INNER JOIN:
+-----------
+Returns matching rows from both tables.
+
+SELECT e.name, d.dept_name
+FROM employees e
+INNER JOIN departments d ON e.dept_id = d.dept_id;
+
+-- Using implicit join (old syntax)
+SELECT e.name, d.dept_name
+FROM employees e, departments d
+WHERE e.dept_id = d.dept_id;
+
+
+LEFT JOIN (LEFT OUTER JOIN):
+----------------------------
+All rows from left table + matching from right (NULL if no match).
+
+SELECT e.name, d.dept_name
+FROM employees e
+LEFT JOIN departments d ON e.dept_id = d.dept_id;
+
+
+RIGHT JOIN (RIGHT OUTER JOIN):
+------------------------------
+All rows from right table + matching from left (NULL if no match).
+
+SELECT e.name, d.dept_name
+FROM employees e
+RIGHT JOIN departments d ON e.dept_id = d.dept_id;
+
+
+FULL OUTER JOIN:
+----------------
+All rows from both tables (NULL where no match).
+Note: MySQL doesn't support FULL OUTER JOIN directly.
+
+-- MySQL workaround
+SELECT e.name, d.dept_name
+FROM employees e
+LEFT JOIN departments d ON e.dept_id = d.dept_id
+UNION
+SELECT e.name, d.dept_name
+FROM employees e
+RIGHT JOIN departments d ON e.dept_id = d.dept_id;
+
+
+CROSS JOIN:
+-----------
+Cartesian product - every row with every row.
+
+SELECT e.name, d.dept_name
+FROM employees e
+CROSS JOIN departments d;
+
+
+SELF JOIN:
+----------
+Table joined with itself.
+
+-- Find employees and their managers
+SELECT e.name AS employee, m.name AS manager
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.emp_id;
+
+
+NATURAL JOIN:
+-------------
+Automatically joins on columns with same name.
+
+SELECT * FROM employees NATURAL JOIN departments;
+
+
+================================================================================
+                    7. SUBQUERIES
+================================================================================
+
+Query inside another query.
+
+SINGLE-ROW SUBQUERY:
+--------------------
+SELECT * FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees);
+
+SELECT * FROM employees
+WHERE dept_id = (SELECT dept_id FROM departments WHERE dept_name = 'Sales');
+
+
+MULTI-ROW SUBQUERY:
+-------------------
+-- IN operator
+SELECT * FROM employees
+WHERE dept_id IN (SELECT dept_id FROM departments WHERE location = 'NYC');
+
+-- ANY/SOME - true if any value matches
+SELECT * FROM employees
+WHERE salary > ANY (SELECT salary FROM employees WHERE dept_id = 101);
+
+-- ALL - true if all values match
+SELECT * FROM employees
+WHERE salary > ALL (SELECT salary FROM employees WHERE dept_id = 101);
+
+
+CORRELATED SUBQUERY:
+--------------------
+Inner query depends on outer query. Executes once per outer row.
+
+-- Employees earning more than department average
+SELECT * FROM employees e
+WHERE salary > (
+    SELECT AVG(salary) FROM employees
+    WHERE dept_id = e.dept_id
+);
+
+
+EXISTS / NOT EXISTS:
+--------------------
+-- Employees who have dependents
+SELECT * FROM employees e
+WHERE EXISTS (
+    SELECT 1 FROM dependents d WHERE d.emp_id = e.emp_id
+);
+
+
+SUBQUERY IN FROM (Derived Table):
+---------------------------------
+SELECT dept_id, avg_sal
+FROM (
+    SELECT dept_id, AVG(salary) AS avg_sal
+    FROM employees
+    GROUP BY dept_id
+) AS dept_avg
+WHERE avg_sal > 60000;
+
+
+================================================================================
+                    8. SET OPERATIONS
+================================================================================
+
+UNION:
+------
+Combines results, removes duplicates.
+
+SELECT name FROM employees
+UNION
+SELECT name FROM contractors;
+
+
+UNION ALL:
+----------
+Combines results, keeps duplicates.
+
+SELECT name FROM employees
+UNION ALL
+SELECT name FROM contractors;
+
+
+INTERSECT:
+----------
+Common rows in both results.
+Note: Not supported in MySQL (use JOIN instead).
+
+SELECT name FROM employees
+INTERSECT
+SELECT name FROM managers;
+
+
+EXCEPT / MINUS:
+---------------
+Rows in first but not in second.
+Note: Not supported in MySQL (use LEFT JOIN with NULL check).
+
+SELECT name FROM employees
+EXCEPT
+SELECT name FROM managers;
+
+
+================================================================================
+                    9. STRING FUNCTIONS
+================================================================================
+
+CONCAT(s1, s2, ...)      - Concatenate strings
+CONCAT_WS(sep, s1, s2)   - Concatenate with separator
+LENGTH(s)                - Length of string
+CHAR_LENGTH(s)           - Character count
+UPPER(s) / UCASE(s)      - Convert to uppercase
+LOWER(s) / LCASE(s)      - Convert to lowercase
+TRIM(s)                  - Remove leading/trailing spaces
+LTRIM(s) / RTRIM(s)      - Trim left/right
+SUBSTRING(s, start, len) - Extract substring
+LEFT(s, n)               - First n characters
+RIGHT(s, n)              - Last n characters
+REPLACE(s, from, to)     - Replace substring
+REVERSE(s)               - Reverse string
+LOCATE(sub, s)           - Position of substring
+INSTR(s, sub)            - Same as LOCATE
+
+Examples:
+SELECT CONCAT(first_name, ' ', last_name) AS full_name FROM employees;
+SELECT UPPER(name) FROM employees;
+SELECT SUBSTRING(name, 1, 3) FROM employees;
+
+
+================================================================================
+                    10. DATE/TIME FUNCTIONS
+================================================================================
+
+NOW()                    - Current date and time
+CURDATE()                - Current date
+CURTIME()                - Current time
+DATE(datetime)           - Extract date part
+TIME(datetime)           - Extract time part
+YEAR(date)               - Extract year
+MONTH(date)              - Extract month
+DAY(date)                - Extract day
+HOUR(time)               - Extract hour
+MINUTE(time)             - Extract minute
+SECOND(time)             - Extract second
+DAYNAME(date)            - Day name (Monday, etc.)
+MONTHNAME(date)          - Month name (January, etc.)
+DATEDIFF(d1, d2)         - Difference in days
+DATE_ADD(date, INTERVAL) - Add to date
+DATE_SUB(date, INTERVAL) - Subtract from date
+DATE_FORMAT(date, fmt)   - Format date
+
+Examples:
+SELECT YEAR(hire_date), COUNT(*) FROM employees GROUP BY YEAR(hire_date);
+SELECT * FROM employees WHERE hire_date > DATE_SUB(NOW(), INTERVAL 1 YEAR);
+SELECT DATE_FORMAT(hire_date, '%M %d, %Y') FROM employees;
+
+
+================================================================================
+                    11. NUMERIC FUNCTIONS
+================================================================================
+
+ABS(n)           - Absolute value
+CEIL(n)          - Round up
+FLOOR(n)         - Round down
+ROUND(n, d)      - Round to d decimal places
+TRUNCATE(n, d)   - Truncate to d decimal places
+MOD(n, m)        - Modulo (remainder)
+POWER(n, p)      - n raised to power p
+SQRT(n)          - Square root
+RAND()           - Random number 0-1
+
+Examples:
+SELECT ROUND(salary, -3) FROM employees;  -- Round to nearest 1000
+SELECT CEIL(AVG(salary)) FROM employees;
+
+
+================================================================================
+                    12. CONDITIONAL EXPRESSIONS
+================================================================================
+
+CASE WHEN:
+----------
+SELECT name, salary,
+    CASE
+        WHEN salary >= 80000 THEN 'High'
+        WHEN salary >= 50000 THEN 'Medium'
+        ELSE 'Low'
+    END AS salary_grade
+FROM employees;
+
+
+IF():
+-----
+SELECT name, IF(salary > 60000, 'Above Average', 'Below Average')
+FROM employees;
+
+
+IFNULL() / COALESCE():
+----------------------
+SELECT name, IFNULL(phone, 'No Phone') FROM employees;
+SELECT name, COALESCE(phone, mobile, 'N/A') FROM employees;
+
+
+NULLIF():
+---------
+Returns NULL if two values are equal.
+SELECT NULLIF(a, b) -- Returns NULL if a = b, otherwise a
+
+
+================================================================================
+                    13. VIEWS
+================================================================================
+
+Virtual table based on SELECT query.
+
+CREATE VIEW:
+------------
+CREATE VIEW high_earners AS
+SELECT emp_id, name, salary
+FROM employees
+WHERE salary > 70000;
+
+-- Use view like table
+SELECT * FROM high_earners;
+
+
+CREATE OR REPLACE:
+------------------
+CREATE OR REPLACE VIEW high_earners AS
+SELECT emp_id, name, salary, dept_id
+FROM employees
+WHERE salary > 75000;
+
+
+DROP VIEW:
+----------
+DROP VIEW high_earners;
+DROP VIEW IF EXISTS high_earners;
+
+
+UPDATABLE VIEWS:
+----------------
+Views can be updated if:
+- Based on single table
+- No aggregate functions
+- No GROUP BY, HAVING, DISTINCT
+- No subqueries in SELECT
+
+INSERT INTO high_earners (emp_id, name, salary) VALUES (100, 'New Emp', 80000);
+
+
+WITH CHECK OPTION:
+------------------
+Prevents inserting rows that don't match view condition.
+
+CREATE VIEW high_earners AS
+SELECT * FROM employees WHERE salary > 70000
+WITH CHECK OPTION;
+
+
+================================================================================
+                    14. INDEXES
+================================================================================
+
+Speed up data retrieval.
+
+CREATE INDEX:
+-------------
+CREATE INDEX idx_name ON employees(name);
+CREATE INDEX idx_name_dept ON employees(name, dept_id);  -- Composite
+CREATE UNIQUE INDEX idx_email ON employees(email);
+
+DROP INDEX:
+-----------
+DROP INDEX idx_name ON employees;
+
+SHOW INDEXES:
+-------------
+SHOW INDEX FROM employees;
+
+
+When to use indexes:
+- Columns in WHERE clauses
+- Columns in JOIN conditions
+- Columns in ORDER BY
+- Primary and foreign keys (auto-indexed)
+
+When NOT to use:
+- Small tables
+- Columns with many NULL values
+- Columns that are frequently updated
+- Columns with low selectivity (few unique values)
+
+
+================================================================================
+                    15. DCL - DATA CONTROL LANGUAGE
+================================================================================
+
+GRANT:
+------
+GRANT SELECT, INSERT ON employees TO 'user1'@'localhost';
+GRANT ALL PRIVILEGES ON company.* TO 'admin'@'localhost';
+GRANT SELECT ON employees TO 'user1'@'localhost' WITH GRANT OPTION;
+
+REVOKE:
+-------
+REVOKE INSERT ON employees FROM 'user1'@'localhost';
+REVOKE ALL PRIVILEGES ON company.* FROM 'admin'@'localhost';
+
+
+================================================================================
+                    16. TCL - TRANSACTION CONTROL
+================================================================================
+
+START TRANSACTION:
+------------------
+START TRANSACTION;
+-- or
+BEGIN;
+
+UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE account_id = 2;
+
+COMMIT;  -- Save changes permanently
+
+-- or
+
+ROLLBACK;  -- Undo all changes since BEGIN
+
+
+SAVEPOINT:
+----------
+START TRANSACTION;
+UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;
+SAVEPOINT sp1;
+UPDATE accounts SET balance = balance + 100 WHERE account_id = 2;
+ROLLBACK TO sp1;  -- Undo only after savepoint
+COMMIT;
+
+
+AUTO COMMIT:
+------------
+SET AUTOCOMMIT = 0;  -- Disable (changes need explicit COMMIT)
+SET AUTOCOMMIT = 1;  -- Enable (each statement auto-commits)
+
+
+================================================================================
+                    17. IMPORTANT SQL QUERIES FOR INTERVIEWS
+================================================================================
+
+1. Second Highest Salary:
+-------------------------
+SELECT MAX(salary) FROM employees
+WHERE salary < (SELECT MAX(salary) FROM employees);
+
+-- OR using LIMIT
+SELECT DISTINCT salary FROM employees
+ORDER BY salary DESC LIMIT 1 OFFSET 1;
+
+-- OR using DENSE_RANK()
+SELECT salary FROM (
+    SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS rnk
+    FROM employees
+) ranked WHERE rnk = 2;
+
+
+2. Nth Highest Salary:
+----------------------
+SELECT DISTINCT salary FROM employees
+ORDER BY salary DESC LIMIT 1 OFFSET N-1;
+
+
+3. Employees with Same Salary:
+------------------------------
+SELECT * FROM employees e1
+WHERE EXISTS (
+    SELECT 1 FROM employees e2
+    WHERE e1.salary = e2.salary AND e1.emp_id != e2.emp_id
+);
+
+
+4. Duplicate Records:
+---------------------
+SELECT email, COUNT(*) FROM employees
+GROUP BY email HAVING COUNT(*) > 1;
+
+
+5. Delete Duplicates (Keep One):
+--------------------------------
+DELETE e1 FROM employees e1
+INNER JOIN employees e2
+WHERE e1.emp_id > e2.emp_id AND e1.email = e2.email;
+
+
+6. Department with Highest Average Salary:
+------------------------------------------
+SELECT dept_id, AVG(salary) AS avg_sal
+FROM employees
+GROUP BY dept_id
+ORDER BY avg_sal DESC
+LIMIT 1;
+
+
+7. Employees Earning More Than Manager:
+---------------------------------------
+SELECT e.name
+FROM employees e
+JOIN employees m ON e.manager_id = m.emp_id
+WHERE e.salary > m.salary;
+
+
+8. Running Total:
+-----------------
+SELECT emp_id, salary,
+    SUM(salary) OVER (ORDER BY emp_id) AS running_total
+FROM employees;
+
+
+9. Rank Employees by Salary:
+----------------------------
+SELECT name, salary,
+    RANK() OVER (ORDER BY salary DESC) AS rnk,
+    DENSE_RANK() OVER (ORDER BY salary DESC) AS dense_rnk,
+    ROW_NUMBER() OVER (ORDER BY salary DESC) AS row_num
+FROM employees;
+
+
+10. Top 3 Earners per Department:
+---------------------------------
+SELECT * FROM (
+    SELECT name, dept_id, salary,
+        DENSE_RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS rnk
+    FROM employees
+) ranked WHERE rnk <= 3;
+
+
+================================================================================
+                    END OF SQL
+================================================================================

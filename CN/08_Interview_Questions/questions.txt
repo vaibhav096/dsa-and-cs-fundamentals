@@ -1,0 +1,380 @@
+================================================================================
+                    COMPUTER NETWORKS INTERVIEW QUESTIONS
+================================================================================
+
+75+ Most Frequently Asked CN Interview Questions
+
+
+================================================================================
+                    SECTION 1: BASICS & OSI MODEL
+================================================================================
+
+Q1: What is a computer network?
+A: Collection of interconnected devices that can communicate
+   and share resources. Examples: LAN, WAN, Internet.
+
+Q2: What is the OSI model?
+A: Open Systems Interconnection - 7-layer reference model.
+   Layers: Physical, Data Link, Network, Transport, Session,
+   Presentation, Application.
+
+Q3: What is the TCP/IP model?
+A: 4-layer practical model used on Internet.
+   Layers: Network Access, Internet, Transport, Application.
+
+Q4: Difference between OSI and TCP/IP model?
+A: OSI: 7 layers, theoretical, detailed.
+   TCP/IP: 4 layers, practical, widely implemented.
+
+Q5: What happens when you type a URL in browser?
+A: 1. DNS lookup (domain → IP)
+   2. TCP connection (3-way handshake)
+   3. TLS handshake (if HTTPS)
+   4. HTTP request sent
+   5. Server processes request
+   6. Server sends response
+   7. Browser renders page
+
+Q6: Difference between LAN, MAN, and WAN?
+A: LAN: Local (building), high speed, low cost.
+   MAN: Metropolitan (city), medium speed.
+   WAN: Wide (global), varied speed, expensive.
+
+Q7: What are network topologies?
+A: Physical arrangement of devices.
+   Types: Bus, Star, Ring, Mesh, Tree, Hybrid.
+
+
+================================================================================
+                    SECTION 2: PHYSICAL & DATA LINK LAYER
+================================================================================
+
+Q8: What is the function of Physical layer?
+A: Transmits raw bits over physical medium.
+   Defines cables, connectors, signals, encoding.
+
+Q9: What is MAC address?
+A: 48-bit physical address assigned by manufacturer.
+   Format: AA:BB:CC:DD:EE:FF
+   Used for local delivery at Layer 2.
+
+Q10: Difference between MAC and IP address?
+A: MAC: Physical, Layer 2, hardware-based, local scope.
+   IP: Logical, Layer 3, software-based, global scope.
+
+Q11: What is ARP?
+A: Address Resolution Protocol. Maps IP to MAC.
+   Broadcast request, unicast reply. Cached in ARP table.
+
+Q12: What is CSMA/CD?
+A: Carrier Sense Multiple Access with Collision Detection.
+   Listen before/during transmit. On collision: stop, jam, backoff.
+   Used in Ethernet.
+
+Q13: What is a switch vs hub?
+A: Hub: Layer 1, broadcasts to all ports, half-duplex.
+   Switch: Layer 2, learns MACs, forwards to specific port, full-duplex.
+
+Q14: What is VLAN?
+A: Virtual LAN. Logical segmentation of network.
+   Isolates broadcast domains without physical separation.
+
+Q15: What is CRC?
+A: Cyclic Redundancy Check. Error detection using polynomial.
+   Appends remainder to data. Very effective.
+
+
+================================================================================
+                    SECTION 3: NETWORK LAYER
+================================================================================
+
+Q16: What is an IP address?
+A: 32-bit (IPv4) or 128-bit (IPv6) logical address.
+   Identifies device on network. Has network and host portion.
+
+Q17: What is subnetting?
+A: Dividing network into smaller subnetworks.
+   Borrow bits from host portion for network.
+
+Q18: Calculate: 192.168.1.0/26 - How many hosts?
+A: /26 means 26 network bits, 6 host bits.
+   Hosts = 2^6 - 2 = 62 usable hosts.
+   (Subtract 2 for network and broadcast addresses)
+
+Q19: What are private IP ranges?
+A: 10.0.0.0 - 10.255.255.255 (Class A)
+   172.16.0.0 - 172.31.255.255 (Class B)
+   192.168.0.0 - 192.168.255.255 (Class C)
+
+Q20: What is NAT?
+A: Network Address Translation. Converts private to public IP.
+   Types: Static, Dynamic, PAT (many-to-one).
+
+Q21: What is DHCP?
+A: Dynamic Host Configuration Protocol.
+   Automatically assigns IP, mask, gateway, DNS.
+   DORA: Discover, Offer, Request, Acknowledge.
+
+Q22: What is a router?
+A: Layer 3 device that routes packets between networks.
+   Uses routing table to make forwarding decisions.
+
+Q23: Difference between routing and switching?
+A: Routing: Layer 3, IP addresses, between networks.
+   Switching: Layer 2, MAC addresses, within network.
+
+Q24: What is ICMP?
+A: Internet Control Message Protocol. Error reporting.
+   Used by ping (Echo), traceroute (Time Exceeded).
+
+Q25: Difference between IPv4 and IPv6?
+A: IPv4: 32-bit, 4 billion addresses, NAT needed.
+   IPv6: 128-bit, vast addresses, no NAT, built-in security.
+
+Q26: What is TTL?
+A: Time To Live. Decremented at each hop.
+   Prevents infinite loops. When 0, packet discarded.
+
+
+================================================================================
+                    SECTION 4: TRANSPORT LAYER
+================================================================================
+
+Q27: What is TCP?
+A: Transmission Control Protocol. Connection-oriented, reliable.
+   Features: Ordering, flow control, congestion control.
+
+Q28: What is UDP?
+A: User Datagram Protocol. Connectionless, unreliable.
+   Fast, low overhead. Used for DNS, streaming, gaming.
+
+Q29: Difference between TCP and UDP?
+A: TCP: Reliable, ordered, connection-oriented, slower.
+   UDP: Unreliable, unordered, connectionless, faster.
+
+Q30: Explain TCP 3-way handshake.
+A: Connection establishment:
+   1. Client → SYN → Server
+   2. Server → SYN+ACK → Client
+   3. Client → ACK → Server
+
+Q31: Explain TCP connection termination.
+A: 4-way handshake:
+   1. FIN → 2. ACK → 3. FIN → 4. ACK
+   Either side can initiate.
+
+Q32: What is a port number?
+A: 16-bit number (0-65535) identifying application.
+   Well-known: 0-1023, Registered: 1024-49151.
+
+Q33: What is a socket?
+A: IP address + Port number.
+   Example: 192.168.1.1:80
+   Uniquely identifies connection endpoint.
+
+Q34: What is TCP congestion control?
+A: Prevent network overload.
+   Algorithms: Slow start, congestion avoidance, fast recovery.
+
+Q35: What is TCP flow control?
+A: Prevent receiver overflow.
+   Sliding window - receiver advertises buffer space.
+
+
+================================================================================
+                    SECTION 5: APPLICATION LAYER
+================================================================================
+
+Q36: What is DNS?
+A: Domain Name System. Translates names to IP.
+   Hierarchical: Root → TLD → Authoritative.
+
+Q37: DNS record types?
+A: A (IPv4), AAAA (IPv6), CNAME (alias),
+   MX (mail), NS (nameserver), PTR (reverse).
+
+Q38: What is HTTP?
+A: Hypertext Transfer Protocol. Web communication.
+   Methods: GET, POST, PUT, DELETE.
+   Stateless protocol.
+
+Q39: HTTP status codes?
+A: 1xx: Info, 2xx: Success, 3xx: Redirect,
+   4xx: Client error, 5xx: Server error.
+   Common: 200 OK, 404 Not Found, 500 Server Error.
+
+Q40: Difference between HTTP and HTTPS?
+A: HTTPS = HTTP + TLS/SSL.
+   Encrypted, authenticated, port 443.
+
+Q41: Difference between GET and POST?
+A: GET: Retrieve data, in URL, cacheable, bookmarkable.
+   POST: Submit data, in body, not cached, not bookmarkable.
+
+Q42: What is FTP?
+A: File Transfer Protocol. Two connections:
+   Control (port 21), Data (port 20).
+
+Q43: Difference between POP3 and IMAP?
+A: POP3: Download and delete, offline, single device.
+   IMAP: Keep on server, sync, multiple devices.
+
+Q44: What is SMTP?
+A: Simple Mail Transfer Protocol. Sending email.
+   Port 25 (or 587). Push protocol.
+
+
+================================================================================
+                    SECTION 6: SECURITY
+================================================================================
+
+Q45: What is the CIA triad?
+A: Confidentiality: Only authorized access.
+   Integrity: No unauthorized modification.
+   Availability: Accessible when needed.
+
+Q46: Symmetric vs Asymmetric encryption?
+A: Symmetric: Same key, fast (AES).
+   Asymmetric: Public/private keys, slower (RSA).
+
+Q47: What is TLS/SSL?
+A: Encryption protocols for secure communication.
+   Handshake establishes keys, certificates verify identity.
+
+Q48: What is a firewall?
+A: Filters traffic based on rules.
+   Types: Packet filter, stateful, application gateway.
+
+Q49: What is a VPN?
+A: Virtual Private Network. Encrypted tunnel.
+   Types: Remote access, site-to-site.
+
+Q50: What is a DDoS attack?
+A: Distributed Denial of Service.
+   Many sources overwhelm target.
+   Types: Volumetric, protocol, application.
+
+Q51: What is man-in-the-middle attack?
+A: Attacker intercepts communication.
+   Can read/modify data. Prevented by HTTPS.
+
+
+================================================================================
+                    SECTION 7: PROTOCOLS & PORTS
+================================================================================
+
+Common Port Numbers:
+| Port | Protocol | Service   |
+|------|----------|-----------|
+| 20   | TCP      | FTP Data  |
+| 21   | TCP      | FTP Control|
+| 22   | TCP      | SSH       |
+| 23   | TCP      | Telnet    |
+| 25   | TCP      | SMTP      |
+| 53   | UDP/TCP  | DNS       |
+| 67   | UDP      | DHCP Server|
+| 68   | UDP      | DHCP Client|
+| 80   | TCP      | HTTP      |
+| 110  | TCP      | POP3      |
+| 143  | TCP      | IMAP      |
+| 443  | TCP      | HTTPS     |
+
+
+================================================================================
+                    SECTION 8: PRACTICAL SCENARIOS
+================================================================================
+
+Q52: Why can't I access a website?
+A: Check: 1. Network connectivity (ping gateway)
+         2. DNS resolution (nslookup)
+         3. Port accessibility (telnet)
+         4. Firewall rules
+         5. Server status
+
+Q53: How does email work?
+A: Sender → SMTP → Sender's server → SMTP → Recipient's server
+   Recipient ← POP3/IMAP ← Recipient's server
+
+Q54: How does ping work?
+A: Sends ICMP Echo Request.
+   Receives ICMP Echo Reply.
+   Measures round-trip time.
+
+Q55: How does traceroute work?
+A: Sends packets with increasing TTL.
+   Each router returns Time Exceeded.
+   Maps path to destination.
+
+Q56: What is localhost?
+A: 127.0.0.1 - Loopback address.
+   Traffic to self, never leaves machine.
+
+Q57: What is gateway?
+A: Router connecting network to other networks.
+   Default gateway for Internet access.
+
+
+================================================================================
+                    SECTION 9: ADVANCED TOPICS
+================================================================================
+
+Q58: What is SDN?
+A: Software Defined Networking.
+   Separates control plane from data plane.
+   Centralized network management.
+
+Q59: What is load balancing?
+A: Distributing traffic across multiple servers.
+   Improves performance and availability.
+   Algorithms: Round-robin, least connections.
+
+Q60: What is CDN?
+A: Content Delivery Network.
+   Distributed servers cache content.
+   Delivers from nearest location.
+
+Q61: What is QoS?
+A: Quality of Service.
+   Prioritize certain traffic (voice, video).
+   Bandwidth, latency, jitter management.
+
+Q62: What is multicast?
+A: Send to multiple receivers simultaneously.
+   One-to-many communication.
+   Used for streaming, IPTV.
+
+
+================================================================================
+                    QUICK REVISION
+================================================================================
+
+1. OSI: Physical, Data Link, Network, Transport, Session, Presentation, Application
+
+2. TCP/IP: Network Access, Internet, Transport, Application
+
+3. TCP: Connection-oriented, reliable, 3-way handshake
+
+4. UDP: Connectionless, unreliable, fast
+
+5. IP Classes: A (1-126), B (128-191), C (192-223)
+
+6. Private IPs: 10.x.x.x, 172.16-31.x.x, 192.168.x.x
+
+7. Subnet Formula: Hosts = 2^(32-prefix) - 2
+
+8. MAC: 48-bit, physical, Layer 2
+
+9. ARP: IP to MAC
+
+10. DNS: Domain to IP
+
+11. DHCP: DORA (Discover, Offer, Request, Acknowledge)
+
+12. HTTP Methods: GET, POST, PUT, DELETE, PATCH
+
+13. Ports: HTTP(80), HTTPS(443), FTP(21), SSH(22), DNS(53)
+
+
+================================================================================
+                    END OF INTERVIEW QUESTIONS
+================================================================================

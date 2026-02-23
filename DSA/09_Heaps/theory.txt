@@ -1,0 +1,336 @@
+================================================================================
+                              HEAPS
+================================================================================
+
+Heap is a complete binary tree satisfying the heap property.
+Used for priority queues, heap sort, finding k largest/smallest.
+
+
+================================================================================
+                    1. HEAP BASICS
+================================================================================
+
+TYPES:
+- Max Heap: Parent >= Children (root is maximum)
+- Min Heap: Parent <= Children (root is minimum)
+
+PROPERTIES:
+- Complete binary tree (filled level by level, left to right)
+- Height: O(log n)
+- Can be represented as array
+
+ARRAY REPRESENTATION:
+For node at index i:
+- Parent: (i - 1) // 2
+- Left child: 2 * i + 1
+- Right child: 2 * i + 2
+
+OPERATIONS:
+    Insert      : O(log n)
+    Extract max/min : O(log n)
+    Get max/min : O(1)
+    Build heap  : O(n)
+    Heapify     : O(log n)
+
+
+================================================================================
+                    2. PYTHON heapq MODULE
+================================================================================
+
+Python's heapq implements MIN HEAP.
+
+    import heapq
+
+    # Create heap from list
+    heap = [3, 1, 4, 1, 5]
+    heapq.heapify(heap)           # O(n)
+
+    # Operations
+    heapq.heappush(heap, x)       # Insert O(log n)
+    heapq.heappop(heap)           # Extract min O(log n)
+    heap[0]                       # Get min O(1)
+
+    # Push and pop in one operation
+    heapq.heapreplace(heap, x)    # Pop then push
+    heapq.heappushpop(heap, x)    # Push then pop (more efficient)
+
+    # Get n smallest/largest
+    heapq.nsmallest(n, heap)
+    heapq.nlargest(n, heap)
+
+
+FOR MAX HEAP:
+Negate values when inserting/extracting.
+
+    # Max heap using negation
+    max_heap = []
+    heapq.heappush(max_heap, -5)  # Insert 5
+    max_val = -heapq.heappop(max_heap)  # Extract max
+
+
+================================================================================
+                    3. HEAP IMPLEMENTATION
+================================================================================
+
+    class MinHeap:
+        def __init__(self):
+            self.heap = []
+
+        def parent(self, i):
+            return (i - 1) // 2
+
+        def left_child(self, i):
+            return 2 * i + 1
+
+        def right_child(self, i):
+            return 2 * i + 2
+
+        def swap(self, i, j):
+            self.heap[i], self.heap[j] = self.heap[j], self.heap[i]
+
+        def insert(self, val):
+            self.heap.append(val)
+            self._heapify_up(len(self.heap) - 1)
+
+        def _heapify_up(self, i):
+            while i > 0 and self.heap[self.parent(i)] > self.heap[i]:
+                self.swap(i, self.parent(i))
+                i = self.parent(i)
+
+        def extract_min(self):
+            if not self.heap:
+                return None
+            if len(self.heap) == 1:
+                return self.heap.pop()
+
+            min_val = self.heap[0]
+            self.heap[0] = self.heap.pop()
+            self._heapify_down(0)
+            return min_val
+
+        def _heapify_down(self, i):
+            smallest = i
+            left = self.left_child(i)
+            right = self.right_child(i)
+
+            if left < len(self.heap) and self.heap[left] < self.heap[smallest]:
+                smallest = left
+            if right < len(self.heap) and self.heap[right] < self.heap[smallest]:
+                smallest = right
+
+            if smallest != i:
+                self.swap(i, smallest)
+                self._heapify_down(smallest)
+
+        def get_min(self):
+            return self.heap[0] if self.heap else None
+
+
+================================================================================
+                    4. PRIORITY QUEUE
+================================================================================
+
+Queue where elements are dequeued based on priority.
+
+    import heapq
+
+    class PriorityQueue:
+        def __init__(self):
+            self.heap = []
+            self.counter = 0  # For tie-breaking
+
+        def push(self, item, priority):
+            heapq.heappush(self.heap, (priority, self.counter, item))
+            self.counter += 1
+
+        def pop(self):
+            return heapq.heappop(self.heap)[2]
+
+        def peek(self):
+            return self.heap[0][2]
+
+        def is_empty(self):
+            return len(self.heap) == 0
+
+
+================================================================================
+                    5. COMMON HEAP PROBLEMS
+================================================================================
+
+PROBLEM 1: Kth Largest Element
+------------------------------
+    def find_kth_largest(nums, k):
+        # Using min heap of size k
+        heap = []
+        for num in nums:
+            heapq.heappush(heap, num)
+            if len(heap) > k:
+                heapq.heappop(heap)
+        return heap[0]
+
+    # Or simply:
+    def find_kth_largest_simple(nums, k):
+        return heapq.nlargest(k, nums)[-1]
+
+
+PROBLEM 2: Top K Frequent Elements
+----------------------------------
+    def top_k_frequent(nums, k):
+        count = Counter(nums)
+        return heapq.nlargest(k, count.keys(), key=count.get)
+
+
+PROBLEM 3: Merge K Sorted Lists
+-------------------------------
+    def merge_k_lists(lists):
+        heap = []
+        for i, lst in enumerate(lists):
+            if lst:
+                heapq.heappush(heap, (lst.val, i, lst))
+
+        dummy = ListNode(0)
+        current = dummy
+
+        while heap:
+            val, i, node = heapq.heappop(heap)
+            current.next = node
+            current = current.next
+            if node.next:
+                heapq.heappush(heap, (node.next.val, i, node.next))
+
+        return dummy.next
+
+
+PROBLEM 4: Find Median from Data Stream
+---------------------------------------
+    class MedianFinder:
+        def __init__(self):
+            self.small = []  # Max heap (negated)
+            self.large = []  # Min heap
+
+        def addNum(self, num):
+            # Add to max heap
+            heapq.heappush(self.small, -num)
+
+            # Balance: move max of small to large
+            heapq.heappush(self.large, -heapq.heappop(self.small))
+
+            # Ensure small has >= elements
+            if len(self.large) > len(self.small):
+                heapq.heappush(self.small, -heapq.heappop(self.large))
+
+        def findMedian(self):
+            if len(self.small) > len(self.large):
+                return -self.small[0]
+            return (-self.small[0] + self.large[0]) / 2
+
+
+PROBLEM 5: Task Scheduler
+-------------------------
+    def least_interval(tasks, n):
+        count = Counter(tasks)
+        max_heap = [-cnt for cnt in count.values()]
+        heapq.heapify(max_heap)
+
+        time = 0
+        while max_heap:
+            temp = []
+            for _ in range(n + 1):
+                if max_heap:
+                    cnt = heapq.heappop(max_heap)
+                    if cnt + 1 < 0:
+                        temp.append(cnt + 1)
+                time += 1
+                if not max_heap and not temp:
+                    break
+
+            for cnt in temp:
+                heapq.heappush(max_heap, cnt)
+
+        return time
+
+
+PROBLEM 6: K Closest Points to Origin
+-------------------------------------
+    def k_closest(points, k):
+        # Max heap of size k
+        heap = []
+        for x, y in points:
+            dist = -(x*x + y*y)  # Negate for max heap
+            if len(heap) < k:
+                heapq.heappush(heap, (dist, x, y))
+            else:
+                heapq.heappushpop(heap, (dist, x, y))
+        return [[x, y] for (_, x, y) in heap]
+
+
+PROBLEM 7: Reorganize String
+----------------------------
+    def reorganize_string(s):
+        count = Counter(s)
+        max_heap = [(-cnt, char) for char, cnt in count.items()]
+        heapq.heapify(max_heap)
+
+        result = []
+        prev_cnt, prev_char = 0, ''
+
+        while max_heap:
+            cnt, char = heapq.heappop(max_heap)
+            result.append(char)
+
+            if prev_cnt < 0:
+                heapq.heappush(max_heap, (prev_cnt, prev_char))
+
+            prev_cnt, prev_char = cnt + 1, char
+
+        return ''.join(result) if len(result) == len(s) else ''
+
+
+PROBLEM 8: Sliding Window Maximum
+---------------------------------
+    def max_sliding_window(nums, k):
+        # Using deque (better approach)
+        from collections import deque
+        dq = deque()
+        result = []
+
+        for i, num in enumerate(nums):
+            while dq and dq[0] < i - k + 1:
+                dq.popleft()
+            while dq and nums[dq[-1]] < num:
+                dq.pop()
+            dq.append(i)
+            if i >= k - 1:
+                result.append(nums[dq[0]])
+
+        return result
+
+
+================================================================================
+                    6. INTERVIEW TIPS
+================================================================================
+
+1. WHEN TO USE HEAP:
+   - K largest/smallest elements
+   - Continuous median
+   - Priority-based processing
+   - Merging sorted lists/arrays
+   - Scheduling problems
+
+2. MIN vs MAX HEAP:
+   - Python heapq is min heap
+   - For max heap, negate values
+
+3. TIME COMPLEXITY:
+   - Insert/Extract: O(log n)
+   - Build heap: O(n)
+   - Find k largest: O(n log k) using min heap of size k
+
+4. COMMON PATTERNS:
+   - Two heaps (for median)
+   - Heap + HashMap (for tracking/removal)
+   - K-way merge
+
+================================================================================
+                         END OF HEAPS
+================================================================================

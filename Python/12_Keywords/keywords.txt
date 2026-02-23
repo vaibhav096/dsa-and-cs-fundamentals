@@ -1,0 +1,377 @@
+================================================================================
+                        PYTHON KEYWORDS
+================================================================================
+
+Python 3.x has 35 reserved keywords that cannot be used as variable names.
+
+
+================================================================================
+                    VALUE KEYWORDS
+================================================================================
+
+True
+----
+Boolean true value.
+    is_valid = True
+    if True:
+        print("Always executes")
+
+False
+-----
+Boolean false value.
+    is_valid = False
+    while False:
+        print("Never executes")
+
+None
+----
+Represents absence of value (like null in other languages).
+    result = None
+    if result is None:
+        print("No result")
+
+
+================================================================================
+                    OPERATOR KEYWORDS
+================================================================================
+
+and
+---
+Logical AND operator.
+    if x > 0 and x < 10:
+        print("x is between 0 and 10")
+
+or
+--
+Logical OR operator.
+    if x < 0 or x > 100:
+        print("x is out of range")
+
+not
+---
+Logical NOT operator.
+    if not is_valid:
+        print("Invalid")
+
+in
+--
+Membership operator. Also used in for loops.
+    if "a" in "apple":
+        print("Found")
+    for x in [1, 2, 3]:
+        print(x)
+
+is
+--
+Identity operator. Checks if same object in memory.
+    if x is None:
+        print("x is None")
+    if a is b:
+        print("Same object")
+
+
+================================================================================
+                    CONTROL FLOW KEYWORDS
+================================================================================
+
+if
+--
+Conditional statement.
+    if condition:
+        # code
+
+elif
+----
+Else if (additional condition).
+    if x > 0:
+        print("Positive")
+    elif x < 0:
+        print("Negative")
+    else:
+        print("Zero")
+
+else
+----
+Default case in conditional/loops.
+    if condition:
+        # code
+    else:
+        # code
+
+    for x in lst:
+        # code
+    else:
+        # runs if no break
+
+
+================================================================================
+                    LOOP KEYWORDS
+================================================================================
+
+for
+---
+Iterate over sequence.
+    for i in range(5):
+        print(i)
+
+while
+-----
+Loop while condition is true.
+    while x > 0:
+        x -= 1
+
+break
+-----
+Exit loop immediately.
+    for x in range(10):
+        if x == 5:
+            break
+
+continue
+--------
+Skip to next iteration.
+    for x in range(10):
+        if x % 2 == 0:
+            continue
+        print(x)
+
+pass
+----
+Do nothing (placeholder).
+    def future_function():
+        pass
+
+
+================================================================================
+                    FUNCTION KEYWORDS
+================================================================================
+
+def
+---
+Define a function.
+    def greet(name):
+        return f"Hello, {name}"
+
+return
+------
+Return value from function.
+    def add(a, b):
+        return a + b
+
+lambda
+------
+Create anonymous function.
+    square = lambda x: x ** 2
+
+yield
+-----
+Return value from generator (pause and resume).
+    def counter(n):
+        for i in range(n):
+            yield i
+
+
+================================================================================
+                    CLASS KEYWORDS
+================================================================================
+
+class
+-----
+Define a class.
+    class Dog:
+        def __init__(self, name):
+            self.name = name
+
+
+================================================================================
+                    EXCEPTION KEYWORDS
+================================================================================
+
+try
+---
+Start of exception handling block.
+    try:
+        x = 10 / 0
+    except:
+        print("Error")
+
+except
+------
+Handle exception.
+    try:
+        x = 10 / 0
+    except ZeroDivisionError:
+        print("Cannot divide by zero")
+
+finally
+-------
+Always executes (cleanup code).
+    try:
+        f = open("file.txt")
+    finally:
+        f.close()
+
+raise
+-----
+Raise an exception.
+    if age < 0:
+        raise ValueError("Age cannot be negative")
+
+assert
+------
+Assert condition is true (debugging).
+    assert x > 0, "x must be positive"
+
+
+================================================================================
+                    IMPORT KEYWORDS
+================================================================================
+
+import
+------
+Import module.
+    import math
+    import numpy as np
+
+from
+----
+Import specific items from module.
+    from math import sqrt, pi
+
+as
+--
+Create alias.
+    import numpy as np
+    from math import sqrt as square_root
+
+
+================================================================================
+                    SCOPE KEYWORDS
+================================================================================
+
+global
+------
+Declare global variable inside function.
+    x = 10
+    def func():
+        global x
+        x = 20
+
+nonlocal
+--------
+Declare variable from enclosing scope (not global).
+    def outer():
+        x = 10
+        def inner():
+            nonlocal x
+            x = 20
+
+
+================================================================================
+                    CONTEXT KEYWORDS
+================================================================================
+
+with
+----
+Context manager (automatic setup/cleanup).
+    with open("file.txt") as f:
+        content = f.read()
+
+
+================================================================================
+                    ASYNC KEYWORDS
+================================================================================
+
+async
+-----
+Define asynchronous function.
+    async def fetch_data():
+        await some_async_operation()
+
+await
+-----
+Wait for async operation to complete.
+    result = await async_function()
+
+
+================================================================================
+                    DELETION KEYWORD
+================================================================================
+
+del
+---
+Delete object/variable.
+    del x              # Delete variable
+    del lst[0]         # Delete list element
+    del dict["key"]    # Delete dict key
+
+
+================================================================================
+                    QUICK REFERENCE TABLE
+================================================================================
+
+Keyword     Category        Brief Description
+-------     --------        -----------------
+True        Value           Boolean true
+False       Value           Boolean false
+None        Value           Null/no value
+
+and         Operator        Logical AND
+or          Operator        Logical OR
+not         Operator        Logical NOT
+in          Operator        Membership test
+is          Operator        Identity test
+
+if          Control Flow    Conditional
+elif        Control Flow    Else if
+else        Control Flow    Default case
+
+for         Loop            Iterate sequence
+while       Loop            Loop while true
+break       Loop            Exit loop
+continue    Loop            Skip iteration
+pass        Loop            Placeholder
+
+def         Function        Define function
+return      Function        Return value
+lambda      Function        Anonymous function
+yield       Function        Generator return
+
+class       Class           Define class
+
+try         Exception       Try block
+except      Exception       Handle exception
+finally     Exception       Cleanup block
+raise       Exception       Raise exception
+assert      Exception       Debug assertion
+
+import      Import          Import module
+from        Import          Import from
+as          Import          Alias
+
+global      Scope           Global variable
+nonlocal    Scope           Enclosing scope
+
+with        Context         Context manager
+
+async       Async           Async function
+await       Async           Await result
+
+del         Deletion        Delete object
+
+
+================================================================================
+                    CHECK ALL KEYWORDS
+================================================================================
+
+import keyword
+print(keyword.kwlist)       # List all keywords
+print(len(keyword.kwlist))  # Count keywords (35 in Python 3.10+)
+
+# Check if word is keyword
+keyword.iskeyword("if")     # True
+keyword.iskeyword("name")   # False
+
+================================================================================
+                       END OF KEYWORDS
+================================================================================

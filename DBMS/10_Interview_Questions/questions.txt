@@ -1,0 +1,515 @@
+================================================================================
+                    DBMS INTERVIEW QUESTIONS AND ANSWERS
+================================================================================
+
+70+ Most Frequently Asked DBMS Interview Questions
+
+
+================================================================================
+                    SECTION 1: BASIC CONCEPTS
+================================================================================
+
+Q1: What is DBMS?
+A: Database Management System is software that stores, retrieves, and manages
+   data in databases. It provides interface between users and data.
+   Examples: MySQL, PostgreSQL, Oracle, SQL Server, MongoDB.
+
+
+Q2: What is the difference between DBMS and RDBMS?
+A: DBMS: General database management, may not support relationships.
+   RDBMS: Relational model with tables, supports ACID, uses SQL.
+   All RDBMS are DBMS, but not all DBMS are RDBMS.
+
+
+Q3: What are the advantages of DBMS?
+A: 1. Data independence
+   2. Reduced redundancy
+   3. Data consistency
+   4. Data security
+   5. Concurrent access
+   6. Backup and recovery
+   7. Data integrity
+
+
+Q4: What is a database schema?
+A: The logical structure/design of database including tables, columns,
+   data types, relationships, and constraints. Blueprint of database.
+
+
+Q5: What is an instance?
+A: The actual data stored in database at a particular moment.
+   Schema = structure, Instance = data.
+
+
+Q6: What are the types of database languages?
+A: DDL (Data Definition): CREATE, ALTER, DROP
+   DML (Data Manipulation): SELECT, INSERT, UPDATE, DELETE
+   DCL (Data Control): GRANT, REVOKE
+   TCL (Transaction Control): COMMIT, ROLLBACK
+
+
+================================================================================
+                    SECTION 2: KEYS
+================================================================================
+
+Q7: What is a Primary Key?
+A: Attribute that uniquely identifies each row in table.
+   - Cannot be NULL
+   - Must be unique
+   - Only one per table
+
+
+Q8: What is a Foreign Key?
+A: Attribute that references primary key of another table.
+   Creates relationship between tables.
+   Can be NULL, can have duplicates.
+
+
+Q9: What is a Candidate Key?
+A: Minimal set of attributes that can uniquely identify a tuple.
+   Table can have multiple candidate keys.
+   One is chosen as primary key.
+
+
+Q10: What is a Super Key?
+A: Any set of attributes that uniquely identifies tuple.
+   May contain extra attributes.
+   Candidate key is minimal super key.
+
+
+Q11: What is a Composite Key?
+A: Primary key made of multiple columns.
+   Example: (StudentID, CourseID) in enrollment table.
+
+
+Q12: What is the difference between Primary Key and Unique Key?
+A: Primary Key: Only one, no NULL allowed, clustered index by default.
+   Unique Key: Multiple allowed, one NULL allowed, non-clustered index.
+
+
+================================================================================
+                    SECTION 3: ER MODEL
+================================================================================
+
+Q13: What is ER Model?
+A: Entity-Relationship model is high-level conceptual model for
+   database design using entities, attributes, and relationships.
+
+
+Q14: What is an Entity?
+A: Real-world object or concept with independent existence.
+   Represented as rectangle in ER diagram.
+   Example: Student, Employee, Product.
+
+
+Q15: What is the difference between Strong and Weak Entity?
+A: Strong Entity: Has own primary key, exists independently.
+   Weak Entity: No own primary key, depends on owner entity.
+   Uses owner's key + partial key for identification.
+
+
+Q16: What are the types of attributes?
+A: Simple: Atomic, cannot be divided (Age, Gender)
+   Composite: Can be divided (Name → First, Last)
+   Single-valued: One value (DOB)
+   Multi-valued: Multiple values (Phone numbers)
+   Derived: Calculated (Age from DOB)
+   Key: Uniquely identifies entity (ID)
+
+
+Q17: What are cardinality constraints?
+A: 1:1 (One-to-One): Person - Passport
+   1:N (One-to-Many): Department - Employees
+   M:N (Many-to-Many): Students - Courses
+
+
+================================================================================
+                    SECTION 4: NORMALIZATION
+================================================================================
+
+Q18: What is Normalization? Why is it needed?
+A: Process of organizing database to reduce redundancy and anomalies.
+   Eliminates: Insertion, Update, and Deletion anomalies.
+
+
+Q19: What are the Normal Forms?
+A: 1NF: Atomic values, no repeating groups
+   2NF: 1NF + No partial dependency
+   3NF: 2NF + No transitive dependency
+   BCNF: 3NF + Every determinant is candidate key
+   4NF: BCNF + No multi-valued dependency
+
+
+Q20: What is Partial Dependency?
+A: When non-key attribute depends on part of composite primary key.
+   Violates 2NF.
+   Example: (StudentID, CourseID) → CourseName (depends only on CourseID)
+
+
+Q21: What is Transitive Dependency?
+A: When non-key attribute depends on another non-key attribute.
+   A → B → C where B is non-key.
+   Violates 3NF.
+   Example: EmpID → DeptID → DeptName
+
+
+Q22: What is the difference between 3NF and BCNF?
+A: 3NF: For X → Y, either X is superkey OR Y is prime attribute.
+   BCNF: For X → Y, X must be superkey (no exception).
+   BCNF is stricter than 3NF.
+
+
+Q23: What is Denormalization?
+A: Intentionally adding redundancy for better read performance.
+   Used in data warehouses, reporting systems.
+   Trade-off: Faster reads, slower writes, more storage.
+
+
+================================================================================
+                    SECTION 5: SQL
+================================================================================
+
+Q24: What is the difference between DELETE, TRUNCATE, and DROP?
+A: DELETE: Removes rows, can use WHERE, can rollback, slow.
+   TRUNCATE: Removes all rows, cannot use WHERE, faster, resets identity.
+   DROP: Removes entire table structure and data.
+
+
+Q25: What is the difference between WHERE and HAVING?
+A: WHERE: Filters rows before grouping, cannot use aggregates.
+   HAVING: Filters groups after GROUP BY, can use aggregates.
+
+
+Q26: What are Aggregate Functions?
+A: COUNT(): Number of rows
+   SUM(): Total of values
+   AVG(): Average value
+   MIN(): Minimum value
+   MAX(): Maximum value
+
+
+Q27: What are the types of JOINs?
+A: INNER JOIN: Matching rows from both tables
+   LEFT JOIN: All from left + matching from right
+   RIGHT JOIN: All from right + matching from left
+   FULL OUTER JOIN: All rows from both tables
+   CROSS JOIN: Cartesian product
+   SELF JOIN: Table joined with itself
+
+
+Q28: What is a Subquery?
+A: Query nested inside another query.
+   Types: Single-row, Multi-row, Correlated.
+   Can be in SELECT, FROM, WHERE clauses.
+
+
+Q29: What is a Correlated Subquery?
+A: Inner query depends on outer query.
+   Executes once for each outer row.
+   Example: Find employees earning more than department average.
+
+
+Q30: What is the difference between UNION and UNION ALL?
+A: UNION: Combines results, removes duplicates.
+   UNION ALL: Combines results, keeps duplicates (faster).
+
+
+Q31: How to find the second highest salary?
+A: Method 1: SELECT MAX(salary) FROM emp WHERE salary < (SELECT MAX(salary) FROM emp)
+   Method 2: SELECT DISTINCT salary FROM emp ORDER BY salary DESC LIMIT 1 OFFSET 1
+   Method 3: Using DENSE_RANK() window function
+
+
+Q32: How to find duplicate records?
+A: SELECT column, COUNT(*) FROM table
+   GROUP BY column HAVING COUNT(*) > 1
+
+
+Q33: What is the difference between RANK(), DENSE_RANK(), and ROW_NUMBER()?
+A: ROW_NUMBER(): Unique sequential numbers (1, 2, 3, 4)
+   RANK(): Same rank for ties, gaps (1, 2, 2, 4)
+   DENSE_RANK(): Same rank for ties, no gaps (1, 2, 2, 3)
+
+
+================================================================================
+                    SECTION 6: TRANSACTIONS & ACID
+================================================================================
+
+Q34: What is a Transaction?
+A: Logical unit of work containing one or more operations.
+   Either all succeed (COMMIT) or all fail (ROLLBACK).
+
+
+Q35: What are ACID properties?
+A: Atomicity: All or nothing
+   Consistency: Database remains consistent
+   Isolation: Transactions don't interfere
+   Durability: Committed changes are permanent
+
+
+Q36: What is a Dirty Read?
+A: Reading uncommitted data from another transaction.
+   If that transaction aborts, the read value was never valid.
+
+
+Q37: What is a Phantom Read?
+A: When query returns different set of rows on re-execution
+   because another transaction inserted/deleted rows.
+
+
+Q38: What are Isolation Levels?
+A: READ UNCOMMITTED: Allows dirty reads
+   READ COMMITTED: Prevents dirty reads
+   REPEATABLE READ: Prevents non-repeatable reads
+   SERIALIZABLE: Prevents phantom reads (strictest)
+
+
+Q39: What is a Schedule? What is Serializability?
+A: Schedule: Sequence of operations from multiple transactions.
+   Serializability: Schedule equivalent to some serial schedule.
+
+
+================================================================================
+                    SECTION 7: CONCURRENCY CONTROL
+================================================================================
+
+Q40: What is a Lock?
+A: Mechanism to control concurrent access to data.
+   Shared Lock (S): Multiple readers allowed
+   Exclusive Lock (X): Single writer, no readers
+
+
+Q41: What is Two-Phase Locking (2PL)?
+A: Protocol ensuring serializability.
+   Growing Phase: Acquire locks, cannot release
+   Shrinking Phase: Release locks, cannot acquire
+
+
+Q42: What is Deadlock?
+A: Situation where transactions wait for each other indefinitely.
+   T1 holds A, waits for B. T2 holds B, waits for A.
+
+
+Q43: How to handle Deadlock?
+A: Prevention: Lock ordering, Wait-Die, Wound-Wait schemes
+   Detection: Wait-for graph, find cycles
+   Timeout: Abort long-waiting transactions
+
+
+Q44: What is Starvation?
+A: Transaction waits indefinitely while others keep getting priority.
+   Different from deadlock (no cycle, just unfair scheduling).
+
+
+================================================================================
+                    SECTION 8: INDEXING
+================================================================================
+
+Q45: What is an Index?
+A: Data structure to speed up data retrieval.
+   Like book index - quickly find without full scan.
+
+
+Q46: What is the difference between Clustered and Non-Clustered Index?
+A: Clustered: Data physically sorted on index, one per table.
+   Non-Clustered: Separate structure with pointers, multiple allowed.
+
+
+Q47: What is a B+ Tree?
+A: Balanced tree with data only in leaf nodes, leaves linked.
+   Used by most databases for indexing.
+   O(log n) search, good for range queries.
+
+
+Q48: When should you create an Index?
+A: Create on: Primary keys, Foreign keys, WHERE columns, JOIN columns
+   Avoid on: Small tables, frequently updated columns, low selectivity
+
+
+Q49: What is a Covering Index?
+A: Index containing all columns needed by query.
+   Query answered entirely from index without table access.
+
+
+================================================================================
+                    SECTION 9: VIEWS
+================================================================================
+
+Q50: What is a View?
+A: Virtual table based on SELECT query.
+   Doesn't store data, computed on access.
+   Used for security, simplification, abstraction.
+
+
+Q51: What is a Materialized View?
+A: View with stored results (cached).
+   Needs refresh to update.
+   Faster queries but uses storage.
+
+
+Q52: Can we perform INSERT, UPDATE, DELETE on Views?
+A: Yes, if view is updatable:
+   - Single table
+   - No aggregates
+   - No GROUP BY, DISTINCT
+   - No joins (varies by DBMS)
+
+
+================================================================================
+                    SECTION 10: STORED PROCEDURES & TRIGGERS
+================================================================================
+
+Q53: What is a Stored Procedure?
+A: Precompiled SQL statements stored in database.
+   Called by applications, reusable, better performance.
+
+
+Q54: What is a Trigger?
+A: Automatic procedure executed on table events.
+   BEFORE/AFTER INSERT, UPDATE, DELETE.
+   Used for auditing, validation, derived columns.
+
+
+Q55: What is a Cursor?
+A: Database object to retrieve rows one at a time.
+   Used when row-by-row processing needed.
+   Types: Implicit, Explicit; Forward-only, Scrollable.
+
+
+================================================================================
+                    SECTION 11: NoSQL
+================================================================================
+
+Q56: What is NoSQL?
+A: "Not Only SQL" - databases for non-relational data models.
+   Types: Key-Value, Document, Column-Family, Graph.
+
+
+Q57: When to use SQL vs NoSQL?
+A: SQL: Complex queries, ACID transactions, structured data
+   NoSQL: Big data, flexible schema, high scalability
+
+
+Q58: What is CAP Theorem?
+A: In distributed systems, can only guarantee 2 of 3:
+   Consistency, Availability, Partition Tolerance.
+
+
+Q59: What is MongoDB?
+A: Document database storing JSON-like documents.
+   Flexible schema, horizontal scaling, rich queries.
+
+
+Q60: What is Redis?
+A: In-memory key-value store.
+   Used for caching, sessions, real-time analytics.
+
+
+================================================================================
+                    SECTION 12: ADVANCED TOPICS
+================================================================================
+
+Q61: What is Data Warehousing?
+A: System for reporting and analysis.
+   Stores historical data from multiple sources.
+   OLAP (Online Analytical Processing).
+
+
+Q62: What is OLTP vs OLAP?
+A: OLTP: Online Transaction Processing - day-to-day operations
+   OLAP: Online Analytical Processing - reporting, analysis
+
+
+Q63: What is ETL?
+A: Extract, Transform, Load.
+   Process of moving data into data warehouse.
+
+
+Q64: What is Sharding?
+A: Horizontal partitioning of data across multiple servers.
+   Each shard holds subset of data.
+   For scalability.
+
+
+Q65: What is Replication?
+A: Copying data to multiple servers.
+   For availability and fault tolerance.
+   Master-Slave, Master-Master.
+
+
+Q66: What is Database Partitioning?
+A: Dividing table into smaller pieces.
+   Horizontal: By rows (sharding)
+   Vertical: By columns
+
+
+Q67: What is a Checkpoint?
+A: Point where all changes flushed to disk.
+   Used in recovery to reduce log scanning.
+
+
+Q68: What is Write-Ahead Logging (WAL)?
+A: Writing log before modifying data.
+   Ensures recoverability after crash.
+
+
+================================================================================
+                    SECTION 13: PRACTICAL SCENARIOS
+================================================================================
+
+Q69: Design a database for an e-commerce system.
+A: Tables: Users, Products, Categories, Orders, OrderItems,
+   Payments, Reviews, Addresses, Cart, CartItems
+
+   Key relationships:
+   - Users 1:N Orders
+   - Orders 1:N OrderItems
+   - Products 1:N OrderItems
+   - Categories 1:N Products
+
+
+Q70: How would you optimize a slow query?
+A: 1. Check execution plan (EXPLAIN)
+   2. Add appropriate indexes
+   3. Avoid SELECT *
+   4. Use JOINs instead of subqueries
+   5. Limit result set
+   6. Denormalize if needed
+   7. Use query caching
+
+
+Q71: How to handle millions of records efficiently?
+A: 1. Proper indexing
+   2. Partitioning
+   3. Pagination (LIMIT/OFFSET)
+   4. Archiving old data
+   5. Caching layer (Redis)
+   6. Read replicas
+   7. Sharding for writes
+
+
+Q72: Difference between optimistic and pessimistic locking?
+A: Pessimistic: Acquire locks upfront, prevent conflicts.
+   Optimistic: No locks, validate at commit time.
+   Use optimistic when conflicts are rare.
+
+
+================================================================================
+                    QUICK REVISION POINTS
+================================================================================
+
+1. ACID = Atomicity, Consistency, Isolation, Durability
+2. Normalization removes redundancy: 1NF→2NF→3NF→BCNF
+3. Primary Key = Unique + Not Null, one per table
+4. Foreign Key references Primary Key of another table
+5. JOIN types: INNER, LEFT, RIGHT, FULL, CROSS, SELF
+6. 2PL = Two-Phase Locking (Growing + Shrinking)
+7. B+ Tree = Balanced tree, data in leaves, leaves linked
+8. CAP = Consistency, Availability, Partition Tolerance (pick 2)
+9. Clustered Index = One per table, data sorted
+10. View = Virtual table from SELECT query
+
+
+================================================================================
+                    END OF INTERVIEW QUESTIONS
+================================================================================

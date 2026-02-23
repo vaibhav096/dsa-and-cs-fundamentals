@@ -1,0 +1,355 @@
+================================================================================
+                         PYTHON DATA STRUCTURES
+================================================================================
+
+Python has 4 built-in data structures: List, Tuple, Set, Dictionary
+
+
+================================================================================
+                                1. LISTS
+================================================================================
+
+Lists are ordered, mutable collections that allow duplicates.
+
+CREATION:
+---------
+    my_list = [1, 2, 3, 4, 5]
+    mixed = [1, "hello", 3.14, True]
+    empty = []
+    from_range = list(range(5))      # [0, 1, 2, 3, 4]
+
+
+ACCESSING ELEMENTS:
+-------------------
+    lst = [10, 20, 30, 40, 50]
+    lst[0]      # 10 (first element)
+    lst[-1]     # 50 (last element)
+    lst[1:4]    # [20, 30, 40] (slicing)
+    lst[:3]     # [10, 20, 30]
+    lst[::2]    # [10, 30, 50] (every 2nd)
+
+
+LIST METHODS:
+-------------
+Adding elements:
+    append(x)      : Add x to end
+                     lst.append(60)        # [10,20,30,40,50,60]
+
+    insert(i, x)   : Insert x at index i
+                     lst.insert(0, 5)      # [5,10,20,30,40,50]
+
+    extend(list2)  : Add all elements of list2
+                     lst.extend([60, 70])  # [10,20,30,40,50,60,70]
+
+Removing elements:
+    remove(x)      : Remove first occurrence of x
+                     lst.remove(30)
+
+    pop()          : Remove and return last element
+                     lst.pop()             # Returns 50
+
+    pop(i)         : Remove and return element at index i
+                     lst.pop(0)            # Returns 10
+
+    clear()        : Remove all elements
+                     lst.clear()           # []
+
+    del lst[i]     : Delete element at index i
+                     del lst[0]
+
+Searching:
+    index(x)       : Return index of first x
+                     lst.index(30)         # 2
+
+    count(x)       : Count occurrences of x
+                     lst.count(20)         # 1
+
+Sorting:
+    sort()         : Sort in place (ascending)
+                     lst.sort()
+
+    sort(reverse=True) : Sort descending
+                     lst.sort(reverse=True)
+
+    sorted(lst)    : Return new sorted list
+                     new_lst = sorted(lst)
+
+    reverse()      : Reverse in place
+                     lst.reverse()
+
+Other:
+    copy()         : Return shallow copy
+                     lst2 = lst.copy()
+
+    len(lst)       : Length of list
+
+
+LIST COMPREHENSION:
+-------------------
+Create lists in one line.
+
+    [expression for item in iterable]
+    [expression for item in iterable if condition]
+
+Examples:
+    squares = [x**2 for x in range(5)]        # [0, 1, 4, 9, 16]
+    evens = [x for x in range(10) if x%2==0]  # [0, 2, 4, 6, 8]
+    pairs = [(x, y) for x in [1,2] for y in [3,4]]  # [(1,3),(1,4),(2,3),(2,4)]
+
+
+================================================================================
+                               2. TUPLES
+================================================================================
+
+Tuples are ordered, immutable collections that allow duplicates.
+
+CREATION:
+---------
+    my_tuple = (1, 2, 3, 4, 5)
+    single = (5,)              # Single element needs comma!
+    without_parens = 1, 2, 3   # Parentheses optional
+    empty = ()
+    from_list = tuple([1,2,3]) # Convert from list
+
+
+WHY USE TUPLES?
+---------------
+- Faster than lists
+- Can be used as dictionary keys (immutable)
+- Protect data from modification
+- Unpacking: a, b, c = (1, 2, 3)
+
+
+TUPLE METHODS:
+--------------
+Only 2 methods (since immutable):
+    count(x)   : Count occurrences of x
+    index(x)   : Return index of first x
+
+
+TUPLE UNPACKING:
+----------------
+    coordinates = (10, 20, 30)
+    x, y, z = coordinates      # x=10, y=20, z=30
+
+    # Swap values
+    a, b = b, a
+
+    # Extended unpacking
+    first, *rest = (1, 2, 3, 4, 5)   # first=1, rest=[2,3,4,5]
+    first, *middle, last = (1, 2, 3, 4, 5)  # middle=[2,3,4]
+
+
+================================================================================
+                                3. SETS
+================================================================================
+
+Sets are unordered collections of unique elements (no duplicates).
+
+CREATION:
+---------
+    my_set = {1, 2, 3, 4, 5}
+    from_list = set([1, 2, 2, 3, 3])  # {1, 2, 3}
+    empty = set()                      # NOT {} (that's dict!)
+
+
+PROPERTIES:
+-----------
+- Unordered (no indexing)
+- No duplicates
+- Mutable (can add/remove)
+- Elements must be immutable (no lists in sets)
+
+
+SET METHODS:
+------------
+Adding elements:
+    add(x)        : Add single element
+                    my_set.add(6)
+
+    update(iter)  : Add multiple elements
+                    my_set.update([7, 8, 9])
+
+Removing elements:
+    remove(x)     : Remove x (raises error if not found)
+                    my_set.remove(3)
+
+    discard(x)    : Remove x (no error if not found)
+                    my_set.discard(10)
+
+    pop()         : Remove and return arbitrary element
+                    my_set.pop()
+
+    clear()       : Remove all elements
+
+
+SET OPERATIONS:
+---------------
+    A = {1, 2, 3, 4}
+    B = {3, 4, 5, 6}
+
+    Union (all elements):
+        A | B               # {1, 2, 3, 4, 5, 6}
+        A.union(B)
+
+    Intersection (common elements):
+        A & B               # {3, 4}
+        A.intersection(B)
+
+    Difference (in A but not in B):
+        A - B               # {1, 2}
+        A.difference(B)
+
+    Symmetric Difference (in A or B but not both):
+        A ^ B               # {1, 2, 5, 6}
+        A.symmetric_difference(B)
+
+    Subset/Superset:
+        {1, 2}.issubset({1, 2, 3})     # True
+        {1, 2, 3}.issuperset({1, 2})   # True
+
+    Disjoint (no common elements):
+        {1, 2}.isdisjoint({3, 4})      # True
+
+
+FROZEN SET:
+-----------
+Immutable version of set.
+    fs = frozenset([1, 2, 3])
+    # Cannot add/remove elements
+    # Can be used as dictionary key
+
+
+================================================================================
+                             4. DICTIONARIES
+================================================================================
+
+Dictionaries store key-value pairs. Keys are unique.
+
+CREATION:
+---------
+    person = {"name": "John", "age": 25, "city": "Delhi"}
+    empty = {}
+    from_keys = dict.fromkeys(['a', 'b'], 0)  # {'a': 0, 'b': 0}
+    from_tuples = dict([('a', 1), ('b', 2)])  # {'a': 1, 'b': 2}
+
+
+ACCESSING VALUES:
+-----------------
+    person["name"]           # "John" (error if key not found)
+    person.get("name")       # "John" (None if not found)
+    person.get("email", "N/A")  # "N/A" (default value)
+
+
+DICTIONARY METHODS:
+-------------------
+Adding/Updating:
+    d[key] = value    : Add or update
+                        person["email"] = "john@mail.com"
+
+    update(dict2)     : Merge dict2 into d
+                        person.update({"age": 26, "job": "Dev"})
+
+Removing:
+    pop(key)          : Remove and return value
+                        age = person.pop("age")
+
+    popitem()         : Remove and return last (key, value)
+                        item = person.popitem()
+
+    del d[key]        : Delete key
+                        del person["city"]
+
+    clear()           : Remove all items
+
+Accessing:
+    keys()            : Return all keys
+                        person.keys()    # dict_keys(['name', 'age'])
+
+    values()          : Return all values
+                        person.values()  # dict_values(['John', 25])
+
+    items()           : Return all (key, value) pairs
+                        person.items()   # dict_items([('name','John')...])
+
+Other:
+    copy()            : Shallow copy
+    setdefault(k, v)  : Get k, if not exists set k=v
+
+
+DICTIONARY COMPREHENSION:
+-------------------------
+    squares = {x: x**2 for x in range(5)}    # {0:0, 1:1, 2:4, 3:9, 4:16}
+    filtered = {k: v for k, v in d.items() if v > 0}
+
+
+ITERATING:
+----------
+    # Iterate keys
+    for key in person:
+        print(key)
+
+    # Iterate values
+    for value in person.values():
+        print(value)
+
+    # Iterate key-value pairs
+    for key, value in person.items():
+        print(f"{key}: {value}")
+
+
+================================================================================
+                        COMPARISON TABLE
+================================================================================
+
+Feature         List        Tuple       Set         Dict
+-------         ----        -----       ---         ----
+Ordered         Yes         Yes         No          Yes*
+Mutable         Yes         No          Yes         Yes
+Duplicates      Yes         Yes         No          Keys: No
+Indexing        Yes         Yes         No          By key
+Syntax          []          ()          {}          {k:v}
+Empty           []          ()          set()       {}
+
+* Dicts maintain insertion order since Python 3.7
+
+
+================================================================================
+                        INTERVIEW QUESTIONS
+================================================================================
+
+Q: Difference between list and tuple?
+A: List is mutable, tuple is immutable.
+   Tuple is faster and can be used as dict key.
+
+Q: Difference between list and set?
+A: List is ordered with duplicates, indexable.
+   Set is unordered with unique elements, no indexing.
+
+Q: How to remove duplicates from list?
+A: list(set(my_list)) - but loses order
+   list(dict.fromkeys(my_list)) - preserves order
+
+Q: How to merge two dictionaries?
+A: d1.update(d2) or {**d1, **d2} or d1 | d2 (Python 3.9+)
+
+Q: What can be dictionary keys?
+A: Only immutable types: int, str, tuple, frozenset
+   NOT: list, set, dict
+
+Q: What is the time complexity of list operations?
+A: Append: O(1), Insert: O(n), Remove: O(n), Access: O(1)
+
+Q: What is the time complexity of dict/set operations?
+A: Add, Remove, Lookup: O(1) average (hash table)
+
+Q: How to sort dictionary by values?
+A: sorted(d.items(), key=lambda x: x[1])
+
+Q: What is shallow vs deep copy?
+A: Shallow: Copies object, references nested objects
+   Deep: Copies object and all nested objects
+
+================================================================================
+                       END OF DATA STRUCTURES
+================================================================================

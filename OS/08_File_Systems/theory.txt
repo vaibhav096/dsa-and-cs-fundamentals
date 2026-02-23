@@ -1,0 +1,440 @@
+================================================================================
+                    FILE SYSTEMS
+================================================================================
+
+File system organizes and manages data storage on disk.
+
+
+================================================================================
+                    1. FILE CONCEPTS
+================================================================================
+
+FILE:
+- Named collection of related information
+- Stored on secondary storage
+- Smallest unit of storage from user's view
+
+
+FILE ATTRIBUTES:
+
+- Name: Human-readable identifier
+- Identifier: Unique number (inode)
+- Type: Needed by system (extension)
+- Location: Pointer to data on disk
+- Size: Current size in bytes
+- Protection: Access permissions
+- Time stamps: Created, modified, accessed
+- Owner: User who owns the file
+
+
+FILE OPERATIONS:
+
+1. Create: Allocate space, create directory entry
+2. Write: Write data at current position
+3. Read: Read data from current position
+4. Reposition (Seek): Move file pointer
+5. Delete: Release space, remove directory entry
+6. Truncate: Keep attributes, delete contents
+7. Open: Load metadata into memory
+8. Close: Flush buffers, remove from open file table
+
+
+OPEN FILE TABLE:
+- Per-process table: File pointers
+- System-wide table: Open count, disk location
+
+
+================================================================================
+                    2. FILE TYPES
+================================================================================
+
+BY STRUCTURE:
+- Regular files: Data (text, binary)
+- Directory files: Contain other files
+- Special files: Devices (character, block)
+- Links: Pointers to other files
+
+
+COMMON EXTENSIONS:
+
+.txt, .doc   - Text documents
+.exe, .com   - Executables
+.c, .cpp, .py - Source code
+.obj, .o     - Object files
+.jpg, .png   - Images
+.mp3, .wav   - Audio
+.mp4, .avi   - Video
+.zip, .tar   - Archives
+
+
+================================================================================
+                    3. DIRECTORY STRUCTURE
+================================================================================
+
+1. SINGLE-LEVEL DIRECTORY:
+   All files in one directory.
+
+   +----------------------------------+
+   | file1 | file2 | file3 | file4   |
+   +----------------------------------+
+
+   Problem: Naming collisions, no organization
+
+
+2. TWO-LEVEL DIRECTORY:
+   One directory per user.
+
+   +------------------+
+   | Master Directory |
+   +--------+---------+
+            |
+   +--------+--------+
+   |                 |
+   User1 Dir     User2 Dir
+   |                 |
+   +-----+-----+     +-----+-----+
+   |file1|file2|     |file1|file3|
+   +-----+-----+     +-----+-----+
+
+
+3. TREE-STRUCTURED DIRECTORY:
+   Hierarchical organization.
+
+              root (/)
+              /    \
+           bin      home
+           /         /  \
+         ls        user1  user2
+                   /  \      \
+               docs  code   file.txt
+               /
+           report.pdf
+
+   - Absolute path: /home/user1/docs/report.pdf
+   - Relative path: ../user2/file.txt
+
+
+4. ACYCLIC-GRAPH DIRECTORY:
+   Allows sharing via links.
+   No cycles allowed.
+
+         /home
+        /      \
+     user1    user2
+        \      /
+         shared_file (same file, two links)
+
+
+5. GENERAL GRAPH DIRECTORY:
+   Cycles allowed.
+   Problem: Infinite loops during traversal
+   Solution: Limit search depth, garbage collection
+
+
+================================================================================
+                    4. FILE ALLOCATION METHODS
+================================================================================
+
+How to allocate disk blocks to files?
+
+
+1. CONTIGUOUS ALLOCATION:
+
+Each file occupies contiguous blocks.
+
+Directory entry: | File | Start Block | Length |
+                 | A    |     0       |   4    |
+                 | B    |     6       |   2    |
+
+Disk:
+| A | A | A | A | - | - | B | B | - | - |
+  0   1   2   3   4   5   6   7   8   9
+
+Advantages:
+- Simple
+- Fast sequential access
+- Fast random access (start + offset)
+
+Disadvantages:
+- External fragmentation
+- File size must be known
+- File cannot grow
+
+
+2. LINKED ALLOCATION:
+
+Each block points to next block.
+
+Directory entry: | File | Start | End |
+                 | A    |   2   |  8  |
+
+Disk:
+| - | - | A | - | A | - | A | - | A | - |
+  0   1  2→4  3  4→6  5  6→8  7  8⊥  9
+                              (⊥ = null)
+
+Advantages:
+- No external fragmentation
+- Files can grow
+- No size needed upfront
+
+Disadvantages:
+- No random access (must traverse)
+- Pointer overhead in each block
+- Reliability (one bad pointer loses file)
+
+
+FAT (File Allocation Table):
+Keep all pointers in separate table.
+
+FAT:
+| Block | Next |
+|   0   |  -1  |
+|   2   |   4  |
+|   4   |   6  |
+|   6   |   8  |
+|   8   |  -1  | (end of file)
+
+
+3. INDEXED ALLOCATION:
+
+All block pointers in index block.
+
+Directory entry: | File | Index Block |
+                 | A    |      5      |
+
+Index Block (5):        Data Blocks:
+| 2 | 7 | 3 | 9 |      2, 7, 3, 9 contain data
+
+Advantages:
+- Direct access
+- No external fragmentation
+- File can grow
+
+Disadvantages:
+- Overhead of index block
+- Index block size limits file size
+
+
+MULTI-LEVEL INDEX:
+
+For large files, use multiple index levels.
+
+Index Block → Index Block → Data Blocks
+
+Unix inode uses:
+- 12 direct blocks
+- 1 single indirect
+- 1 double indirect
+- 1 triple indirect
+
+
+================================================================================
+                    5. FREE SPACE MANAGEMENT
+================================================================================
+
+Track which blocks are free.
+
+
+1. BIT VECTOR (BITMAP):
+
+One bit per block (1=free, 0=allocated)
+
+Block:  0 1 2 3 4 5 6 7 8 9
+Bitmap: 0 1 0 1 1 0 0 1 1 1
+
+Free blocks: 1, 3, 4, 7, 8, 9
+
+Advantages: Easy to find contiguous free blocks
+Disadvantages: Bitmap can be large
+
+
+2. LINKED LIST:
+
+Free blocks linked together.
+
+Head → 3 → 5 → 7 → 9 → null
+
+Disadvantages: Slow to find contiguous blocks
+
+
+3. GROUPING:
+
+First free block contains addresses of n-1 free blocks
+plus address of next block with more addresses.
+
+
+4. COUNTING:
+
+Store (starting block, count) pairs.
+
+(3, 2), (7, 3) means blocks 3-4 and 7-9 are free.
+
+
+================================================================================
+                    6. FILE SYSTEM IMPLEMENTATION
+================================================================================
+
+ON-DISK STRUCTURES:
+
+1. Boot Control Block:
+   - Info to boot OS from this volume
+   - First block of volume
+
+2. Volume Control Block (Superblock):
+   - Volume details: block count, block size
+   - Free block count, free FCB count
+   - Pointers to free lists
+
+3. Directory Structure:
+   - File names and inode numbers
+
+4. File Control Block (FCB / Inode):
+   - File attributes
+   - Data block pointers
+
+
+IN-MEMORY STRUCTURES:
+
+1. Mount Table:
+   - Info about mounted volumes
+
+2. Directory Cache:
+   - Recently accessed directories
+
+3. System-Wide Open File Table:
+   - FCB copies of open files
+
+4. Per-Process Open File Table:
+   - Pointer to system table entry
+   - File position
+
+
+================================================================================
+                    7. UNIX FILE SYSTEM
+================================================================================
+
+INODE (Index Node):
+Contains all file metadata except name.
+
+| Mode (permissions) |
+| Link count         |
+| Owner UID          |
+| Group GID          |
+| Size               |
+| Timestamps         |
+| Direct blocks [12] |
+| Single indirect    |
+| Double indirect    |
+| Triple indirect    |
+
+
+MAXIMUM FILE SIZE (4KB blocks, 4-byte pointers):
+
+- Direct: 12 × 4KB = 48KB
+- Single indirect: 1024 × 4KB = 4MB
+- Double indirect: 1024 × 1024 × 4KB = 4GB
+- Triple indirect: 1024³ × 4KB = 4TB
+
+Maximum ≈ 4TB
+
+
+DIRECTORY ENTRY:
+| Inode Number | File Name |
+
+
+HARD LINK vs SOFT LINK:
+
+Hard Link:
+- Multiple directory entries point to same inode
+- File exists until all links removed
+- Cannot span file systems
+- Cannot link directories
+
+Soft Link (Symbolic):
+- Special file containing path to target
+- Can span file systems
+- Can link directories
+- Breaks if target deleted
+
+
+================================================================================
+                    8. FILE SYSTEM MOUNTING
+================================================================================
+
+Attach file system to directory tree.
+
+Before mount:
+/                     /mnt
+├── home              (empty)
+├── etc
+└── mnt
+
+After mount (USB at /mnt):
+/
+├── home
+├── etc
+└── mnt
+    ├── photos
+    └── documents
+
+
+================================================================================
+                    9. FILE PROTECTION
+================================================================================
+
+UNIX PERMISSIONS:
+
+rwxrwxrwx
+└┬┘└┬┘└┬┘
+ │  │  └── Others
+ │  └───── Group
+ └──────── Owner
+
+r (4): Read
+w (2): Write
+x (1): Execute
+
+Example: chmod 755 file
+- Owner: rwx (7)
+- Group: r-x (5)
+- Others: r-x (5)
+
+
+ACCESS CONTROL LIST (ACL):
+Specify permissions for individual users/groups.
+
+
+================================================================================
+                    10. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is a file system?
+A: Organizes and manages data on storage devices.
+   Provides directory structure, allocation, free space management.
+
+Q2: Compare contiguous, linked, and indexed allocation.
+A: Contiguous: Fast but fragmentation.
+   Linked: No fragmentation but no random access.
+   Indexed: Both benefits, but index block overhead.
+
+Q3: What is an inode?
+A: Index node containing file metadata and block pointers.
+   Everything except file name. Unix/Linux specific.
+
+Q4: Difference between hard and soft link?
+A: Hard: Same inode, file exists until all links removed.
+   Soft: Path to target, can span filesystems, can break.
+
+Q5: How is free space tracked?
+A: Bitmap (bit per block), linked list, grouping, counting.
+   Bitmap most common for easy contiguous allocation.
+
+Q6: What is FAT?
+A: File Allocation Table - linked allocation with pointers
+   in separate table. Used by FAT16, FAT32.
+
+
+================================================================================
+                    END OF FILE SYSTEMS
+================================================================================

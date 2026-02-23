@@ -1,0 +1,56 @@
+Problem 4: Longest Substring Without Repeating Characters
+Difficulty: Medium
+Topic: Sliding Window / String / HashMap
+
+-----------------------------------------------------------------------
+PROBLEM STATEMENT:
+Given a string `s`, find the length of the longest substring without repeating characters.
+
+Example 1:
+Input: s = "abcabcbb"
+Output: 3
+Explanation: The answer is "abc", with the length of 3.
+
+Example 2:
+Input: s = "bbbbb"
+Output: 1
+Explanation: The answer is "b", with the length of 1.
+
+Example 3:
+Input: s = "pwwkew"
+Output: 3
+Explanation: The answer is "wke", with the length of 3. 
+Note that the answer must be a substring, "pwke" is a subsequence and not a substring.
+
+-----------------------------------------------------------------------
+THINKING PROCESS & APPROACH:
+
+1.  **Brute Force ?**:
+    Checking every substring would be O(N^3) or O(N^2). Too slow for N=10^5.
+
+2.  **Sliding Window Optimized**:
+    We want to maintain a window `[start, end]` that contains ONLY unique characters.
+    We extend `end` one by one. If we encounter a character that is already inside our window, we must shrink the window from the `start` until the duplicate is removed.
+
+3.  **Using a Map (Dictionary) for "Jumps"**:
+    Instead of shrinking one by one (which is O(2N)), we can store the *last seen index* of each character.
+    If we see a character `s[end]` that is already in our map AND its index is `>= start` (meaning it's inside the current window), we immediately jump `start` to `last_seen_index + 1`.
+    
+4.  **Algorithm**:
+    -   `char_index_map = {}`
+    -   `start = 0`
+    -   `max_length = 0`
+    -   Iterate `end` from 0 to len(s) - 1:
+        -   Char = `s[end]`
+        -   If Char is in map and `map[Char] >= start`:
+            -   Update `start = map[Char] + 1` (Move start effectively past the duplicate)
+        -   `map[Char] = end` (Update the new index of this char)
+        -   `max_length = max(max_length, end - start + 1)`
+
+5.  **Why checking `map[Char] >= start` is important?**
+    The map might contain an index from an *old* window. For example, in "abba", when we are at the second 'a', the map says 'a' is at 0. But our start is already at 2 (because of 'b'). We shouldn't move start BACK to 1. We only care if the duplicate is *after* our current start.
+
+-----------------------------------------------------------------------
+COMPLEXITY:
+-   Time: O(N). We traverse the string once.
+-   Space: O(min(N, M)) where M is the size of the charset (e.g., 26 for alphabets, 128 for ASCII).

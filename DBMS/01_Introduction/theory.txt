@@ -1,0 +1,352 @@
+================================================================================
+                    DATABASE MANAGEMENT SYSTEM (DBMS)
+================================================================================
+
+A DBMS is software that manages databases - stores, retrieves, and manipulates data.
+
+
+================================================================================
+                    1. BASIC CONCEPTS
+================================================================================
+
+DATA vs INFORMATION:
+- Data: Raw facts (e.g., "John", "25", "Delhi")
+- Information: Processed data with meaning (e.g., "John is 25 years old from Delhi")
+
+DATABASE:
+- Organized collection of related data
+- Stored in tables (rows and columns)
+- Designed to be accessed, managed, and updated
+
+DBMS (Database Management System):
+- Software to interact with databases
+- Handles storage, retrieval, and security
+- Examples: MySQL, PostgreSQL, Oracle, SQL Server, MongoDB
+
+RDBMS (Relational DBMS):
+- Based on relational model
+- Data stored in tables with relationships
+- Uses SQL for queries
+- Examples: MySQL, PostgreSQL, Oracle, SQL Server
+
+
+================================================================================
+                    2. FILE SYSTEM vs DBMS
+================================================================================
+
+FILE SYSTEM:
+- Data stored in files
+- Manual data management
+- Data redundancy and inconsistency
+- No security or access control
+- Difficult to query
+
+DBMS ADVANTAGES:
+1. Data Independence - Logical and physical separation
+2. Reduced Redundancy - Normalization
+3. Data Consistency - Constraints and rules
+4. Data Security - Access control
+5. Concurrent Access - Multiple users
+6. Backup and Recovery - Automatic
+7. Data Integrity - Constraints (PK, FK, etc.)
+8. Easy Querying - SQL
+
+
+================================================================================
+                    3. DATABASE ARCHITECTURE
+================================================================================
+
+THREE-SCHEMA ARCHITECTURE:
+
++---------------------------+
+|      External Level       |  <-- User views (View 1, View 2, ...)
++---------------------------+
+            |
++---------------------------+
+|     Conceptual Level      |  <-- Logical structure (Tables, Relationships)
++---------------------------+
+            |
++---------------------------+
+|      Internal Level       |  <-- Physical storage (Files, Indexes)
++---------------------------+
+
+1. EXTERNAL LEVEL (View Level):
+   - How users see data
+   - Different views for different users
+   - Provides data abstraction
+
+2. CONCEPTUAL LEVEL (Logical Level):
+   - What data is stored
+   - Tables, relationships, constraints
+   - Database schema
+
+3. INTERNAL LEVEL (Physical Level):
+   - How data is physically stored
+   - File organization, indexing
+   - Storage allocation
+
+
+DATA INDEPENDENCE:
+
+1. Logical Data Independence:
+   - Changes at conceptual level don't affect external level
+   - Add/remove columns without changing views
+
+2. Physical Data Independence:
+   - Changes at physical level don't affect conceptual level
+   - Change storage without changing logical structure
+
+
+================================================================================
+                    4. DATABASE MODELS
+================================================================================
+
+1. HIERARCHICAL MODEL:
+   - Tree-like structure
+   - Parent-child relationships
+   - One-to-many relationships only
+   - Example: IBM IMS
+
+2. NETWORK MODEL:
+   - Graph structure
+   - Many-to-many relationships
+   - Complex navigation
+   - Example: IDMS
+
+3. RELATIONAL MODEL:
+   - Tables (relations)
+   - Rows (tuples) and columns (attributes)
+   - Keys for relationships
+   - Most widely used
+   - Example: MySQL, PostgreSQL
+
+4. OBJECT-ORIENTED MODEL:
+   - Objects with attributes and methods
+   - Inheritance, encapsulation
+   - Example: ObjectDB
+
+5. DOCUMENT MODEL:
+   - JSON/BSON documents
+   - Flexible schema
+   - Example: MongoDB
+
+
+================================================================================
+                    5. RELATIONAL MODEL TERMINOLOGY
+================================================================================
+
+RELATION (Table):
+- A 2D table with rows and columns
+- Each table represents an entity
+
+TUPLE (Row):
+- A single record in a table
+- Represents one instance of entity
+
+ATTRIBUTE (Column):
+- A property or characteristic
+- Has a specific data type
+
+DOMAIN:
+- Set of possible values for an attribute
+- Example: Age domain = {1, 2, 3, ..., 150}
+
+DEGREE:
+- Number of attributes (columns) in a relation
+
+CARDINALITY:
+- Number of tuples (rows) in a relation
+
+
+EXAMPLE TABLE - STUDENTS:
+
++----+--------+-----+--------+
+| ID | Name   | Age | Dept   |
++----+--------+-----+--------+
+| 1  | Alice  | 20  | CSE    |  <- Tuple
+| 2  | Bob    | 21  | ECE    |
+| 3  | Carol  | 19  | CSE    |
++----+--------+-----+--------+
+     ^
+     |
+  Attribute
+
+Degree = 4 (columns)
+Cardinality = 3 (rows)
+
+
+================================================================================
+                    6. KEYS IN DBMS
+================================================================================
+
+1. SUPER KEY:
+   - Set of attributes that uniquely identifies a tuple
+   - Can have extra attributes
+   - Example: {ID}, {ID, Name}, {ID, Age}
+
+2. CANDIDATE KEY:
+   - Minimal super key (no redundant attributes)
+   - Multiple candidate keys can exist
+   - Example: {ID}, {Email}, {Phone}
+
+3. PRIMARY KEY:
+   - Chosen candidate key for main identification
+   - Cannot be NULL
+   - Unique for each tuple
+   - One per table
+
+4. ALTERNATE KEY:
+   - Candidate keys not chosen as primary key
+   - Also called Secondary Key
+
+5. FOREIGN KEY:
+   - Attribute that references primary key of another table
+   - Creates relationship between tables
+   - Can be NULL (optional relationship)
+
+6. COMPOSITE KEY:
+   - Key made of multiple attributes
+   - Example: {StudentID, CourseID} in enrollment table
+
+7. SURROGATE KEY:
+   - System-generated unique key
+   - Auto-increment integers
+   - No business meaning
+
+
+EXAMPLE:
+
+STUDENTS:                        ENROLLMENTS:
++----+--------+--------+         +----+--------+--------+
+| ID | Email  | Phone  |         | SID| CID    | Grade  |
++----+--------+--------+         +----+--------+--------+
+| 1  | a@x.com| 111    |         | 1  | C101   | A      |
++----+--------+--------+         +----+--------+--------+
+
+- Super Keys: {ID}, {Email}, {Phone}, {ID, Email}, ...
+- Candidate Keys: {ID}, {Email}, {Phone}
+- Primary Key: ID
+- Alternate Keys: Email, Phone
+- Foreign Key: SID references STUDENTS(ID)
+- Composite Key: {SID, CID} in ENROLLMENTS
+
+
+================================================================================
+                    7. INTEGRITY CONSTRAINTS
+================================================================================
+
+Rules to maintain data accuracy and consistency.
+
+1. DOMAIN CONSTRAINT:
+   - Attribute values must be from defined domain
+   - Data type, format, range
+   - Example: Age must be positive integer
+
+2. ENTITY INTEGRITY:
+   - Primary key cannot be NULL
+   - Each row must be uniquely identifiable
+
+3. REFERENTIAL INTEGRITY:
+   - Foreign key must match primary key or be NULL
+   - No orphan records
+   - Actions on violation:
+     * CASCADE - Delete/update child records
+     * SET NULL - Set foreign key to NULL
+     * RESTRICT - Prevent the operation
+     * NO ACTION - Similar to RESTRICT
+
+4. KEY CONSTRAINT:
+   - Primary key must be unique
+   - No duplicate values
+
+5. NOT NULL CONSTRAINT:
+   - Attribute cannot have NULL value
+
+6. UNIQUE CONSTRAINT:
+   - All values in column must be different
+   - Unlike PK, can have NULL
+
+7. CHECK CONSTRAINT:
+   - Custom condition must be true
+   - Example: Age >= 18
+
+
+================================================================================
+                    8. DATABASE LANGUAGES
+================================================================================
+
+1. DDL (Data Definition Language):
+   - Define database structure
+   - CREATE, ALTER, DROP, TRUNCATE
+   - Schema definition
+
+2. DML (Data Manipulation Language):
+   - Manipulate data
+   - SELECT, INSERT, UPDATE, DELETE
+   - CRUD operations
+
+3. DCL (Data Control Language):
+   - Control access
+   - GRANT, REVOKE
+   - Security permissions
+
+4. TCL (Transaction Control Language):
+   - Manage transactions
+   - COMMIT, ROLLBACK, SAVEPOINT
+   - Transaction management
+
+
+================================================================================
+                    9. DATABASE USERS
+================================================================================
+
+1. DATABASE ADMINISTRATOR (DBA):
+   - Manages entire database
+   - Security, backup, recovery
+   - Performance tuning
+
+2. DATABASE DESIGNER:
+   - Designs database schema
+   - Defines tables, relationships
+   - Normalization
+
+3. APPLICATION PROGRAMMER:
+   - Writes applications using database
+   - Embeds SQL in programs
+
+4. END USER:
+   - Uses database through applications
+   - Query and report generation
+
+
+================================================================================
+                    10. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is DBMS? Why use it?
+A: Software to manage databases. Provides data independence, security,
+   concurrent access, and reduces redundancy.
+
+Q2: Difference between DBMS and RDBMS?
+A: RDBMS stores data in related tables using keys. DBMS is general term.
+   RDBMS follows ACID properties strictly.
+
+Q3: What are the different types of keys?
+A: Super, Candidate, Primary, Alternate, Foreign, Composite, Surrogate keys.
+
+Q4: What is data independence?
+A: Ability to modify schema at one level without affecting other levels.
+   Logical and Physical data independence.
+
+Q5: What is referential integrity?
+A: Foreign key must reference existing primary key or be NULL.
+   Maintains relationships between tables.
+
+Q6: What is the three-schema architecture?
+A: External (user views), Conceptual (logical schema), Internal (physical storage).
+   Provides data abstraction and independence.
+
+
+================================================================================
+                    END OF INTRODUCTION
+================================================================================

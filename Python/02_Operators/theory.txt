@@ -1,0 +1,289 @@
+================================================================================
+                              PYTHON OPERATORS
+================================================================================
+
+Operators are special symbols that perform operations on variables and values.
+
+
+1. ARITHMETIC OPERATORS
+================================================================================
+
+Used for mathematical calculations.
+
+Operator    Name                Example         Result
+--------    ----                -------         ------
++           Addition            5 + 3           8
+-           Subtraction         5 - 3           2
+*           Multiplication      5 * 3           15
+/           Division            5 / 3           1.666...
+//          Floor Division      5 // 3          1
+%           Modulus (Remainder) 5 % 3           2
+**          Exponentiation      5 ** 3          125
+
+Important Points:
+- / always returns float (even 6/2 = 3.0)
+- // returns integer for int operands, float for float operands
+- % is useful for checking even/odd, divisibility
+- ** is same as pow() function
+
+
+2. COMPARISON (RELATIONAL) OPERATORS
+================================================================================
+
+Used to compare values. Returns True or False.
+
+Operator    Name                    Example     Result
+--------    ----                    -------     ------
+==          Equal to                5 == 5      True
+!=          Not equal to            5 != 3      True
+>           Greater than            5 > 3       True
+<           Less than               5 < 3       False
+>=          Greater than or equal   5 >= 5      True
+<=          Less than or equal      5 <= 3      False
+
+Important Points:
+- == compares values (equality)
+- = is assignment (different!)
+- Can compare strings (lexicographic order)
+  "apple" < "banana"  # True (a comes before b)
+
+
+3. ASSIGNMENT OPERATORS
+================================================================================
+
+Used to assign values to variables.
+
+Operator    Example         Same As
+--------    -------         -------
+=           x = 5           x = 5
++=          x += 3          x = x + 3
+-=          x -= 3          x = x - 3
+*=          x *= 3          x = x * 3
+/=          x /= 3          x = x / 3
+//=         x //= 3         x = x // 3
+%=          x %= 3          x = x % 3
+**=         x **= 3         x = x ** 3
+&=          x &= 3          x = x & 3
+|=          x |= 3          x = x | 3
+^=          x ^= 3          x = x ^ 3
+>>=         x >>= 3         x = x >> 3
+<<=         x <<= 3         x = x << 3
+
+Important Points:
+- No ++ or -- operators in Python (use += 1 or -= 1)
+- Assignment operators modify in place
+
+
+4. LOGICAL OPERATORS
+================================================================================
+
+Used to combine conditional statements.
+
+Operator    Description             Example
+--------    -----------             -------
+and         True if BOTH true       x > 0 and x < 10
+or          True if AT LEAST ONE    x < 0 or x > 10
+not         Reverses the result     not(x > 0)
+
+Truth Table for AND:
+    True  and True  = True
+    True  and False = False
+    False and True  = False
+    False and False = False
+
+Truth Table for OR:
+    True  or True  = True
+    True  or False = True
+    False or True  = True
+    False or False = False
+
+Truth Table for NOT:
+    not True  = False
+    not False = True
+
+Short-circuit Evaluation:
+- and: If first is False, second is not evaluated
+- or:  If first is True, second is not evaluated
+
+Example:
+    x = 0
+    y = 10
+    x != 0 and y/x > 2  # Second part NOT evaluated (prevents division by zero)
+
+
+5. BITWISE OPERATORS
+================================================================================
+
+Work on binary representation of numbers.
+
+Operator    Name        Description                     Example
+--------    ----        -----------                     -------
+&           AND         1 if both bits are 1           5 & 3 = 1
+|           OR          1 if at least one bit is 1     5 | 3 = 7
+^           XOR         1 if bits are different        5 ^ 3 = 6
+~           NOT         Inverts all bits               ~5 = -6
+<<          Left Shift  Shifts bits left               5 << 1 = 10
+>>          Right Shift Shifts bits right              5 >> 1 = 2
+
+Binary Explanation:
+    5 in binary = 101
+    3 in binary = 011
+
+    5 & 3:   101 & 011 = 001 = 1
+    5 | 3:   101 | 011 = 111 = 7
+    5 ^ 3:   101 ^ 011 = 110 = 6
+
+    5 << 1:  101 << 1 = 1010 = 10 (multiply by 2)
+    5 >> 1:  101 >> 1 = 10 = 2   (divide by 2)
+
+Useful Tricks:
+- x << n = x * 2^n  (faster multiplication)
+- x >> n = x / 2^n  (faster division)
+- x & 1 = 1 if odd, 0 if even
+- x ^ x = 0 (any number XOR itself is 0)
+- x ^ 0 = x (any number XOR 0 is itself)
+
+
+6. MEMBERSHIP OPERATORS
+================================================================================
+
+Test if a value is in a sequence (string, list, tuple, set, dict).
+
+Operator    Description                     Example
+--------    -----------                     -------
+in          True if value is present        "a" in "apple"  # True
+not in      True if value is not present    5 not in [1,2,3] # True
+
+Examples:
+    # In string
+    "py" in "python"            # True
+
+    # In list
+    5 in [1, 2, 3, 4, 5]       # True
+
+    # In dictionary (checks keys)
+    "name" in {"name": "John"} # True
+
+
+7. IDENTITY OPERATORS
+================================================================================
+
+Compare memory locations (not values).
+
+Operator    Description                     Example
+--------    -----------                     -------
+is          True if same object             x is y
+is not      True if not same object         x is not y
+
+Difference between == and is:
+    ==  compares VALUES
+    is  compares IDENTITY (memory location)
+
+Examples:
+    a = [1, 2, 3]
+    b = [1, 2, 3]
+    c = a
+
+    a == b      # True (same values)
+    a is b      # False (different objects in memory)
+    a is c      # True (same object, c points to a)
+
+Special Case with Small Integers:
+    x = 5
+    y = 5
+    x is y      # True (Python caches small integers -5 to 256)
+
+    x = 1000
+    y = 1000
+    x is y      # False (not cached)
+
+When to use is:
+    - Comparing with None: if x is None
+    - Comparing with True/False: if x is True
+
+
+8. OPERATOR PRECEDENCE
+================================================================================
+
+Order in which operators are evaluated (highest to lowest):
+
+Precedence  Operator
+----------  --------
+1 (highest) ()              Parentheses
+2           **              Exponentiation
+3           ~, +, -         Unary NOT, plus, minus
+4           *, /, //, %     Multiplication, Division
+5           +, -            Addition, Subtraction
+6           <<, >>          Bitwise shifts
+7           &               Bitwise AND
+8           ^               Bitwise XOR
+9           |               Bitwise OR
+10          ==, !=, <, etc  Comparisons
+11          not             Logical NOT
+12          and             Logical AND
+13 (lowest) or              Logical OR
+
+Example:
+    2 + 3 * 4       # 14 (not 20, * before +)
+    (2 + 3) * 4     # 20 (parentheses first)
+    2 ** 3 ** 2     # 512 (right to left: 3**2=9, 2**9=512)
+
+TIP: When in doubt, use parentheses to make intent clear!
+
+
+9. WALRUS OPERATOR (:=) - Python 3.8+
+================================================================================
+
+Assigns and returns value in single expression.
+
+Old way:
+    n = len(my_list)
+    if n > 10:
+        print(f"List is too long ({n} elements)")
+
+New way with walrus:
+    if (n := len(my_list)) > 10:
+        print(f"List is too long ({n} elements)")
+
+Useful in while loops:
+    while (line := input()) != "quit":
+        print(f"You entered: {line}")
+
+
+10. INTERVIEW QUESTIONS
+================================================================================
+
+Q: What is the difference between / and //?
+A: / is true division (always returns float)
+   // is floor division (rounds down to nearest integer)
+   7 / 2 = 3.5
+   7 // 2 = 3
+
+Q: What is the difference between == and is?
+A: == compares values (equality check)
+   is compares identity (same object in memory)
+
+Q: What does x = x or y mean?
+A: If x is falsy, assign y to x. Short-circuit evaluation.
+   Common pattern for default values.
+
+Q: How to swap two numbers without temp variable?
+A: Using tuple unpacking: a, b = b, a
+   Using XOR: a = a ^ b; b = a ^ b; a = a ^ b
+
+Q: What is short-circuit evaluation?
+A: In logical operations, Python stops evaluating as soon as
+   result is determined.
+   False and anything = False (second not evaluated)
+   True or anything = True (second not evaluated)
+
+Q: How to check if a number is even using bitwise?
+A: n & 1 == 0 (if last bit is 0, number is even)
+
+Q: What is operator overloading?
+A: Ability to define custom behavior for operators in classes.
+   Example: __add__ for +, __eq__ for ==
+
+================================================================================
+                           END OF OPERATORS
+================================================================================

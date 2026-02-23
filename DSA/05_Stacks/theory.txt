@@ -1,0 +1,440 @@
+================================================================================
+                              STACKS
+================================================================================
+
+Stack is a linear data structure that follows LIFO (Last In, First Out).
+Think of a stack of plates - you can only add/remove from the top.
+
+
+================================================================================
+                    1. STACK BASICS
+================================================================================
+
+OPERATIONS:
+-----------
+push(x)     : Add element to top        O(1)
+pop()       : Remove and return top     O(1)
+peek()/top(): Return top without removing O(1)
+isEmpty()   : Check if stack is empty   O(1)
+size()      : Return number of elements O(1)
+
+
+IMPLEMENTATION IN PYTHON:
+-------------------------
+Using list (recommended):
+    stack = []
+    stack.append(x)     # push
+    stack.pop()         # pop
+    stack[-1]           # peek
+    len(stack) == 0     # isEmpty
+
+Using collections.deque (efficient):
+    from collections import deque
+    stack = deque()
+    stack.append(x)     # push
+    stack.pop()         # pop
+
+
+================================================================================
+                    2. WHEN TO USE STACK
+================================================================================
+
+Use stack when you need:
+1. Last In, First Out access
+2. Reverse order processing
+3. Matching pairs (parentheses, tags)
+4. Backtracking
+5. Expression evaluation
+6. Function call management (recursion)
+
+COMMON PATTERNS:
+- Matching parentheses/brackets
+- Next/Previous greater/smaller element
+- Expression evaluation (infix, postfix)
+- Monotonic stack problems
+- Undo operations
+
+
+================================================================================
+                    3. STACK IMPLEMENTATION
+================================================================================
+
+USING LIST:
+    class Stack:
+        def __init__(self):
+            self.items = []
+
+        def push(self, item):
+            self.items.append(item)
+
+        def pop(self):
+            if not self.is_empty():
+                return self.items.pop()
+            raise IndexError("Stack is empty")
+
+        def peek(self):
+            if not self.is_empty():
+                return self.items[-1]
+            raise IndexError("Stack is empty")
+
+        def is_empty(self):
+            return len(self.items) == 0
+
+        def size(self):
+            return len(self.items)
+
+
+USING LINKED LIST:
+    class StackNode:
+        def __init__(self, val):
+            self.val = val
+            self.next = None
+
+    class LinkedStack:
+        def __init__(self):
+            self.top = None
+            self._size = 0
+
+        def push(self, val):
+            node = StackNode(val)
+            node.next = self.top
+            self.top = node
+            self._size += 1
+
+        def pop(self):
+            if self.is_empty():
+                raise IndexError("Stack is empty")
+            val = self.top.val
+            self.top = self.top.next
+            self._size -= 1
+            return val
+
+
+================================================================================
+                    4. IMPORTANT PROBLEMS
+================================================================================
+
+PROBLEM 1: Valid Parentheses
+----------------------------
+Check if string has valid brackets.
+Time: O(n), Space: O(n)
+
+    def is_valid(s):
+        stack = []
+        pairs = {')': '(', ']': '[', '}': '{'}
+
+        for char in s:
+            if char in '([{':
+                stack.append(char)
+            elif char in ')]}':
+                if not stack or stack.pop() != pairs[char]:
+                    return False
+
+        return len(stack) == 0
+
+    # Examples:
+    # "()" → True
+    # "()[]{}" → True
+    # "(]" → False
+    # "([)]" → False
+
+
+PROBLEM 2: Next Greater Element
+-------------------------------
+For each element, find next greater element to its right.
+Time: O(n), Space: O(n)
+
+    def next_greater(nums):
+        n = len(nums)
+        result = [-1] * n
+        stack = []  # Stack of indices
+
+        for i in range(n):
+            while stack and nums[i] > nums[stack[-1]]:
+                result[stack.pop()] = nums[i]
+            stack.append(i)
+
+        return result
+
+    # Example: [4, 5, 2, 25] → [5, 25, 25, -1]
+
+
+PROBLEM 3: Next Smaller Element
+-------------------------------
+For each element, find next smaller element to its right.
+
+    def next_smaller(nums):
+        n = len(nums)
+        result = [-1] * n
+        stack = []
+
+        for i in range(n):
+            while stack and nums[i] < nums[stack[-1]]:
+                result[stack.pop()] = nums[i]
+            stack.append(i)
+
+        return result
+
+
+PROBLEM 4: Evaluate Reverse Polish Notation (Postfix)
+-----------------------------------------------------
+Time: O(n), Space: O(n)
+
+    def eval_rpn(tokens):
+        stack = []
+        operators = {'+', '-', '*', '/'}
+
+        for token in tokens:
+            if token in operators:
+                b = stack.pop()
+                a = stack.pop()
+                if token == '+': stack.append(a + b)
+                elif token == '-': stack.append(a - b)
+                elif token == '*': stack.append(a * b)
+                else: stack.append(int(a / b))  # Truncate toward zero
+            else:
+                stack.append(int(token))
+
+        return stack[0]
+
+    # Example: ["2","1","+","3","*"] → 9 ((2+1)*3)
+
+
+PROBLEM 5: Min Stack
+--------------------
+Stack that supports getMin() in O(1).
+Time: O(1) for all operations
+
+    class MinStack:
+        def __init__(self):
+            self.stack = []
+            self.min_stack = []
+
+        def push(self, val):
+            self.stack.append(val)
+            if not self.min_stack or val <= self.min_stack[-1]:
+                self.min_stack.append(val)
+
+        def pop(self):
+            val = self.stack.pop()
+            if val == self.min_stack[-1]:
+                self.min_stack.pop()
+
+        def top(self):
+            return self.stack[-1]
+
+        def getMin(self):
+            return self.min_stack[-1]
+
+
+PROBLEM 6: Largest Rectangle in Histogram
+-----------------------------------------
+Find largest rectangle area in histogram.
+Time: O(n), Space: O(n)
+
+    def largest_rectangle_area(heights):
+        stack = []  # Stack of indices
+        max_area = 0
+        heights.append(0)  # Sentinel
+
+        for i, h in enumerate(heights):
+            while stack and heights[stack[-1]] > h:
+                height = heights[stack.pop()]
+                width = i if not stack else i - stack[-1] - 1
+                max_area = max(max_area, height * width)
+            stack.append(i)
+
+        return max_area
+
+    # Example: [2,1,5,6,2,3] → 10
+
+
+PROBLEM 7: Daily Temperatures
+-----------------------------
+Days until warmer temperature.
+Time: O(n), Space: O(n)
+
+    def daily_temperatures(temperatures):
+        n = len(temperatures)
+        result = [0] * n
+        stack = []  # Stack of indices
+
+        for i in range(n):
+            while stack and temperatures[i] > temperatures[stack[-1]]:
+                prev = stack.pop()
+                result[prev] = i - prev
+            stack.append(i)
+
+        return result
+
+    # Example: [73,74,75,71,69,72,76,73] → [1,1,4,2,1,1,0,0]
+
+
+PROBLEM 8: Trapping Rain Water (using stack)
+--------------------------------------------
+Time: O(n), Space: O(n)
+
+    def trap(height):
+        stack = []
+        water = 0
+
+        for i, h in enumerate(height):
+            while stack and h > height[stack[-1]]:
+                bottom = stack.pop()
+                if not stack:
+                    break
+                width = i - stack[-1] - 1
+                bounded_height = min(h, height[stack[-1]]) - height[bottom]
+                water += width * bounded_height
+            stack.append(i)
+
+        return water
+
+
+PROBLEM 9: Decode String
+------------------------
+k[encoded_string] → repeat encoded_string k times
+Time: O(n), Space: O(n)
+
+    def decode_string(s):
+        stack = []
+        current_num = 0
+        current_str = ""
+
+        for char in s:
+            if char.isdigit():
+                current_num = current_num * 10 + int(char)
+            elif char == '[':
+                stack.append((current_str, current_num))
+                current_str = ""
+                current_num = 0
+            elif char == ']':
+                prev_str, num = stack.pop()
+                current_str = prev_str + current_str * num
+            else:
+                current_str += char
+
+        return current_str
+
+    # Example: "3[a]2[bc]" → "aaabcbc"
+    # Example: "3[a2[c]]" → "accaccacc"
+
+
+PROBLEM 10: Remove K Digits
+---------------------------
+Remove k digits to get smallest number.
+Time: O(n), Space: O(n)
+
+    def remove_k_digits(num, k):
+        stack = []
+
+        for digit in num:
+            while k and stack and stack[-1] > digit:
+                stack.pop()
+                k -= 1
+            stack.append(digit)
+
+        # Remove remaining k digits from end
+        stack = stack[:-k] if k else stack
+
+        # Remove leading zeros
+        return ''.join(stack).lstrip('0') or '0'
+
+    # Example: "1432219", k=3 → "1219"
+
+
+PROBLEM 11: Asteroid Collision
+------------------------------
+Time: O(n), Space: O(n)
+
+    def asteroid_collision(asteroids):
+        stack = []
+
+        for asteroid in asteroids:
+            while stack and asteroid < 0 < stack[-1]:
+                if stack[-1] < -asteroid:
+                    stack.pop()
+                    continue
+                elif stack[-1] == -asteroid:
+                    stack.pop()
+                break
+            else:
+                stack.append(asteroid)
+
+        return stack
+
+    # Example: [5,10,-5] → [5,10]
+    # Example: [10,2,-5] → [10]
+
+
+PROBLEM 12: Simplify Path
+-------------------------
+Simplify Unix file path.
+Time: O(n), Space: O(n)
+
+    def simplify_path(path):
+        stack = []
+        parts = path.split('/')
+
+        for part in parts:
+            if part == '..':
+                if stack:
+                    stack.pop()
+            elif part and part != '.':
+                stack.append(part)
+
+        return '/' + '/'.join(stack)
+
+    # Example: "/a/./b/../../c/" → "/c"
+
+
+================================================================================
+                    5. MONOTONIC STACK
+================================================================================
+
+Monotonic stack maintains elements in sorted order.
+
+MONOTONIC INCREASING STACK:
+Elements increase from bottom to top.
+Used for: Next Smaller Element
+
+MONOTONIC DECREASING STACK:
+Elements decrease from bottom to top.
+Used for: Next Greater Element
+
+Template for Next Greater Element:
+    def next_greater(nums):
+        stack = []  # Monotonic decreasing
+        result = [-1] * len(nums)
+
+        for i in range(len(nums)):
+            while stack and nums[i] > nums[stack[-1]]:
+                result[stack.pop()] = nums[i]
+            stack.append(i)
+
+        return result
+
+
+================================================================================
+                    6. INTERVIEW TIPS
+================================================================================
+
+1. RECOGNIZE STACK PATTERNS:
+   - Matching/balancing (parentheses)
+   - Processing in reverse order
+   - Next greater/smaller element
+   - Expression evaluation
+   - Nested structures
+
+2. COMMON MISTAKES:
+   - Forgetting to handle empty stack
+   - Off-by-one errors with indices
+   - Not handling remaining elements in stack
+
+3. ALTERNATIVES:
+   - Recursion (function call stack)
+   - Two pointers (sometimes)
+
+================================================================================
+                         END OF STACKS
+================================================================================

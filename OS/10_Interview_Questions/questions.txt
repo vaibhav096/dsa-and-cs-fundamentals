@@ -1,0 +1,417 @@
+================================================================================
+                    OPERATING SYSTEM INTERVIEW QUESTIONS
+================================================================================
+
+80+ Most Frequently Asked OS Interview Questions
+
+
+================================================================================
+                    SECTION 1: BASICS
+================================================================================
+
+Q1: What is an Operating System?
+A: Software that manages hardware and provides services for programs.
+   Acts as intermediary between user and hardware.
+   Functions: Process management, memory management, file system, I/O, security.
+
+Q2: What are the types of Operating Systems?
+A: - Batch OS: Jobs processed in batches
+   - Time-sharing: Multiple users share CPU time
+   - Real-time: Strict timing constraints (hard/soft)
+   - Distributed: Multiple computers as single system
+   - Embedded: Specific-purpose devices
+
+Q3: What is kernel? What are its types?
+A: Core of OS, always in memory, manages hardware.
+   Types:
+   - Monolithic: All services in single block
+   - Microkernel: Minimal kernel, services in user space
+   - Hybrid: Combination
+
+Q4: What is a system call?
+A: Interface for programs to request OS services.
+   Types: Process control, file management, device management,
+   information, communication.
+
+Q5: Difference between user mode and kernel mode?
+A: User mode: Limited access, cannot access hardware directly.
+   Kernel mode: Full access, can execute privileged instructions.
+   System call causes mode switch.
+
+Q6: What is BIOS?
+A: Basic Input/Output System. Firmware that initializes hardware
+   during boot and loads bootloader.
+
+
+================================================================================
+                    SECTION 2: PROCESSES
+================================================================================
+
+Q7: What is a process?
+A: Program in execution. Includes code, data, stack, heap, and state.
+   Process = Program + Execution Context.
+
+Q8: What is PCB (Process Control Block)?
+A: Data structure containing all process information.
+   Contains: PID, state, PC, registers, memory info, I/O status.
+
+Q9: What are process states?
+A: New → Ready → Running → Waiting → Terminated
+   Ready: Waiting for CPU
+   Running: Executing on CPU
+   Waiting: Waiting for I/O or event
+
+Q10: What is context switching?
+A: Saving state of current process and loading state of another.
+   Includes: Save/restore registers, update PCBs, switch memory maps.
+   Pure overhead - no useful work done.
+
+Q11: What is a thread?
+A: Lightweight process. Smallest unit of CPU execution.
+   Shares code, data, files with other threads of same process.
+   Has own: Thread ID, PC, registers, stack.
+
+Q12: Difference between process and thread?
+A: Process: Own address space, isolated, heavy-weight.
+   Thread: Shared address space, lighter, faster creation.
+   Threads within process can easily communicate.
+
+Q13: User-level vs Kernel-level threads?
+A: User-level: Managed by library, OS doesn't know, fast but blocking blocks all.
+   Kernel-level: Managed by OS, true parallelism, blocking doesn't affect others.
+
+Q14: What is a zombie process?
+A: Process that has terminated but parent hasn't read exit status.
+   Takes up PID. Prevented by parent calling wait().
+
+Q15: What is an orphan process?
+A: Process whose parent has terminated.
+   Adopted by init (PID 1) which calls wait() for cleanup.
+
+
+================================================================================
+                    SECTION 3: CPU SCHEDULING
+================================================================================
+
+Q16: What is CPU scheduling?
+A: Selecting which process runs on CPU from ready queue.
+   Goals: Maximize utilization, throughput; minimize waiting, turnaround.
+
+Q17: Preemptive vs Non-preemptive scheduling?
+A: Preemptive: OS can take CPU from running process.
+   Non-preemptive: Process runs until it voluntarily releases.
+
+Q18: What is turnaround time and waiting time?
+A: Turnaround = Completion Time - Arrival Time (total time in system)
+   Waiting = Turnaround - Burst Time (time in ready queue)
+
+Q19: Explain FCFS scheduling.
+A: First Come First Served. Non-preemptive.
+   Simple but has convoy effect (short jobs wait behind long).
+
+Q20: Explain SJF scheduling.
+A: Shortest Job First. Optimal for average waiting time.
+   Non-preemptive: Run shortest job to completion.
+   Preemptive (SRTF): Preempt if new job is shorter.
+   Problem: Starvation of long jobs.
+
+Q21: Explain Round Robin scheduling.
+A: Preemptive FCFS with time quantum.
+   Each process gets quantum, then preempted.
+   Fair, no starvation, good for time-sharing.
+   Too small quantum = too many context switches.
+
+Q22: What is priority scheduling?
+A: Higher priority process runs first.
+   Problem: Starvation of low priority.
+   Solution: Aging - increase priority over time.
+
+Q23: What is convoy effect?
+A: Short processes waiting behind long process (in FCFS).
+   Increases average waiting time.
+
+Q24: What is starvation? How to prevent?
+A: Process never gets CPU.
+   Solution: Aging - gradually increase priority of waiting processes.
+
+
+================================================================================
+                    SECTION 4: PROCESS SYNCHRONIZATION
+================================================================================
+
+Q25: What is race condition?
+A: Multiple processes access shared data concurrently.
+   Outcome depends on execution order. Causes data inconsistency.
+
+Q26: What is critical section?
+A: Code segment that accesses shared resources.
+   Only one process should be in critical section at a time.
+
+Q27: What are requirements for critical section solution?
+A: 1. Mutual Exclusion: Only one process in CS at a time.
+   2. Progress: Selection cannot be postponed indefinitely.
+   3. Bounded Waiting: Limit on times others enter before requesting process.
+
+Q28: What is a mutex?
+A: Mutual exclusion lock. Binary (locked/unlocked).
+   acquire() to get, release() to give up.
+
+Q29: What is a semaphore?
+A: Integer variable with atomic wait()/signal() operations.
+   Binary: 0 or 1, like mutex.
+   Counting: Any value, for resource counting.
+
+Q30: Difference between mutex and semaphore?
+A: Mutex: Binary, owned by thread that locked it.
+   Semaphore: Can have any value, no ownership concept.
+   Mutex for mutual exclusion, semaphore for signaling/counting.
+
+Q31: Explain Producer-Consumer problem.
+A: Producer creates items, consumer uses them, limited buffer.
+   Use semaphores: empty (tracks slots), full (tracks items), mutex (protect buffer).
+
+Q32: Explain Readers-Writers problem.
+A: Multiple readers can read simultaneously.
+   Writers need exclusive access.
+   Problem: Writer starvation if readers keep coming.
+
+Q33: Explain Dining Philosophers problem.
+A: 5 philosophers, 5 chopsticks, need 2 to eat.
+   Demonstrates deadlock. All pick left chopstick = deadlock.
+   Solutions: Limit diners, order picking, use waiter.
+
+
+================================================================================
+                    SECTION 5: DEADLOCKS
+================================================================================
+
+Q34: What is deadlock?
+A: Processes waiting for each other indefinitely, none can proceed.
+   P1 holds R1, waits for R2. P2 holds R2, waits for R1.
+
+Q35: What are the four necessary conditions for deadlock?
+A: ALL must hold simultaneously:
+   1. Mutual Exclusion: Resource held exclusively
+   2. Hold and Wait: Hold one, wait for another
+   3. No Preemption: Cannot force release
+   4. Circular Wait: Cycle of waiting
+
+Q36: How to prevent deadlock?
+A: Break one condition:
+   - Hold & Wait: Request all resources at start
+   - No Preemption: Allow forceful release
+   - Circular Wait: Order resources, request in order
+
+Q37: What is deadlock avoidance?
+A: System checks each request, denies if leads to unsafe state.
+   Banker's Algorithm: Check if granting keeps system safe.
+
+Q38: Explain Banker's Algorithm.
+A: Deadlock avoidance for multiple instances.
+   Data: Available, Max, Allocation, Need.
+   Before granting, simulate and check if safe sequence exists.
+
+Q39: What is safe state?
+A: System can allocate resources so all processes finish.
+   Safe sequence exists. Unsafe may lead to deadlock.
+
+Q40: How to detect deadlock?
+A: Single instance: Wait-for graph, find cycle.
+   Multiple instances: Detection algorithm similar to Banker's.
+
+Q41: How to recover from deadlock?
+A: Process termination: Abort all or one-by-one.
+   Resource preemption: Take from one, give to another.
+
+
+================================================================================
+                    SECTION 6: MEMORY MANAGEMENT
+================================================================================
+
+Q42: What is logical vs physical address?
+A: Logical (Virtual): Generated by CPU, used by process.
+   Physical: Actual RAM address.
+   MMU translates logical to physical.
+
+Q43: What is paging?
+A: Divide memory into fixed-size frames (physical) and pages (logical).
+   Page table maps pages to frames.
+   No external fragmentation, only internal.
+
+Q44: What is segmentation?
+A: Divide memory into logical variable-size segments.
+   Each segment has base and limit.
+   Can have external fragmentation.
+
+Q45: Internal vs External fragmentation?
+A: Internal: Unused space within allocated block.
+   External: Free memory scattered, can't satisfy large request.
+
+Q46: What is TLB?
+A: Translation Look-aside Buffer. Cache for page table entries.
+   Hit: One memory access. Miss: Two accesses + update TLB.
+
+Q47: What is a page table?
+A: Maps logical pages to physical frames.
+   Entry: frame number, valid bit, protection bits, dirty bit.
+
+Q48: What is multi-level page table?
+A: Hierarchical page table to reduce memory usage.
+   Only load needed portions.
+   Two-level, three-level, etc.
+
+
+================================================================================
+                    SECTION 7: VIRTUAL MEMORY
+================================================================================
+
+Q49: What is virtual memory?
+A: Allows process execution when not fully in memory.
+   Programs can be larger than physical memory.
+   Uses demand paging and swapping.
+
+Q50: What is demand paging?
+A: Load pages only when needed (on page fault).
+   Reduces I/O and memory usage.
+
+Q51: What is page fault?
+A: Access to page not in memory.
+   OS loads page from disk, updates page table, restarts instruction.
+   Expensive due to disk I/O.
+
+Q52: Explain page replacement algorithms.
+A: FIFO: Replace oldest page (Belady's anomaly possible).
+   LRU: Replace least recently used (good but expensive).
+   Optimal: Replace page not used for longest (theoretical best).
+   Clock: Approximation of LRU using reference bit.
+
+Q53: What is Belady's Anomaly?
+A: More frames can cause MORE page faults (with FIFO).
+   Doesn't occur with stack algorithms (LRU, Optimal).
+
+Q54: What is thrashing?
+A: Process spends more time paging than executing.
+   Caused by too many processes, not enough frames per process.
+   Solution: Working set model, page fault frequency.
+
+Q55: What is working set?
+A: Set of pages process is actively using.
+   Allocate enough frames for working set to avoid thrashing.
+
+
+================================================================================
+                    SECTION 8: FILE SYSTEMS
+================================================================================
+
+Q56: What is a file system?
+A: Organizes and manages data on storage devices.
+   Provides directory structure, allocation methods, free space management.
+
+Q57: What is an inode?
+A: Index node in Unix. Contains file metadata and block pointers.
+   Everything except file name.
+
+Q58: Compare file allocation methods.
+A: Contiguous: Fast access, external fragmentation, can't grow.
+   Linked: No fragmentation, no random access, pointer overhead.
+   Indexed: Direct access, index block overhead.
+
+Q59: Hard link vs Soft link?
+A: Hard: Multiple names for same inode, file exists until all removed.
+   Soft: Special file with path, can span filesystems, can break.
+
+Q60: What is FAT?
+A: File Allocation Table. Linked allocation with pointers in table.
+   Used by FAT16, FAT32.
+
+
+================================================================================
+                    SECTION 9: DISK SCHEDULING
+================================================================================
+
+Q61: Why is disk scheduling needed?
+A: Minimize seek time (head movement), which is slowest part.
+   Many I/O requests, need efficient ordering.
+
+Q62: Explain FCFS disk scheduling.
+A: First Come First Served. Simple but high seek time.
+
+Q63: Explain SSTF disk scheduling.
+A: Shortest Seek Time First. Service nearest request.
+   Efficient but can cause starvation.
+
+Q64: Explain SCAN (Elevator) algorithm.
+A: Head moves in one direction, services all requests.
+   Reverses at end. No starvation, uniform wait.
+
+Q65: Difference between SCAN and C-SCAN?
+A: SCAN: Reverses at end, services in both directions.
+   C-SCAN: Jumps to start, only services in one direction.
+   C-SCAN has more uniform wait times.
+
+Q66: What is LOOK algorithm?
+A: Like SCAN but doesn't go to end.
+   Reverses at last request in that direction.
+
+Q67: What is RAID?
+A: Redundant Array of Independent Disks.
+   RAID 0: Striping (performance, no redundancy)
+   RAID 1: Mirroring (redundancy)
+   RAID 5: Striping with distributed parity
+
+
+================================================================================
+                    SECTION 10: MISCELLANEOUS
+================================================================================
+
+Q68: What is spooling?
+A: Simultaneous Peripheral Operations On-Line.
+   Buffer for slow devices (printer queue).
+
+Q69: What is DMA?
+A: Direct Memory Access. Device transfers data directly to memory
+   without CPU involvement. CPU freed for other work.
+
+Q70: What is interrupt?
+A: Signal to CPU that event needs attention.
+   Hardware (device) or software (trap/exception).
+   Causes context switch to interrupt handler.
+
+Q71: What is real-time OS?
+A: Strict timing constraints.
+   Hard RTOS: Deadlines must be met (pacemaker).
+   Soft RTOS: Deadlines preferred (streaming).
+
+Q72: What is a bootloader?
+A: Program that loads OS kernel into memory.
+   Examples: GRUB, LILO.
+
+Q73: What is system throughput?
+A: Number of processes completed per unit time.
+
+Q74: What is turnaround time?
+A: Total time from submission to completion.
+
+Q75: What is response time?
+A: Time from submission to first response.
+
+
+================================================================================
+                    QUICK REVISION POINTS
+================================================================================
+
+1. Process States: New → Ready → Running → Waiting → Terminated
+2. Context Switch: Save state of P1, load state of P2
+3. Scheduling: FCFS, SJF, Priority, Round Robin
+4. Deadlock Conditions: Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait
+5. Banker's Algorithm: Check safe state before allocation
+6. Paging: Fixed-size pages/frames, page table, TLB
+7. Virtual Memory: Demand paging, page replacement, thrashing
+8. Page Replacement: FIFO, LRU, Optimal, Clock
+9. File Allocation: Contiguous, Linked, Indexed
+10. Disk Scheduling: FCFS, SSTF, SCAN, C-SCAN, LOOK
+
+
+================================================================================
+                    END OF INTERVIEW QUESTIONS
+================================================================================

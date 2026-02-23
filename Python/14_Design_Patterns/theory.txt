@@ -1,0 +1,878 @@
+================================================================================
+                    DESIGN PATTERNS IN PYTHON
+================================================================================
+
+Design patterns are reusable solutions to common software design problems.
+They are templates, not code - showing HOW to structure your solution.
+
+
+================================================================================
+                    1. CATEGORIES OF DESIGN PATTERNS
+================================================================================
+
+1. CREATIONAL PATTERNS:
+   - How objects are created
+   - Singleton, Factory, Abstract Factory, Builder, Prototype
+
+2. STRUCTURAL PATTERNS:
+   - How objects are composed
+   - Adapter, Decorator, Facade, Proxy, Composite
+
+3. BEHAVIORAL PATTERNS:
+   - How objects communicate
+   - Strategy, Observer, Command, State, Template Method
+
+
+================================================================================
+                    2. CREATIONAL PATTERNS
+================================================================================
+
+--------------------------------------------------------------------------------
+2.1 SINGLETON PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Ensure only ONE instance of a class exists.
+
+USE CASES:
+- Database connection
+- Configuration manager
+- Logger
+- Cache
+
+
+IMPLEMENTATION 1: Using __new__
+
+class Singleton:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+# Usage
+s1 = Singleton()
+s2 = Singleton()
+print(s1 is s2)  # True - same instance
+
+
+IMPLEMENTATION 2: Using decorator
+
+def singleton(cls):
+    instances = {}
+    def get_instance(*args, **kwargs):
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+    return get_instance
+
+@singleton
+class Database:
+    def __init__(self):
+        self.connection = "Connected"
+
+
+IMPLEMENTATION 3: Using metaclass
+
+class SingletonMeta(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class Logger(metaclass=SingletonMeta):
+    def log(self, message):
+        print(f"LOG: {message}")
+
+
+--------------------------------------------------------------------------------
+2.2 FACTORY PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Create objects without specifying exact class.
+
+USE CASES:
+- Creating different types of documents
+- Database connections for different DBs
+- UI elements for different platforms
+
+
+SIMPLE FACTORY:
+
+class Animal:
+    def speak(self):
+        pass
+
+class Dog(Animal):
+    def speak(self):
+        return "Woof!"
+
+class Cat(Animal):
+    def speak(self):
+        return "Meow!"
+
+class AnimalFactory:
+    @staticmethod
+    def create_animal(animal_type):
+        if animal_type == "dog":
+            return Dog()
+        elif animal_type == "cat":
+            return Cat()
+        else:
+            raise ValueError(f"Unknown animal: {animal_type}")
+
+# Usage
+animal = AnimalFactory.create_animal("dog")
+print(animal.speak())  # Woof!
+
+
+FACTORY METHOD:
+
+from abc import ABC, abstractmethod
+
+class Creator(ABC):
+    @abstractmethod
+    def factory_method(self):
+        pass
+
+    def operation(self):
+        product = self.factory_method()
+        return f"Created: {product.operation()}"
+
+class ConcreteCreatorA(Creator):
+    def factory_method(self):
+        return ProductA()
+
+class ConcreteCreatorB(Creator):
+    def factory_method(self):
+        return ProductB()
+
+
+--------------------------------------------------------------------------------
+2.3 ABSTRACT FACTORY PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Create families of related objects.
+
+USE CASES:
+- Cross-platform UI (Windows/Mac buttons, checkboxes)
+- Database access for different databases
+
+
+from abc import ABC, abstractmethod
+
+# Abstract Products
+class Button(ABC):
+    @abstractmethod
+    def click(self):
+        pass
+
+class Checkbox(ABC):
+    @abstractmethod
+    def check(self):
+        pass
+
+# Concrete Products - Windows
+class WindowsButton(Button):
+    def click(self):
+        return "Windows button clicked"
+
+class WindowsCheckbox(Checkbox):
+    def check(self):
+        return "Windows checkbox checked"
+
+# Concrete Products - Mac
+class MacButton(Button):
+    def click(self):
+        return "Mac button clicked"
+
+class MacCheckbox(Checkbox):
+    def check(self):
+        return "Mac checkbox checked"
+
+# Abstract Factory
+class GUIFactory(ABC):
+    @abstractmethod
+    def create_button(self) -> Button:
+        pass
+
+    @abstractmethod
+    def create_checkbox(self) -> Checkbox:
+        pass
+
+# Concrete Factories
+class WindowsFactory(GUIFactory):
+    def create_button(self):
+        return WindowsButton()
+
+    def create_checkbox(self):
+        return WindowsCheckbox()
+
+class MacFactory(GUIFactory):
+    def create_button(self):
+        return MacButton()
+
+    def create_checkbox(self):
+        return MacCheckbox()
+
+# Client code
+def create_ui(factory: GUIFactory):
+    button = factory.create_button()
+    checkbox = factory.create_checkbox()
+    print(button.click())
+    print(checkbox.check())
+
+# Usage
+create_ui(WindowsFactory())
+create_ui(MacFactory())
+
+
+--------------------------------------------------------------------------------
+2.4 BUILDER PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Construct complex objects step by step.
+
+USE CASES:
+- Building complex configurations
+- Creating documents with many optional parts
+- Constructing SQL queries
+
+
+class Computer:
+    def __init__(self):
+        self.cpu = None
+        self.ram = None
+        self.storage = None
+        self.gpu = None
+
+    def __str__(self):
+        return f"Computer: CPU={self.cpu}, RAM={self.ram}, Storage={self.storage}, GPU={self.gpu}"
+
+class ComputerBuilder:
+    def __init__(self):
+        self.computer = Computer()
+
+    def set_cpu(self, cpu):
+        self.computer.cpu = cpu
+        return self  # Return self for chaining
+
+    def set_ram(self, ram):
+        self.computer.ram = ram
+        return self
+
+    def set_storage(self, storage):
+        self.computer.storage = storage
+        return self
+
+    def set_gpu(self, gpu):
+        self.computer.gpu = gpu
+        return self
+
+    def build(self):
+        return self.computer
+
+# Usage with method chaining
+gaming_pc = (ComputerBuilder()
+    .set_cpu("Intel i9")
+    .set_ram("32GB")
+    .set_storage("1TB SSD")
+    .set_gpu("RTX 4090")
+    .build())
+
+print(gaming_pc)
+
+
+# Director (optional) - predefined configurations
+class ComputerDirector:
+    def __init__(self, builder):
+        self.builder = builder
+
+    def build_gaming_pc(self):
+        return (self.builder
+            .set_cpu("Intel i9")
+            .set_ram("32GB")
+            .set_storage("1TB SSD")
+            .set_gpu("RTX 4090")
+            .build())
+
+    def build_office_pc(self):
+        return (self.builder
+            .set_cpu("Intel i5")
+            .set_ram("8GB")
+            .set_storage("256GB SSD")
+            .build())
+
+
+================================================================================
+                    3. STRUCTURAL PATTERNS
+================================================================================
+
+--------------------------------------------------------------------------------
+3.1 ADAPTER PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Make incompatible interfaces work together.
+
+USE CASES:
+- Integrating legacy code
+- Third-party library integration
+- Converting data formats
+
+
+# Existing interface
+class OldPaymentSystem:
+    def make_payment(self, amount):
+        return f"Old system: Paid ${amount}"
+
+# New interface we want to use
+class NewPaymentGateway:
+    def process_payment(self, dollars, cents):
+        return f"New gateway: Processed ${dollars}.{cents}"
+
+# Adapter
+class PaymentAdapter:
+    def __init__(self, new_gateway):
+        self.gateway = new_gateway
+
+    def make_payment(self, amount):
+        dollars = int(amount)
+        cents = int((amount - dollars) * 100)
+        return self.gateway.process_payment(dollars, cents)
+
+# Usage
+old_system = OldPaymentSystem()
+print(old_system.make_payment(99.99))
+
+new_gateway = NewPaymentGateway()
+adapter = PaymentAdapter(new_gateway)
+print(adapter.make_payment(99.99))  # Same interface as old system
+
+
+--------------------------------------------------------------------------------
+3.2 DECORATOR PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Add behavior to objects dynamically.
+
+USE CASES:
+- Adding features to objects at runtime
+- Logging, caching, authentication wrappers
+- Python's @decorator syntax
+
+
+from abc import ABC, abstractmethod
+
+# Component interface
+class Coffee(ABC):
+    @abstractmethod
+    def cost(self):
+        pass
+
+    @abstractmethod
+    def description(self):
+        pass
+
+# Concrete component
+class SimpleCoffee(Coffee):
+    def cost(self):
+        return 2.0
+
+    def description(self):
+        return "Simple coffee"
+
+# Decorator base
+class CoffeeDecorator(Coffee):
+    def __init__(self, coffee):
+        self._coffee = coffee
+
+    def cost(self):
+        return self._coffee.cost()
+
+    def description(self):
+        return self._coffee.description()
+
+# Concrete decorators
+class MilkDecorator(CoffeeDecorator):
+    def cost(self):
+        return self._coffee.cost() + 0.5
+
+    def description(self):
+        return self._coffee.description() + ", milk"
+
+class SugarDecorator(CoffeeDecorator):
+    def cost(self):
+        return self._coffee.cost() + 0.2
+
+    def description(self):
+        return self._coffee.description() + ", sugar"
+
+# Usage - can stack decorators
+coffee = SimpleCoffee()
+coffee = MilkDecorator(coffee)
+coffee = SugarDecorator(coffee)
+
+print(coffee.description())  # Simple coffee, milk, sugar
+print(f"Cost: ${coffee.cost()}")  # Cost: $2.7
+
+
+# Python function decorator pattern
+def logger(func):
+    def wrapper(*args, **kwargs):
+        print(f"Calling {func.__name__}")
+        result = func(*args, **kwargs)
+        print(f"Finished {func.__name__}")
+        return result
+    return wrapper
+
+@logger
+def add(a, b):
+    return a + b
+
+
+--------------------------------------------------------------------------------
+3.3 FACADE PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Provide simple interface to complex subsystem.
+
+USE CASES:
+- Simplifying complex libraries
+- Creating unified API
+- Hiding system complexity
+
+
+# Complex subsystem classes
+class CPU:
+    def freeze(self):
+        print("CPU: Freezing")
+
+    def jump(self, position):
+        print(f"CPU: Jumping to {position}")
+
+    def execute(self):
+        print("CPU: Executing")
+
+class Memory:
+    def load(self, position, data):
+        print(f"Memory: Loading {data} at {position}")
+
+class HardDrive:
+    def read(self, lba, size):
+        return f"Data from sector {lba}"
+
+# Facade
+class ComputerFacade:
+    def __init__(self):
+        self.cpu = CPU()
+        self.memory = Memory()
+        self.hard_drive = HardDrive()
+
+    def start(self):
+        """Simple interface to start computer"""
+        self.cpu.freeze()
+        self.memory.load(0, self.hard_drive.read(0, 1024))
+        self.cpu.jump(0)
+        self.cpu.execute()
+        print("Computer started!")
+
+# Usage - simple!
+computer = ComputerFacade()
+computer.start()
+
+
+--------------------------------------------------------------------------------
+3.4 PROXY PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Control access to an object.
+
+USE CASES:
+- Lazy initialization
+- Access control
+- Logging/monitoring
+- Caching
+
+
+from abc import ABC, abstractmethod
+
+class Image(ABC):
+    @abstractmethod
+    def display(self):
+        pass
+
+class RealImage(Image):
+    def __init__(self, filename):
+        self.filename = filename
+        self._load_from_disk()
+
+    def _load_from_disk(self):
+        print(f"Loading {self.filename} from disk...")
+
+    def display(self):
+        print(f"Displaying {self.filename}")
+
+# Proxy - lazy loading
+class ImageProxy(Image):
+    def __init__(self, filename):
+        self.filename = filename
+        self._real_image = None
+
+    def display(self):
+        if self._real_image is None:
+            self._real_image = RealImage(self.filename)
+        self._real_image.display()
+
+# Usage
+image = ImageProxy("photo.jpg")  # No loading yet
+print("Image proxy created")
+image.display()  # Loads only when needed
+
+
+================================================================================
+                    4. BEHAVIORAL PATTERNS
+================================================================================
+
+--------------------------------------------------------------------------------
+4.1 STRATEGY PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Define family of algorithms, make them interchangeable.
+
+USE CASES:
+- Different sorting algorithms
+- Payment methods
+- Compression algorithms
+- Pricing strategies
+
+
+from abc import ABC, abstractmethod
+
+# Strategy interface
+class PaymentStrategy(ABC):
+    @abstractmethod
+    def pay(self, amount):
+        pass
+
+# Concrete strategies
+class CreditCardPayment(PaymentStrategy):
+    def __init__(self, card_number):
+        self.card_number = card_number
+
+    def pay(self, amount):
+        return f"Paid ${amount} using Credit Card {self.card_number[-4:]}"
+
+class PayPalPayment(PaymentStrategy):
+    def __init__(self, email):
+        self.email = email
+
+    def pay(self, amount):
+        return f"Paid ${amount} using PayPal ({self.email})"
+
+class CryptoPayment(PaymentStrategy):
+    def __init__(self, wallet):
+        self.wallet = wallet
+
+    def pay(self, amount):
+        return f"Paid ${amount} using Crypto wallet"
+
+# Context
+class ShoppingCart:
+    def __init__(self):
+        self.items = []
+        self.payment_strategy = None
+
+    def add_item(self, item, price):
+        self.items.append((item, price))
+
+    def set_payment_strategy(self, strategy):
+        self.payment_strategy = strategy
+
+    def checkout(self):
+        total = sum(price for _, price in self.items)
+        return self.payment_strategy.pay(total)
+
+# Usage
+cart = ShoppingCart()
+cart.add_item("Laptop", 999)
+cart.add_item("Mouse", 29)
+
+cart.set_payment_strategy(CreditCardPayment("1234-5678-9012-3456"))
+print(cart.checkout())
+
+cart.set_payment_strategy(PayPalPayment("user@email.com"))
+print(cart.checkout())
+
+
+--------------------------------------------------------------------------------
+4.2 OBSERVER PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: One-to-many dependency - when one changes, all dependents notified.
+
+USE CASES:
+- Event handling systems
+- Newsletter subscriptions
+- Stock price monitoring
+- MVC architecture
+
+
+from abc import ABC, abstractmethod
+
+# Observer interface
+class Observer(ABC):
+    @abstractmethod
+    def update(self, message):
+        pass
+
+# Subject (Observable)
+class Subject:
+    def __init__(self):
+        self._observers = []
+
+    def attach(self, observer):
+        self._observers.append(observer)
+
+    def detach(self, observer):
+        self._observers.remove(observer)
+
+    def notify(self, message):
+        for observer in self._observers:
+            observer.update(message)
+
+# Concrete Subject
+class NewsAgency(Subject):
+    def __init__(self):
+        super().__init__()
+        self._news = None
+
+    def publish_news(self, news):
+        self._news = news
+        self.notify(news)
+
+# Concrete Observers
+class EmailSubscriber(Observer):
+    def __init__(self, email):
+        self.email = email
+
+    def update(self, message):
+        print(f"Email to {self.email}: {message}")
+
+class SMSSubscriber(Observer):
+    def __init__(self, phone):
+        self.phone = phone
+
+    def update(self, message):
+        print(f"SMS to {self.phone}: {message}")
+
+# Usage
+agency = NewsAgency()
+
+email_sub = EmailSubscriber("user@example.com")
+sms_sub = SMSSubscriber("123-456-7890")
+
+agency.attach(email_sub)
+agency.attach(sms_sub)
+
+agency.publish_news("Breaking: Design patterns are awesome!")
+# Both subscribers get notified
+
+
+--------------------------------------------------------------------------------
+4.3 COMMAND PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Encapsulate request as object.
+
+USE CASES:
+- Undo/Redo functionality
+- Transaction systems
+- Task queuing
+- Macro recording
+
+
+from abc import ABC, abstractmethod
+
+# Command interface
+class Command(ABC):
+    @abstractmethod
+    def execute(self):
+        pass
+
+    @abstractmethod
+    def undo(self):
+        pass
+
+# Receiver
+class TextEditor:
+    def __init__(self):
+        self.text = ""
+
+    def write(self, text):
+        self.text += text
+
+    def delete(self, length):
+        deleted = self.text[-length:]
+        self.text = self.text[:-length]
+        return deleted
+
+# Concrete Commands
+class WriteCommand(Command):
+    def __init__(self, editor, text):
+        self.editor = editor
+        self.text = text
+
+    def execute(self):
+        self.editor.write(self.text)
+
+    def undo(self):
+        self.editor.delete(len(self.text))
+
+# Invoker with history
+class CommandInvoker:
+    def __init__(self):
+        self.history = []
+
+    def execute(self, command):
+        command.execute()
+        self.history.append(command)
+
+    def undo(self):
+        if self.history:
+            command = self.history.pop()
+            command.undo()
+
+# Usage
+editor = TextEditor()
+invoker = CommandInvoker()
+
+invoker.execute(WriteCommand(editor, "Hello "))
+invoker.execute(WriteCommand(editor, "World!"))
+print(editor.text)  # Hello World!
+
+invoker.undo()
+print(editor.text)  # Hello
+
+
+--------------------------------------------------------------------------------
+4.4 STATE PATTERN
+--------------------------------------------------------------------------------
+
+PURPOSE: Object behavior changes based on internal state.
+
+USE CASES:
+- Vending machines
+- Document workflows
+- Game character states
+- Order processing
+
+
+from abc import ABC, abstractmethod
+
+# State interface
+class OrderState(ABC):
+    @abstractmethod
+    def next(self, order):
+        pass
+
+    @abstractmethod
+    def prev(self, order):
+        pass
+
+    @abstractmethod
+    def status(self):
+        pass
+
+# Concrete States
+class NewOrder(OrderState):
+    def next(self, order):
+        order.state = PaidOrder()
+
+    def prev(self, order):
+        print("Already at initial state")
+
+    def status(self):
+        return "New Order"
+
+class PaidOrder(OrderState):
+    def next(self, order):
+        order.state = ShippedOrder()
+
+    def prev(self, order):
+        order.state = NewOrder()
+
+    def status(self):
+        return "Paid"
+
+class ShippedOrder(OrderState):
+    def next(self, order):
+        order.state = DeliveredOrder()
+
+    def prev(self, order):
+        order.state = PaidOrder()
+
+    def status(self):
+        return "Shipped"
+
+class DeliveredOrder(OrderState):
+    def next(self, order):
+        print("Order already delivered")
+
+    def prev(self, order):
+        order.state = ShippedOrder()
+
+    def status(self):
+        return "Delivered"
+
+# Context
+class Order:
+    def __init__(self):
+        self.state = NewOrder()
+
+    def next_state(self):
+        self.state.next(self)
+
+    def prev_state(self):
+        self.state.prev(self)
+
+    def get_status(self):
+        return self.state.status()
+
+# Usage
+order = Order()
+print(order.get_status())  # New Order
+
+order.next_state()
+print(order.get_status())  # Paid
+
+order.next_state()
+print(order.get_status())  # Shipped
+
+
+================================================================================
+                    5. WHEN TO USE WHICH PATTERN
+================================================================================
+
++-------------------+----------------------------------------+
+| Pattern           | Use When                               |
++-------------------+----------------------------------------+
+| Singleton         | Need exactly one instance              |
+| Factory           | Object creation should be centralized  |
+| Abstract Factory  | Creating families of related objects   |
+| Builder           | Complex object with many options       |
+| Adapter           | Need to use incompatible interface     |
+| Decorator         | Add behavior without modifying class   |
+| Facade            | Simplify complex subsystem             |
+| Proxy             | Control access to object               |
+| Strategy          | Multiple algorithms, choose at runtime |
+| Observer          | One-to-many event notification         |
+| Command           | Encapsulate requests, undo/redo        |
+| State             | Behavior depends on state              |
++-------------------+----------------------------------------+
+
+
+================================================================================
+                    END OF DESIGN PATTERNS
+================================================================================

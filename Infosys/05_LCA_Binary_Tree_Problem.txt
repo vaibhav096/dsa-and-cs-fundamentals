@@ -1,0 +1,56 @@
+Problem 5: Lowest Common Ancestor (LCA) in a Binary Tree
+Difficulty: Medium
+Topic: Tree / Recursion
+
+-----------------------------------------------------------------------
+PROBLEM STATEMENT:
+Given a binary tree, find the lowest common ancestor (LCA) of two given nodes `p` and `q`.
+
+According to the definition of LCA on Wikipedia: "The lowest common ancestor is defined between two nodes p and q as the lowest node in T that has both p and q as descendants (where we allow **a node to be a descendant of itself**)."
+
+Example 1:
+Input: root = [3,5,1,6,2,0,8], p = 5, q = 1
+Output: 3
+Explanation: The LCA of 5 and 1 is 3.
+
+Example 2:
+Input: root = [3,5,1,6,2,0,8], p = 5, q = 4 (Assume 4 is child of 2)
+Output: 5
+Explanation: The LCA of 5 and 4 is 5, since a node can be a descendant of itself.
+
+-----------------------------------------------------------------------
+THINKING PROCESS & APPROACH:
+
+1.  **Recursive Traversal**:
+    We need to search for `p` and `q` in the tree.
+    Since it's a binary tree (not BST), we can't discard half the tree. We must check both left and right children.
+
+2.  **Base Cases for Recursion**:
+    -   If `root` is `None`, return `None` (Found nothing).
+    -   If `root` is `p` or `root` is `q`, return `root` (Found one target!).
+
+3.  **Recursive Step**:
+    -   Look in Left Subtree: `left_result = LCA(root.left, p, q)`
+    -   Look in Right Subtree: `right_result = LCA(root.right, p, q)`
+
+4.  **Decision Logic (Post-Order)**:
+    -   If `left_result` is not None AND `right_result` is not None:
+        This means we found `p` in one side and `q` in the other.
+        Therefore, the current `root` is the split point. **`root` is the LCA**.
+    
+    -   If only one side returns a node (e.g., left is not None, right is None):
+        This means both `p` and `q` are in that subtree (or one is found and the other is below it).
+        Return the non-None result (`left_result`).
+        
+    -   If both are None:
+        Return `None`.
+
+5.  **Complexity**:
+    -   Time: O(N) in worst case (visit every node).
+    -   Space: O(H) for recursion stack height.
+
+-----------------------------------------------------------------------
+IMPORTANT CONCEPT:
+This is one of the most elegant recursive solutions. The key is understanding how the return values "bubble up". 
+If you get non-null from left and right, YOU are the answer. 
+If you get non-null from only one side, pass it up.

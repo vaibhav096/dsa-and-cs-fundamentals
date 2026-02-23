@@ -1,0 +1,350 @@
+================================================================================
+                       PYTHON EXCEPTION HANDLING
+================================================================================
+
+Exceptions are errors that occur during program execution. Exception handling
+allows programs to handle errors gracefully instead of crashing.
+
+
+1. WHAT IS AN EXCEPTION?
+================================================================================
+
+Exception: An error that occurs during execution of program.
+           Program stops if not handled.
+
+Examples:
+    print(10/0)           # ZeroDivisionError
+    int("hello")          # ValueError
+    lst = [1,2]; lst[5]   # IndexError
+    dct = {}; dct['key']  # KeyError
+
+
+2. TRY-EXCEPT BLOCK
+================================================================================
+
+Basic Syntax:
+    try:
+        # Code that might raise exception
+    except ExceptionType:
+        # Code to handle exception
+
+Example:
+    try:
+        x = 10 / 0
+    except ZeroDivisionError:
+        print("Cannot divide by zero!")
+
+Multiple Except Blocks:
+    try:
+        x = int(input("Enter number: "))
+        result = 10 / x
+    except ValueError:
+        print("Invalid input! Please enter a number.")
+    except ZeroDivisionError:
+        print("Cannot divide by zero!")
+
+Catch Multiple Exceptions:
+    try:
+        # code
+    except (ValueError, TypeError):
+        print("Value or Type error occurred")
+
+
+3. GENERIC EXCEPTION HANDLING
+================================================================================
+
+Catch any exception:
+
+    try:
+        # code
+    except Exception as e:
+        print(f"Error: {e}")
+        print(f"Error type: {type(e).__name__}")
+
+Catch literally everything (including KeyboardInterrupt):
+    try:
+        # code
+    except BaseException as e:
+        print(f"Error: {e}")
+
+Note: Avoid catching generic exceptions unless necessary.
+      Be specific about what exceptions to handle.
+
+
+4. ELSE CLAUSE
+================================================================================
+
+else block executes if NO exception occurred.
+
+    try:
+        x = 10 / 2
+    except ZeroDivisionError:
+        print("Division error!")
+    else:
+        print(f"Result: {x}")  # Runs because no exception
+
+Use case: Code that should run only if try succeeded.
+
+
+5. FINALLY CLAUSE
+================================================================================
+
+finally block ALWAYS executes, whether exception occurred or not.
+
+    try:
+        file = open("data.txt")
+        # do something
+    except FileNotFoundError:
+        print("File not found!")
+    finally:
+        print("This always runs")
+        # file.close()  # Cleanup code
+
+Use cases:
+- Closing files
+- Closing database connections
+- Releasing locks
+- Cleanup operations
+
+
+6. COMPLETE TRY STRUCTURE
+================================================================================
+
+    try:
+        # Code that might raise exception
+    except ExceptionType1:
+        # Handle ExceptionType1
+    except ExceptionType2:
+        # Handle ExceptionType2
+    except Exception as e:
+        # Handle any other exception
+    else:
+        # Runs if no exception
+    finally:
+        # Always runs
+
+Order matters:
+- More specific exceptions first
+- Generic Exception last
+- else after all except
+- finally at the end
+
+
+7. RAISE STATEMENT
+================================================================================
+
+Manually raise an exception.
+
+    def validate_age(age):
+        if age < 0:
+            raise ValueError("Age cannot be negative")
+        if age > 150:
+            raise ValueError("Age seems too high")
+        return True
+
+    try:
+        validate_age(-5)
+    except ValueError as e:
+        print(f"Validation error: {e}")
+
+Re-raise exception:
+    try:
+        # some code
+    except ValueError:
+        print("Logging the error...")
+        raise  # Re-raises the same exception
+
+
+8. ASSERT STATEMENT
+================================================================================
+
+Assert checks a condition. Raises AssertionError if False.
+
+    def divide(a, b):
+        assert b != 0, "Divisor cannot be zero"
+        return a / b
+
+    try:
+        divide(10, 0)
+    except AssertionError as e:
+        print(f"Assertion failed: {e}")
+
+Use cases:
+- Debugging
+- Checking assumptions
+- Unit testing
+
+Note: Can be disabled with python -O flag. Don't use for validation!
+
+
+9. CUSTOM EXCEPTIONS
+================================================================================
+
+Create your own exception classes by inheriting from Exception.
+
+    class InvalidAgeError(Exception):
+        """Exception raised for invalid age"""
+        def __init__(self, age, message="Age is invalid"):
+            self.age = age
+            self.message = message
+            super().__init__(self.message)
+
+        def __str__(self):
+            return f"{self.message}: {self.age}"
+
+    def set_age(age):
+        if age < 0:
+            raise InvalidAgeError(age, "Age cannot be negative")
+        if age > 150:
+            raise InvalidAgeError(age, "Age is unrealistic")
+        return age
+
+    try:
+        set_age(-5)
+    except InvalidAgeError as e:
+        print(f"Error: {e}")
+
+
+10. COMMON BUILT-IN EXCEPTIONS
+================================================================================
+
+Exception               Description
+---------               -----------
+SyntaxError             Invalid Python syntax
+IndentationError        Incorrect indentation
+NameError               Undefined variable
+TypeError               Invalid type for operation
+ValueError              Invalid value for operation
+IndexError              List index out of range
+KeyError                Dictionary key not found
+AttributeError          Invalid attribute reference
+ZeroDivisionError       Division by zero
+FileNotFoundError       File not found
+IOError                 Input/output operation failed
+ImportError             Module import failed
+ModuleNotFoundError     Module not found
+MemoryError             Out of memory
+OverflowError           Number too large
+RecursionError          Maximum recursion depth exceeded
+StopIteration           No more items in iterator
+KeyboardInterrupt       User pressed Ctrl+C
+SystemExit              sys.exit() called
+
+
+11. EXCEPTION HIERARCHY
+================================================================================
+
+BaseException
+├── SystemExit
+├── KeyboardInterrupt
+├── GeneratorExit
+└── Exception
+    ├── ArithmeticError
+    │   ├── ZeroDivisionError
+    │   ├── OverflowError
+    │   └── FloatingPointError
+    ├── LookupError
+    │   ├── IndexError
+    │   └── KeyError
+    ├── ValueError
+    ├── TypeError
+    ├── AttributeError
+    ├── OSError
+    │   ├── FileNotFoundError
+    │   └── PermissionError
+    └── ... (many more)
+
+
+12. BEST PRACTICES
+================================================================================
+
+1. Be specific with exceptions
+   BAD:  except Exception:
+   GOOD: except ValueError:
+
+2. Don't use exceptions for flow control
+   BAD:  Use try-except instead of if-else for normal logic
+   GOOD: Use exceptions only for exceptional cases
+
+3. Don't catch exceptions you can't handle
+
+4. Always include meaningful error messages
+
+5. Use finally for cleanup (or context managers)
+
+6. Don't suppress exceptions silently
+   BAD:  except: pass
+   GOOD: except ValueError: log_error()
+
+7. Create custom exceptions for your application
+
+
+13. CONTEXT MANAGERS (with statement)
+================================================================================
+
+Automatically handles setup and cleanup. Uses __enter__ and __exit__.
+
+File handling:
+    with open("file.txt", "r") as f:
+        content = f.read()
+    # File automatically closed
+
+Multiple resources:
+    with open("in.txt") as fin, open("out.txt", "w") as fout:
+        fout.write(fin.read())
+
+Custom context manager:
+    class Timer:
+        def __enter__(self):
+            import time
+            self.start = time.time()
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            import time
+            print(f"Time elapsed: {time.time() - self.start:.2f}s")
+            return False  # Don't suppress exceptions
+
+    with Timer():
+        # some code
+        pass
+
+
+14. INTERVIEW QUESTIONS
+================================================================================
+
+Q: What is difference between exception and error?
+A: In Python, errors are subset of exceptions. Syntax errors occur
+   before execution, runtime errors occur during execution.
+
+Q: Difference between try-except and if-else?
+A: if-else for expected conditions (control flow)
+   try-except for unexpected errors (exception handling)
+
+Q: What is finally used for?
+A: Code that must execute regardless of exception (cleanup).
+
+Q: Can we have try without except?
+A: Yes, but must have finally: try-finally is valid.
+
+Q: What is difference between raise and raise from?
+A: raise: Raises exception
+   raise from: Raises with explicit cause (exception chaining)
+
+Q: What happens if exception in finally?
+A: It replaces any previous exception.
+
+Q: How to create custom exception?
+A: Create class inheriting from Exception or its subclass.
+
+Q: What is exception chaining?
+A: Linking exceptions using __cause__ (raise from) or
+   __context__ (implicit chaining).
+
+Q: What is assert used for?
+A: Debugging checks. Raises AssertionError if condition False.
+   Can be disabled with -O flag.
+
+================================================================================
+                      END OF EXCEPTION HANDLING
+================================================================================

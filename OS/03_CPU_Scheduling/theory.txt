@@ -1,0 +1,463 @@
+================================================================================
+                    CPU SCHEDULING
+================================================================================
+
+CPU Scheduling is the process of selecting which process runs on CPU
+from the ready queue.
+
+
+================================================================================
+                    1. BASIC CONCEPTS
+================================================================================
+
+WHY CPU SCHEDULING?
+- Maximize CPU utilization
+- Multiple processes share single CPU
+- When one process waits (I/O), another runs
+
+
+CPU-I/O BURST CYCLE:
+Process alternates between:
+- CPU Burst: Executing on CPU
+- I/O Burst: Waiting for I/O
+
+    CPU Burst → I/O Burst → CPU Burst → I/O Burst → ...
+
+
+PROCESS TYPES:
+
+1. CPU-BOUND:
+   - Long CPU bursts, short I/O bursts
+   - Example: Scientific calculations
+
+2. I/O-BOUND:
+   - Short CPU bursts, long I/O bursts
+   - Example: Word processor
+
+
+================================================================================
+                    2. SCHEDULING CRITERIA
+================================================================================
+
+1. CPU UTILIZATION:
+   - Keep CPU as busy as possible
+   - Goal: 40% (light) to 90% (heavy)
+
+2. THROUGHPUT:
+   - Number of processes completed per unit time
+   - Higher is better
+
+3. TURNAROUND TIME:
+   - Total time from submission to completion
+   - TAT = Completion Time - Arrival Time
+   - Lower is better
+
+4. WAITING TIME:
+   - Time spent waiting in ready queue
+   - WT = TAT - Burst Time
+   - Lower is better
+
+5. RESPONSE TIME:
+   - Time from submission to first response
+   - Important for interactive systems
+   - Lower is better
+
+
+================================================================================
+                    3. SCHEDULING TYPES
+================================================================================
+
+1. NON-PREEMPTIVE (Cooperative):
+   - Process runs until it voluntarily releases CPU
+   - Releases on: termination, I/O request
+   - Simple but poor response time
+
+2. PREEMPTIVE:
+   - OS can take CPU from running process
+   - Better response time
+   - Requires synchronization
+   - More complex
+
+
+DISPATCHER:
+Module that gives CPU control to selected process.
+- Context switch
+- Switch to user mode
+- Jump to proper location
+
+Dispatch Latency: Time to stop one process and start another.
+
+
+================================================================================
+                    4. SCHEDULING ALGORITHMS
+================================================================================
+
+--------------------------------------------------------------------------------
+4.1 FIRST-COME, FIRST-SERVED (FCFS)
+--------------------------------------------------------------------------------
+
+- Non-preemptive
+- Process that arrives first gets CPU first
+- Simple FIFO queue
+
+Example:
+Process  Arrival  Burst
+P1       0        24
+P2       1        3
+P3       2        3
+
+Gantt Chart:
+|----P1----|--P2--|--P3--|
+0         24     27     30
+
+Calculations:
+P1: CT=24, TAT=24-0=24, WT=24-24=0
+P2: CT=27, TAT=27-1=26, WT=26-3=23
+P3: CT=30, TAT=30-2=28, WT=28-3=25
+
+Average WT = (0+23+25)/3 = 16
+Average TAT = (24+26+28)/3 = 26
+
+CONVOY EFFECT:
+Short processes wait behind long process.
+Like being behind a slow truck on single-lane road.
+
+Pros: Simple, fair
+Cons: High average waiting time, convoy effect
+
+
+--------------------------------------------------------------------------------
+4.2 SHORTEST JOB FIRST (SJF)
+--------------------------------------------------------------------------------
+
+- Select process with shortest burst time
+- Optimal for average waiting time
+- Two versions: Non-preemptive and Preemptive
+
+NON-PREEMPTIVE SJF:
+
+Example:
+Process  Arrival  Burst
+P1       0        7
+P2       2        4
+P3       4        1
+P4       5        4
+
+At t=0: Only P1 available, run P1
+At t=7: P2, P3, P4 available, shortest is P3
+
+Gantt Chart:
+|----P1----|P3|--P2--|--P4--|
+0          7  8     12     16
+
+Average WT = (0+6+3+7)/4 = 4
+
+
+PREEMPTIVE SJF (Shortest Remaining Time First - SRTF):
+
+Example:
+Process  Arrival  Burst
+P1       0        7
+P2       2        4
+P3       4        1
+P4       5        4
+
+At t=0: P1 starts (remaining=7)
+At t=2: P2 arrives (4<5), preempt P1
+At t=4: P3 arrives (1<2), preempt P2
+At t=5: P3 done, P2 resumes (2), P4 arrives (4)
+At t=7: P2 done, P4 starts (4<5)
+At t=11: P4 done, P1 resumes
+
+Gantt Chart:
+|--P1--|--P2--|P3|--P2--|--P4--|----P1----|
+0      2      4  5      7     11         16
+
+Average WT = (9+1+0+2)/4 = 3
+
+Pros: Optimal average waiting time
+Cons: Starvation of long processes, need to know burst time
+
+
+--------------------------------------------------------------------------------
+4.3 PRIORITY SCHEDULING
+--------------------------------------------------------------------------------
+
+- Each process has priority
+- Higher priority runs first
+- Can be preemptive or non-preemptive
+
+Priority Assignment:
+- Internal: Based on measurable quantities (time, memory)
+- External: Based on importance, user preference
+
+Example (Lower number = Higher priority):
+Process  Arrival  Burst  Priority
+P1       0        10     3
+P2       0        1      1
+P3       0        2      4
+P4       0        1      5
+P5       0        5      2
+
+Order: P2 → P5 → P1 → P3 → P4
+
+Gantt Chart:
+|P2|--P5--|----P1----|--P3--|P4|
+0  1      6         16     18  19
+
+STARVATION (Indefinite Blocking):
+Low priority process may never execute.
+
+AGING:
+Solution to starvation - gradually increase priority of waiting processes.
+
+Pros: Priorities allow important tasks first
+Cons: Starvation possible
+
+
+--------------------------------------------------------------------------------
+4.4 ROUND ROBIN (RR)
+--------------------------------------------------------------------------------
+
+- Preemptive FCFS with time quantum
+- Each process gets small CPU time (quantum)
+- After quantum expires, process preempted
+
+TIME QUANTUM:
+- Too small: Too many context switches
+- Too large: Becomes FCFS
+- Typical: 10-100 milliseconds
+
+Example (Quantum = 4):
+Process  Arrival  Burst
+P1       0        24
+P2       0        3
+P3       0        3
+
+Ready Queue: P1, P2, P3
+
+Gantt Chart:
+|--P1--|--P2--|--P3--|--P1--|--P1--|--P1--|--P1--|--P1--|
+0      4      7     10     14     18     22     26     30
+
+P1: 4 units, preempt, P2 added to end
+P2: 3 units, done
+P3: 3 units, done
+P1: 4 units, preempt... continues
+
+Average WT = ((30-24)+4+7)/3 = 5.67
+
+Pros: Fair, good for time-sharing, no starvation
+Cons: Average WT can be high, many context switches
+
+
+--------------------------------------------------------------------------------
+4.5 MULTILEVEL QUEUE SCHEDULING
+--------------------------------------------------------------------------------
+
+- Ready queue divided into separate queues
+- Each queue has own scheduling algorithm
+- Scheduling between queues (fixed priority or time slice)
+
+Example Queues (High to Low Priority):
+1. System processes
+2. Interactive processes
+3. Batch processes
+
+         ┌─────────────────────┐
+         │  System Processes   │ ← Highest Priority
+         │      (FCFS)         │
+         └─────────────────────┘
+         ┌─────────────────────┐
+         │ Interactive (RR)    │
+         └─────────────────────┘
+         ┌─────────────────────┐
+         │   Batch (FCFS)      │ ← Lowest Priority
+         └─────────────────────┘
+
+Problem: Process stuck in one queue forever.
+
+
+--------------------------------------------------------------------------------
+4.6 MULTILEVEL FEEDBACK QUEUE
+--------------------------------------------------------------------------------
+
+- Process can move between queues
+- Based on CPU burst behavior
+- Aging can be implemented
+
+Parameters:
+- Number of queues
+- Scheduling algorithm for each queue
+- Method to upgrade/demote processes
+- Method to determine initial queue
+
+Example:
+Queue 0: RR with quantum 8
+Queue 1: RR with quantum 16
+Queue 2: FCFS
+
+Rules:
+- New process enters Queue 0
+- If doesn't finish in quantum, move to Queue 1
+- If still doesn't finish, move to Queue 2
+- Aging: Move up after waiting too long
+
+         ┌─────────────────────┐
+         │  Queue 0 (RR q=8)   │ ← New processes
+         └──────────┬──────────┘
+                    ↓ (if not done)
+         ┌─────────────────────┐
+         │  Queue 1 (RR q=16)  │
+         └──────────┬──────────┘
+                    ↓ (if not done)
+         ┌─────────────────────┐
+         │   Queue 2 (FCFS)    │
+         └─────────────────────┘
+
+Most flexible algorithm but complex to tune.
+
+
+================================================================================
+                    5. ALGORITHM COMPARISON
+================================================================================
+
++-------------+------------+----------+-----------+------------+
+| Algorithm   | Preemptive | Starvation| Overhead | Best For   |
++-------------+------------+----------+-----------+------------+
+| FCFS        | No         | No       | Low       | Batch      |
+| SJF         | No         | Yes      | Medium    | Short jobs |
+| SRTF        | Yes        | Yes      | High      | Short jobs |
+| Priority    | Both       | Yes      | Medium    | Real-time  |
+| Round Robin | Yes        | No       | High      | Time-share |
+| MLQ         | Both       | Yes      | Medium    | Mixed      |
+| MLFQ        | Yes        | No       | High      | General    |
++-------------+------------+----------+-----------+------------+
+
+
+================================================================================
+                    6. REAL-TIME SCHEDULING
+================================================================================
+
+For systems with strict timing constraints.
+
+HARD REAL-TIME:
+- Must meet deadlines
+- Missing deadline = system failure
+- Example: Pacemaker, ABS brakes
+
+SOFT REAL-TIME:
+- Deadlines preferred but not critical
+- Missing deadline = degraded performance
+- Example: Video streaming
+
+
+RATE MONOTONIC SCHEDULING (RMS):
+- Static priority based on period
+- Shorter period = higher priority
+- Preemptive
+
+EARLIEST DEADLINE FIRST (EDF):
+- Dynamic priority based on deadline
+- Closest deadline = highest priority
+- Optimal for uniprocessor
+
+
+================================================================================
+                    7. PRACTICE PROBLEMS
+================================================================================
+
+PROBLEM 1:
+Process  Arrival  Burst
+P1       0        5
+P2       1        3
+P3       2        8
+P4       3        6
+
+Calculate average WT and TAT for FCFS, SJF, RR (q=2).
+
+FCFS:
+Gantt: |P1|P2|P3|P4|
+       0  5  8  16  22
+
+TAT: P1=5, P2=7, P3=14, P4=19 → Avg=11.25
+WT:  P1=0, P2=4, P3=6, P4=13 → Avg=5.75
+
+
+SJF (Non-preemptive):
+At t=0: P1 only
+At t=5: P2(3), P3(8), P4(6) → P2 shortest
+
+Gantt: |P1|P2|P4|P3|
+       0  5  8  14  22
+
+TAT: P1=5, P2=7, P3=20, P4=11 → Avg=10.75
+WT:  P1=0, P2=4, P3=12, P4=5 → Avg=5.25
+
+
+RR (q=2):
+Gantt: |P1|P2|P3|P4|P1|P2|P3|P4|P1|P3|P4|P3|
+       0  2  4  6  8 10 11 13 15 16 18 20 22
+
+(Work through ready queue with quantum=2)
+
+
+================================================================================
+                    8. FORMULAS
+================================================================================
+
+Turnaround Time (TAT):
+TAT = Completion Time - Arrival Time
+
+Waiting Time (WT):
+WT = TAT - Burst Time
+OR
+WT = Start Time - Arrival Time (for non-preemptive)
+
+Response Time:
+RT = First Run Time - Arrival Time
+
+CPU Utilization:
+= (Total Burst Time / Total Time) × 100
+
+Throughput:
+= Number of processes / Total Time
+
+
+================================================================================
+                    9. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is CPU scheduling? Why is it needed?
+A: Selecting which process runs on CPU from ready queue.
+   Needed to maximize CPU utilization and share CPU among processes.
+
+Q2: Difference between preemptive and non-preemptive?
+A: Preemptive: OS can take CPU from running process.
+   Non-preemptive: Process runs until it voluntarily releases.
+
+Q3: Which scheduling algorithm is optimal?
+A: SJF (SRTF) gives minimum average waiting time.
+   But requires knowing burst time in advance.
+
+Q4: What is starvation? How to prevent it?
+A: Low priority process never gets CPU.
+   Solution: Aging - increase priority over time.
+
+Q5: What is convoy effect?
+A: Short processes waiting behind long process (FCFS).
+   Increases average waiting time.
+
+Q6: How to choose time quantum for Round Robin?
+A: Too small = too many context switches
+   Too large = becomes FCFS
+   Rule: 80% of CPU bursts should be < quantum
+
+Q7: Difference between MLQ and MLFQ?
+A: MLQ: Fixed queues, process stays in assigned queue.
+   MLFQ: Process can move between queues based on behavior.
+
+
+================================================================================
+                    END OF CPU SCHEDULING
+================================================================================

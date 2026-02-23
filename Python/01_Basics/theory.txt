@@ -1,0 +1,277 @@
+================================================================================
+                              PYTHON BASICS
+================================================================================
+
+1. WHAT IS PYTHON?
+================================================================================
+
+Python is a high-level, interpreted programming language created by Guido van
+Rossum in 1991.
+
+Key Features:
+- Easy to learn and read (clean syntax)
+- Interpreted (no compilation needed)
+- Dynamically typed (no need to declare variable types)
+- Object-oriented and functional programming support
+- Huge library support
+- Cross-platform (runs on Windows, Mac, Linux)
+
+Why Python for Placements?
+- Most commonly asked in interviews
+- Used for DSA, automation, web dev, data science, ML
+- Companies like Google, Amazon, Netflix use Python
+
+
+2. PYTHON INSTALLATION & EXECUTION
+================================================================================
+
+Check Python version:
+    python --version
+    python3 --version
+
+Run Python file:
+    python filename.py
+
+Interactive mode:
+    python
+    >>> print("Hello")
+
+
+3. PRINT STATEMENT
+================================================================================
+
+print() function displays output to the screen.
+
+Syntax: print(value1, value2, ..., sep=' ', end='\n')
+
+Parameters:
+- sep  : Separator between values (default is space)
+- end  : What to print at end (default is newline \n)
+
+Examples:
+    print("Hello World")                    # Hello World
+    print("Hello", "World")                 # Hello World
+    print("Hello", "World", sep="-")        # Hello-World
+    print("Hello", end=" ")
+    print("World")                          # Hello World (same line)
+
+
+4. COMMENTS
+================================================================================
+
+Comments are ignored by Python. Used to explain code.
+
+Single-line comment:
+    # This is a comment
+    x = 5  # This is inline comment
+
+Multi-line comment (using triple quotes):
+    '''
+    This is a
+    multi-line comment
+    '''
+
+    """
+    This also works
+    as multi-line comment
+    """
+
+
+5. VARIABLES
+================================================================================
+
+Variables are containers that store data values.
+
+Rules for variable names:
+- Must start with letter or underscore (_)
+- Cannot start with number
+- Can contain letters, numbers, underscores
+- Case-sensitive (name and Name are different)
+- Cannot use Python keywords (if, for, while, etc.)
+
+Valid names:   name, _name, name1, my_name, myName
+Invalid names: 1name, my-name, my name, for, if
+
+Creating variables (no declaration needed):
+    x = 5           # integer
+    name = "John"   # string
+    pi = 3.14       # float
+
+Multiple assignment:
+    a, b, c = 1, 2, 3
+    x = y = z = 0
+
+
+6. DATA TYPES
+================================================================================
+
+Python has these built-in data types:
+
+NUMERIC TYPES:
+--------------
+int     : Integer numbers (whole numbers)
+          x = 10
+          x = -5
+          x = 0
+
+float   : Decimal numbers
+          x = 3.14
+          x = -2.5
+          x = 1.0
+
+complex : Complex numbers (real + imaginary)
+          x = 3 + 4j
+          x = complex(3, 4)
+
+TEXT TYPE:
+----------
+str     : String (text data)
+          x = "Hello"
+          x = 'Hello'
+          x = """Multi
+          line string"""
+
+BOOLEAN TYPE:
+-------------
+bool    : True or False
+          x = True
+          x = False
+          x = (5 > 3)  # True
+
+SEQUENCE TYPES:
+---------------
+list    : Ordered, mutable collection
+          x = [1, 2, 3]
+          x = ["a", "b", "c"]
+
+tuple   : Ordered, immutable collection
+          x = (1, 2, 3)
+          x = ("a", "b", "c")
+
+range   : Sequence of numbers
+          x = range(5)      # 0, 1, 2, 3, 4
+          x = range(1, 6)   # 1, 2, 3, 4, 5
+
+MAPPING TYPE:
+-------------
+dict    : Key-value pairs
+          x = {"name": "John", "age": 25}
+
+SET TYPES:
+----------
+set       : Unordered, unique elements, mutable
+            x = {1, 2, 3}
+
+frozenset : Unordered, unique elements, immutable
+            x = frozenset({1, 2, 3})
+
+NONE TYPE:
+----------
+NoneType : Represents absence of value
+           x = None
+
+
+7. TYPE CHECKING
+================================================================================
+
+type() : Returns the type of a variable
+
+    x = 5
+    print(type(x))      # <class 'int'>
+
+    y = "Hello"
+    print(type(y))      # <class 'str'>
+
+isinstance() : Checks if variable is of specific type
+
+    x = 5
+    print(isinstance(x, int))    # True
+    print(isinstance(x, str))    # False
+
+
+8. TYPE CONVERSION (Type Casting)
+================================================================================
+
+Implicit Conversion (automatic):
+    x = 5       # int
+    y = 2.5     # float
+    z = x + y   # z becomes float (7.5)
+
+Explicit Conversion (manual):
+
+    int()   : Convert to integer
+              int(3.14)      # 3
+              int("10")      # 10
+              int(True)      # 1
+
+    float() : Convert to float
+              float(5)       # 5.0
+              float("3.14")  # 3.14
+
+    str()   : Convert to string
+              str(10)        # "10"
+              str(3.14)      # "3.14"
+
+    bool()  : Convert to boolean
+              bool(1)        # True
+              bool(0)        # False
+              bool("")       # False
+              bool("Hello")  # True
+
+    list()  : Convert to list
+              list("abc")    # ['a', 'b', 'c']
+              list((1,2,3))  # [1, 2, 3]
+
+Note: Not all conversions are possible
+      int("hello")  # ERROR!
+      int("3.14")   # ERROR! (use float first)
+
+
+9. INPUT
+================================================================================
+
+input() function takes user input (always returns string)
+
+Syntax: input(prompt)
+
+Examples:
+    name = input("Enter your name: ")
+    print("Hello", name)
+
+    # For numeric input, convert the type
+    age = int(input("Enter your age: "))
+    price = float(input("Enter price: "))
+
+
+10. IMPORTANT INTERVIEW POINTS
+================================================================================
+
+Q: Is Python compiled or interpreted?
+A: Python is interpreted. Code is executed line by line by the Python
+   interpreter. However, Python first compiles to bytecode (.pyc) then
+   interprets it.
+
+Q: What is dynamic typing?
+A: Variable type is determined at runtime, not compile time.
+   x = 5      # x is int
+   x = "hi"   # now x is string (no error)
+
+Q: What is the difference between = and ==?
+A: = is assignment operator (assigns value)
+   == is comparison operator (checks equality)
+
+Q: What are mutable and immutable types?
+A: Mutable: Can be changed after creation (list, dict, set)
+   Immutable: Cannot be changed after creation (int, str, tuple)
+
+Q: What is None in Python?
+A: None represents absence of value. It's Python's null.
+   Used to initialize variables with no value.
+
+Q: What is the difference between print() and return?
+A: print() displays output on screen
+   return sends value back from a function
+
+================================================================================
+                              END OF BASICS
+================================================================================

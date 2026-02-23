@@ -1,0 +1,384 @@
+================================================================================
+                    PYTHON INTERVIEW QUESTIONS
+================================================================================
+
+Comprehensive list of Python interview questions for placements.
+
+
+================================================================================
+                    BASIC PYTHON QUESTIONS
+================================================================================
+
+Q1: What is Python? What are its key features?
+A: Python is a high-level, interpreted, dynamically-typed programming language.
+   Key features:
+   - Easy to learn and read (clean syntax)
+   - Interpreted (no compilation)
+   - Dynamically typed
+   - Object-oriented
+   - Large standard library
+   - Cross-platform
+
+Q2: Difference between Python 2 and Python 3?
+A: - Print: print "hello" vs print("hello")
+   - Division: 5/2=2 vs 5/2=2.5
+   - Unicode: ASCII default vs Unicode default
+   - Range: returns list vs returns iterator
+   - Python 2 is deprecated (end of life: 2020)
+
+Q3: What is PEP 8?
+A: Python Enhancement Proposal 8 - style guide for Python code.
+   Guidelines include:
+   - 4 spaces for indentation
+   - Max 79 characters per line
+   - snake_case for functions/variables
+   - CamelCase for classes
+
+Q4: Difference between list and tuple?
+A: List: mutable, [], can be modified
+   Tuple: immutable, (), cannot be modified after creation
+   Tuples are faster and can be used as dictionary keys.
+
+Q5: Difference between list and set?
+A: List: ordered, allows duplicates, mutable, indexed
+   Set: unordered, unique elements, mutable, no indexing
+
+Q6: Difference between dictionary and list?
+A: List: ordered sequence, accessed by index
+   Dict: key-value pairs, accessed by key
+
+Q7: What are mutable and immutable types?
+A: Mutable: Can be changed (list, dict, set)
+   Immutable: Cannot be changed (int, str, tuple, frozenset)
+
+Q8: What is None in Python?
+A: None represents absence of value (like null).
+   It's a singleton object of NoneType.
+
+Q9: Difference between == and is?
+A: == compares values (equality)
+   is compares identity (same object in memory)
+
+Q10: Difference between = and ==?
+A: = is assignment operator (assigns value)
+   == is comparison operator (checks equality)
+
+
+================================================================================
+                    DATA TYPES & STRUCTURES
+================================================================================
+
+Q11: How to check variable type?
+A: type(variable) returns the type
+   isinstance(variable, type) checks specific type
+
+Q12: How to convert types?
+A: int(), float(), str(), list(), tuple(), set(), dict()
+
+Q13: What is string interning?
+A: Python caches small strings/integers, so identical values
+   may share same memory location for efficiency.
+
+Q14: How to reverse a string?
+A: s[::-1] or ''.join(reversed(s))
+
+Q15: How to check if string is palindrome?
+A: s == s[::-1]
+
+Q16: How to remove duplicates from list?
+A: list(set(lst)) - but loses order
+   list(dict.fromkeys(lst)) - preserves order
+
+Q17: What can be dictionary keys?
+A: Only immutable types: int, str, tuple, frozenset
+   NOT: list, set, dict
+
+Q18: How to merge two dictionaries?
+A: d1.update(d2) or {**d1, **d2} or d1 | d2 (Python 3.9+)
+
+Q19: Difference between append() and extend()?
+A: append() adds one element
+   extend() adds all elements from iterable
+
+Q20: What is list comprehension?
+A: Concise way to create lists: [x**2 for x in range(5)]
+
+
+================================================================================
+                    FUNCTIONS
+================================================================================
+
+Q21: Difference between parameters and arguments?
+A: Parameters are in function definition
+   Arguments are values passed when calling
+
+Q22: What is *args and **kwargs?
+A: *args: tuple of extra positional arguments
+   **kwargs: dict of extra keyword arguments
+
+Q23: What is the default return value?
+A: None, if no return statement
+
+Q24: What is a lambda function?
+A: Anonymous function: lambda args: expression
+
+Q25: Difference between map() and filter()?
+A: map() transforms each element
+   filter() selects elements based on condition
+
+Q26: What is recursion?
+A: Function calling itself. Must have base case.
+
+Q27: What is a closure?
+A: Function that remembers variables from enclosing scope.
+
+Q28: What is a decorator?
+A: Function that modifies another function's behavior.
+   Uses @decorator syntax.
+
+Q29: Difference between global and nonlocal?
+A: global refers to module-level variables
+   nonlocal refers to enclosing function's variables
+
+
+================================================================================
+                    OBJECT-ORIENTED PROGRAMMING
+================================================================================
+
+Q30: What is OOP?
+A: Programming paradigm based on objects with data (attributes)
+   and code (methods). Four pillars: Encapsulation, Inheritance,
+   Polymorphism, Abstraction.
+
+Q31: What is a class and object?
+A: Class is blueprint/template
+   Object is instance of class
+
+Q32: What is self?
+A: Reference to current instance, used to access instance
+   attributes and methods.
+
+Q33: What is __init__?
+A: Constructor method, called when object is created.
+
+Q34: Class vs instance attributes?
+A: Class attributes shared by all instances
+   Instance attributes unique to each instance
+
+Q35: What is encapsulation?
+A: Bundling data and methods, restricting direct access.
+   Achieved using private attributes (__attr).
+
+Q36: What is inheritance?
+A: Creating new class from existing class.
+   Child inherits parent's attributes and methods.
+
+Q37: What is polymorphism?
+A: Same interface, different implementations.
+   Method overriding, duck typing, operator overloading.
+
+Q38: What is abstraction?
+A: Hiding complex implementation, showing only necessary interface.
+   Achieved using abstract base classes (ABC).
+
+Q39: What is super()?
+A: Function to call parent class methods.
+
+Q40: What are dunder methods?
+A: Special methods with double underscores (__method__).
+   Define behavior for built-in operations.
+
+
+================================================================================
+                    EXCEPTION HANDLING
+================================================================================
+
+Q41: What is exception handling?
+A: Mechanism to handle runtime errors gracefully using
+   try-except-finally blocks.
+
+Q42: Difference between exception and error?
+A: Errors are subset of exceptions in Python.
+   Syntax errors occur before execution,
+   Runtime errors occur during execution.
+
+Q43: What is finally used for?
+A: Code that must execute regardless of exception (cleanup).
+
+Q44: Can we have try without except?
+A: Yes, but must have finally: try-finally is valid.
+
+Q45: How to create custom exception?
+A: Create class inheriting from Exception.
+
+
+================================================================================
+                    FILE HANDLING
+================================================================================
+
+Q46: Difference between r, w, a modes?
+A: r = read (must exist)
+   w = write (creates/truncates)
+   a = append (creates/appends)
+
+Q47: Why use 'with' statement?
+A: Automatically closes file, even if exception occurs.
+
+Q48: How to read large files efficiently?
+A: Iterate line by line (for line in f:) or read in chunks.
+
+Q49: Difference between read() and readline()?
+A: read() reads entire file (or n chars)
+   readline() reads one line at a time
+
+
+================================================================================
+                    MODULES & PACKAGES
+================================================================================
+
+Q50: Difference between module and package?
+A: Module is single .py file
+   Package is directory with __init__.py
+
+Q51: What is __name__ == "__main__"?
+A: Checks if file is run directly (vs imported).
+
+Q52: Difference between import x and from x import y?
+A: import x: imports entire module, access via x.y
+   from x import y: imports specific item
+
+
+================================================================================
+                    ADVANCED TOPICS
+================================================================================
+
+Q53: What is a generator?
+A: Function using yield that returns iterator.
+   Memory efficient, generates values on demand.
+
+Q54: Generator vs iterator?
+A: Generator is simpler way to create iterators.
+   Uses yield, automatically handles __iter__ and __next__.
+
+Q55: What is the GIL?
+A: Global Interpreter Lock - mutex that allows only one thread
+   to execute Python bytecode at a time. Limits true parallelism.
+
+Q56: Difference between multiprocessing and multithreading?
+A: Multithreading: shares memory, limited by GIL
+   Multiprocessing: separate memory, true parallelism
+
+Q57: What is a context manager?
+A: Object managing setup/cleanup with 'with' statement.
+   Implements __enter__ and __exit__.
+
+Q58: What is the walrus operator?
+A: := operator for assignment expressions.
+   Assigns and returns value in one expression.
+
+
+================================================================================
+                    MEMORY & PERFORMANCE
+================================================================================
+
+Q59: How does Python manage memory?
+A: Private heap managed by Python memory manager.
+   Reference counting and garbage collection.
+
+Q60: What is garbage collection?
+A: Automatic memory management. Python uses reference counting
+   and generational garbage collector.
+
+Q61: What is reference counting?
+A: Each object has count of references to it.
+   When count reaches 0, memory is freed.
+
+Q62: How to improve Python performance?
+A: - Use built-in functions
+   - Use list comprehensions
+   - Use generators for large data
+   - Use appropriate data structures
+   - Use numpy for numerical operations
+   - Profile code to find bottlenecks
+
+
+================================================================================
+                    CODING PROBLEMS
+================================================================================
+
+Q63: Swap two numbers without temp variable?
+A: a, b = b, a
+   or using XOR: a = a ^ b; b = a ^ b; a = a ^ b
+
+Q64: Check if number is prime?
+A: def is_prime(n):
+       if n < 2: return False
+       for i in range(2, int(n**0.5) + 1):
+           if n % i == 0: return False
+       return True
+
+Q65: Fibonacci series?
+A: def fib(n):
+       a, b = 0, 1
+       for _ in range(n):
+           yield a
+           a, b = b, a + b
+
+Q66: Factorial?
+A: def factorial(n):
+       if n <= 1: return 1
+       return n * factorial(n - 1)
+
+Q67: Find second largest in list?
+A: sorted(set(lst))[-2]
+   or iterate through list tracking largest and second
+
+Q68: Two sum problem?
+A: def two_sum(nums, target):
+       seen = {}
+       for i, num in enumerate(nums):
+           if target - num in seen:
+               return [seen[target - num], i]
+           seen[num] = i
+
+Q69: Reverse linked list?
+A: def reverse(head):
+       prev = None
+       while head:
+           next_node = head.next
+           head.next = prev
+           prev = head
+           head = next_node
+       return prev
+
+Q70: Check balanced parentheses?
+A: def is_balanced(s):
+       stack = []
+       pairs = {')': '(', ']': '[', '}': '{'}
+       for char in s:
+           if char in '([{':
+               stack.append(char)
+           elif char in ')]}':
+               if not stack or stack.pop() != pairs[char]:
+                   return False
+       return len(stack) == 0
+
+
+================================================================================
+                    QUICK TIPS FOR INTERVIEWS
+================================================================================
+
+1. Always clarify requirements before coding
+2. Think out loud - explain your approach
+3. Start with brute force, then optimize
+4. Consider edge cases (empty input, negative numbers, etc.)
+5. Test your code with examples
+6. Know time and space complexity
+7. Practice coding without IDE assistance
+8. Be familiar with common data structures and algorithms
+9. Know Python-specific features (list comprehension, generators)
+10. Be prepared to discuss trade-offs
+
+================================================================================
+                 END OF INTERVIEW QUESTIONS
+================================================================================

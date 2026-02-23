@@ -1,0 +1,333 @@
+================================================================================
+                              PYTHON STRINGS
+================================================================================
+
+Strings are sequences of characters enclosed in quotes.
+
+
+1. STRING CREATION
+================================================================================
+
+Different ways to create strings:
+
+    # Single quotes
+    str1 = 'Hello'
+
+    # Double quotes
+    str2 = "Hello"
+
+    # Triple quotes (multi-line)
+    str3 = '''This is
+    a multi-line
+    string'''
+
+    str4 = """This also
+    works"""
+
+    # Empty string
+    empty = ""
+    empty = ''
+
+Single vs Double quotes:
+- Both are same in Python
+- Use double when string contains single quote: "It's Python"
+- Use single when string contains double quote: 'He said "Hi"'
+
+
+2. STRING INDEXING
+================================================================================
+
+Each character has an index (position).
+
+    String:  P  y  t  h  o  n
+    Index:   0  1  2  3  4  5
+    Neg:    -6 -5 -4 -3 -2 -1
+
+Examples:
+    s = "Python"
+    s[0]      # 'P' (first character)
+    s[5]      # 'n' (last character)
+    s[-1]     # 'n' (last character using negative)
+    s[-6]     # 'P' (first character using negative)
+
+Note: Strings are immutable, cannot change individual characters.
+      s[0] = 'J'  # ERROR!
+
+
+3. STRING SLICING
+================================================================================
+
+Extract a portion of string.
+
+Syntax: string[start:stop:step]
+- start: Beginning index (inclusive, default 0)
+- stop:  Ending index (exclusive, default length)
+- step:  Step size (default 1)
+
+Examples:
+    s = "Python"
+
+    s[0:3]    # 'Pyt' (index 0, 1, 2)
+    s[2:5]    # 'tho' (index 2, 3, 4)
+    s[:3]     # 'Pyt' (start to index 2)
+    s[3:]     # 'hon' (index 3 to end)
+    s[:]      # 'Python' (copy of string)
+    s[::2]    # 'Pto' (every 2nd character)
+    s[::-1]   # 'nohtyP' (reverse string!)
+    s[1:5:2]  # 'yh' (index 1, 3)
+
+
+4. STRING OPERATORS
+================================================================================
+
+Concatenation (+):
+    "Hello" + " " + "World"   # "Hello World"
+
+Repetition (*):
+    "Hi" * 3                  # "HiHiHi"
+
+Membership (in, not in):
+    "Py" in "Python"          # True
+    "java" not in "Python"    # True
+
+Comparison:
+    "apple" < "banana"        # True (alphabetical)
+    "Apple" < "apple"         # True (uppercase < lowercase)
+
+
+5. STRING METHODS
+================================================================================
+
+CASE METHODS:
+-------------
+upper()      : Converts to uppercase
+               "hello".upper()         # "HELLO"
+
+lower()      : Converts to lowercase
+               "HELLO".lower()         # "hello"
+
+capitalize() : First character uppercase, rest lowercase
+               "hello world".capitalize()  # "Hello world"
+
+title()      : First character of each word uppercase
+               "hello world".title()       # "Hello World"
+
+swapcase()   : Swaps case of each character
+               "Hello".swapcase()          # "hELLO"
+
+casefold()   : Aggressive lowercase (for case-insensitive comparisons)
+               "HELLO".casefold()          # "hello"
+
+
+SEARCH METHODS:
+---------------
+find(sub)    : Returns index of first occurrence, -1 if not found
+               "Hello".find("l")           # 2
+               "Hello".find("x")           # -1
+
+rfind(sub)   : Returns index of last occurrence
+               "Hello".rfind("l")          # 3
+
+index(sub)   : Like find(), but raises ValueError if not found
+               "Hello".index("l")          # 2
+
+count(sub)   : Counts occurrences of substring
+               "Hello".count("l")          # 2
+
+startswith() : Checks if string starts with substring
+               "Hello".startswith("He")    # True
+
+endswith()   : Checks if string ends with substring
+               "Hello".endswith("lo")      # True
+
+
+CHECK METHODS (return boolean):
+-------------------------------
+isalpha()    : True if all alphabetic
+               "Hello".isalpha()           # True
+               "Hello123".isalpha()        # False
+
+isdigit()    : True if all digits
+               "123".isdigit()             # True
+
+isalnum()    : True if alphanumeric (letters or numbers)
+               "Hello123".isalnum()        # True
+
+isspace()    : True if all whitespace
+               "   ".isspace()             # True
+
+isupper()    : True if all uppercase
+               "HELLO".isupper()           # True
+
+islower()    : True if all lowercase
+               "hello".islower()           # True
+
+isnumeric()  : True if all numeric characters
+               "123".isnumeric()           # True
+
+
+MODIFICATION METHODS:
+---------------------
+replace(old, new)   : Replace occurrences
+                      "Hello".replace("l", "x")    # "Hexxo"
+                      "Hello".replace("l", "x", 1) # "Hexlo" (only first)
+
+strip()             : Remove leading/trailing whitespace
+                      "  Hello  ".strip()          # "Hello"
+
+lstrip()            : Remove leading whitespace
+                      "  Hello  ".lstrip()         # "Hello  "
+
+rstrip()            : Remove trailing whitespace
+                      "  Hello  ".rstrip()         # "  Hello"
+
+center(width)       : Center string in given width
+                      "Hi".center(10)              # "    Hi    "
+
+ljust(width)        : Left justify
+                      "Hi".ljust(10)               # "Hi        "
+
+rjust(width)        : Right justify
+                      "Hi".rjust(10)               # "        Hi"
+
+zfill(width)        : Pad with zeros on left
+                      "42".zfill(5)                # "00042"
+
+
+SPLIT AND JOIN:
+---------------
+split()             : Split string into list
+                      "a,b,c".split(",")           # ['a', 'b', 'c']
+                      "hello world".split()        # ['hello', 'world']
+                      "a,b,c".split(",", 1)        # ['a', 'b,c'] (max 1 split)
+
+rsplit()            : Split from right
+                      "a,b,c".rsplit(",", 1)       # ['a,b', 'c']
+
+join()              : Join list into string
+                      ",".join(['a', 'b', 'c'])    # "a,b,c"
+                      " ".join(['Hello', 'World']) # "Hello World"
+
+splitlines()        : Split on newlines
+                      "a\nb\nc".splitlines()       # ['a', 'b', 'c']
+
+partition(sep)      : Split into 3 parts (before, sep, after)
+                      "hello-world".partition("-") # ('hello', '-', 'world')
+
+
+6. STRING FORMATTING
+================================================================================
+
+METHOD 1: f-strings (Python 3.6+) - RECOMMENDED
+-----------------------------------------------
+    name = "Alice"
+    age = 25
+
+    f"Name: {name}, Age: {age}"
+    f"Sum: {5 + 3}"
+    f"Upper: {name.upper()}"
+    f"Float: {3.14159:.2f}"        # "3.14" (2 decimal places)
+    f"Padded: {42:05d}"            # "00042" (5 digits, zero-padded)
+    f"Percent: {0.25:.0%}"         # "25%"
+
+METHOD 2: format() method
+--------------------------
+    "Name: {}, Age: {}".format("Alice", 25)
+    "Name: {0}, Age: {1}".format("Alice", 25)
+    "Name: {name}, Age: {age}".format(name="Alice", age=25)
+
+METHOD 3: % operator (old style)
+---------------------------------
+    "Name: %s, Age: %d" % ("Alice", 25)
+    "Float: %.2f" % 3.14159        # "3.14"
+
+Format Specifiers:
+    {:d}   - Integer
+    {:f}   - Float
+    {:.2f} - Float with 2 decimal places
+    {:s}   - String
+    {:>10} - Right align, width 10
+    {:<10} - Left align, width 10
+    {:^10} - Center, width 10
+    {:,}   - Thousands separator (1,000,000)
+
+
+7. ESCAPE CHARACTERS
+================================================================================
+
+Special characters in strings:
+
+    \n    - Newline
+    \t    - Tab
+    \\    - Backslash
+    \'    - Single quote
+    \"    - Double quote
+    \r    - Carriage return
+    \b    - Backspace
+
+Examples:
+    print("Hello\nWorld")   # Two lines
+    print("Hello\tWorld")   # Tab between
+    print("He said \"Hi\"") # Quotes inside string
+
+Raw strings (ignore escape characters):
+    print(r"C:\new\folder") # Prints as-is
+    # Useful for regex and file paths
+
+
+8. STRING IMMUTABILITY
+================================================================================
+
+Strings cannot be changed after creation.
+
+    s = "Hello"
+    s[0] = "J"      # ERROR! Cannot modify
+
+    # To "change" a string, create a new one:
+    s = "J" + s[1:]  # "Jello"
+
+Why immutable?
+- Security (string values can't be tampered)
+- Memory efficiency (strings can be reused)
+- Thread safety
+- Can be used as dictionary keys
+
+
+9. STRING INTERVIEW QUESTIONS
+================================================================================
+
+Q: How to reverse a string?
+A: s[::-1] or ''.join(reversed(s))
+
+Q: How to check if string is palindrome?
+A: s == s[::-1]
+
+Q: How to count vowels in a string?
+A: sum(1 for c in s.lower() if c in 'aeiou')
+
+Q: How to remove duplicates from string?
+A: ''.join(dict.fromkeys(s)) # Preserves order
+
+Q: How to check if two strings are anagrams?
+A: sorted(s1) == sorted(s2)
+
+Q: Difference between find() and index()?
+A: find() returns -1 if not found
+   index() raises ValueError if not found
+
+Q: How to convert string to list of characters?
+A: list(s)
+
+Q: How to convert list of characters to string?
+A: ''.join(list_of_chars)
+
+Q: What is string interning?
+A: Python caches small strings, so identical strings
+   may share same memory location.
+
+Q: Are strings mutable or immutable?
+A: Immutable. Cannot change characters in place.
+
+================================================================================
+                            END OF STRINGS
+================================================================================

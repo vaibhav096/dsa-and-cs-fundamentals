@@ -1,0 +1,708 @@
+================================================================================
+                    MUST-DO DSA PROBLEMS FOR INTERVIEWS
+================================================================================
+
+Curated list of 100+ essential problems covering all topics.
+Practice these before any technical interview.
+
+
+================================================================================
+                    ARRAYS (15 Problems)
+================================================================================
+
+1. Two Sum
+   - Given array and target, find indices of two numbers that sum to target
+   - Approach: Hash map for O(n) solution
+   - LeetCode #1
+
+2. Best Time to Buy and Sell Stock
+   - Find max profit from single transaction
+   - Approach: Track min price, calculate max profit
+   - LeetCode #121
+
+3. Contains Duplicate
+   - Check if array has duplicates
+   - Approach: Set for O(n) time
+   - LeetCode #217
+
+4. Product of Array Except Self
+   - Return array where each element is product of all others
+   - Approach: Prefix and suffix products
+   - LeetCode #238
+
+5. Maximum Subarray (Kadane's Algorithm)
+   - Find contiguous subarray with largest sum
+   - Approach: Track current and max sum
+   - LeetCode #53
+
+6. Maximum Product Subarray
+   - Find contiguous subarray with largest product
+   - Approach: Track max and min products (handle negatives)
+   - LeetCode #152
+
+7. Find Minimum in Rotated Sorted Array
+   - Find min in rotated sorted array
+   - Approach: Modified binary search
+   - LeetCode #153
+
+8. Search in Rotated Sorted Array
+   - Search target in rotated sorted array
+   - Approach: Modified binary search
+   - LeetCode #33
+
+9. 3Sum
+   - Find all triplets that sum to zero
+   - Approach: Sort + two pointers
+   - LeetCode #15
+
+10. Container With Most Water
+    - Find max area between vertical lines
+    - Approach: Two pointers from ends
+    - LeetCode #11
+
+11. Merge Intervals
+    - Merge overlapping intervals
+    - Approach: Sort by start, merge
+    - LeetCode #56
+
+12. Next Permutation
+    - Find next lexicographically greater permutation
+    - Approach: Find pivot, swap, reverse
+    - LeetCode #31
+
+13. Trapping Rain Water
+    - Calculate water trapped between bars
+    - Approach: Two pointers or stack
+    - LeetCode #42
+
+14. Set Matrix Zeroes
+    - Set entire row/column to 0 if element is 0
+    - Approach: Use first row/column as markers
+    - LeetCode #73
+
+15. Rotate Image
+    - Rotate matrix 90 degrees clockwise
+    - Approach: Transpose then reverse rows
+    - LeetCode #48
+
+
+================================================================================
+                    STRINGS (12 Problems)
+================================================================================
+
+1. Valid Anagram
+   - Check if two strings are anagrams
+   - Approach: Character frequency count
+   - LeetCode #242
+
+2. Valid Palindrome
+   - Check if string is palindrome (alphanumeric only)
+   - Approach: Two pointers
+   - LeetCode #125
+
+3. Longest Substring Without Repeating Characters
+   - Find length of longest unique character substring
+   - Approach: Sliding window with hash map
+   - LeetCode #3
+
+4. Longest Palindromic Substring
+   - Find longest palindrome in string
+   - Approach: Expand around center
+   - LeetCode #5
+
+5. Group Anagrams
+   - Group strings that are anagrams
+   - Approach: Sort as key, hash map grouping
+   - LeetCode #49
+
+6. Valid Parentheses
+   - Check if brackets are valid
+   - Approach: Stack
+   - LeetCode #20
+
+7. Longest Common Prefix
+   - Find longest common prefix of all strings
+   - Approach: Vertical or horizontal scanning
+   - LeetCode #14
+
+8. Minimum Window Substring
+   - Smallest window containing all target characters
+   - Approach: Sliding window with frequency map
+   - LeetCode #76
+
+9. Palindrome Partitioning
+   - Partition string into palindromes
+   - Approach: Backtracking
+   - LeetCode #131
+
+10. Longest Repeating Character Replacement
+    - Longest substring with same letters after k changes
+    - Approach: Sliding window
+    - LeetCode #424
+
+11. String to Integer (atoi)
+    - Implement atoi function
+    - Approach: Handle edge cases carefully
+    - LeetCode #8
+
+12. Decode Ways
+    - Count ways to decode digit string
+    - Approach: DP
+    - LeetCode #91
+
+
+================================================================================
+                    LINKED LISTS (10 Problems)
+================================================================================
+
+1. Reverse Linked List
+   - Reverse singly linked list
+   - Approach: Iterative or recursive
+   - LeetCode #206
+
+2. Detect Cycle in Linked List
+   - Check if linked list has cycle
+   - Approach: Floyd's slow-fast pointers
+   - LeetCode #141
+
+3. Merge Two Sorted Lists
+   - Merge two sorted linked lists
+   - Approach: Two pointers, build new list
+   - LeetCode #21
+
+4. Remove Nth Node From End
+   - Remove nth node from end
+   - Approach: Two pointers with gap n
+   - LeetCode #19
+
+5. Reorder List
+   - Reorder L1->L2->...->Ln to L1->Ln->L2->Ln-1...
+   - Approach: Find middle, reverse second half, merge
+   - LeetCode #143
+
+6. Linked List Cycle II
+   - Find start of cycle
+   - Approach: Floyd's algorithm + restart
+   - LeetCode #142
+
+7. Merge K Sorted Lists
+   - Merge k sorted linked lists
+   - Approach: Min heap or divide and conquer
+   - LeetCode #23
+
+8. Add Two Numbers
+   - Add numbers represented as linked lists
+   - Approach: Simulate addition with carry
+   - LeetCode #2
+
+9. Copy List with Random Pointer
+   - Deep copy list with random pointers
+   - Approach: Hash map or interweaving
+   - LeetCode #138
+
+10. LRU Cache
+    - Implement LRU cache
+    - Approach: HashMap + Doubly Linked List
+    - LeetCode #146
+
+
+================================================================================
+                    STACKS & QUEUES (8 Problems)
+================================================================================
+
+1. Valid Parentheses
+   - Check if brackets are balanced
+   - Approach: Stack
+   - LeetCode #20
+
+2. Min Stack
+   - Stack with O(1) getMin
+   - Approach: Store (value, min) pairs
+   - LeetCode #155
+
+3. Evaluate Reverse Polish Notation
+   - Evaluate postfix expression
+   - Approach: Stack for operands
+   - LeetCode #150
+
+4. Daily Temperatures
+   - Days until warmer temperature
+   - Approach: Monotonic decreasing stack
+   - LeetCode #739
+
+5. Largest Rectangle in Histogram
+   - Find largest rectangle
+   - Approach: Monotonic stack
+   - LeetCode #84
+
+6. Implement Queue using Stacks
+   - Queue operations using two stacks
+   - Approach: Two stacks (push/pop stack)
+   - LeetCode #232
+
+7. Sliding Window Maximum
+   - Max in each sliding window
+   - Approach: Monotonic decreasing deque
+   - LeetCode #239
+
+8. Next Greater Element I
+   - Find next greater element
+   - Approach: Monotonic stack
+   - LeetCode #496
+
+
+================================================================================
+                    TREES (15 Problems)
+================================================================================
+
+1. Maximum Depth of Binary Tree
+   - Find height of tree
+   - Approach: DFS or BFS
+   - LeetCode #104
+
+2. Same Tree
+   - Check if two trees are identical
+   - Approach: DFS comparison
+   - LeetCode #100
+
+3. Invert Binary Tree
+   - Mirror the tree
+   - Approach: Recursive swap
+   - LeetCode #226
+
+4. Binary Tree Level Order Traversal
+   - Level by level traversal
+   - Approach: BFS with queue
+   - LeetCode #102
+
+5. Subtree of Another Tree
+   - Check if tree is subtree
+   - Approach: DFS + tree matching
+   - LeetCode #572
+
+6. Lowest Common Ancestor of BST
+   - Find LCA in BST
+   - Approach: Use BST property
+   - LeetCode #235
+
+7. Validate Binary Search Tree
+   - Check if valid BST
+   - Approach: Inorder traversal or range checking
+   - LeetCode #98
+
+8. Kth Smallest Element in BST
+   - Find kth smallest
+   - Approach: Inorder traversal
+   - LeetCode #230
+
+9. Binary Tree from Preorder and Inorder
+   - Construct tree from traversals
+   - Approach: Recursive partitioning
+   - LeetCode #105
+
+10. Binary Tree Maximum Path Sum
+    - Max sum path in tree
+    - Approach: DFS, track max
+    - LeetCode #124
+
+11. Serialize and Deserialize Binary Tree
+    - Convert tree to string and back
+    - Approach: BFS or DFS with markers
+    - LeetCode #297
+
+12. Diameter of Binary Tree
+    - Longest path between any two nodes
+    - Approach: DFS, track max diameter
+    - LeetCode #543
+
+13. Balanced Binary Tree
+    - Check if height-balanced
+    - Approach: DFS with height return
+    - LeetCode #110
+
+14. Binary Tree Right Side View
+    - Nodes visible from right side
+    - Approach: BFS, take last in level
+    - LeetCode #199
+
+15. Count Good Nodes in Binary Tree
+    - Nodes where path max <= node value
+    - Approach: DFS with max tracking
+    - LeetCode #1448
+
+
+================================================================================
+                    GRAPHS (12 Problems)
+================================================================================
+
+1. Number of Islands
+   - Count connected components
+   - Approach: DFS/BFS flood fill
+   - LeetCode #200
+
+2. Clone Graph
+   - Deep copy graph
+   - Approach: BFS/DFS with hash map
+   - LeetCode #133
+
+3. Course Schedule
+   - Check if can finish all courses
+   - Approach: Topological sort, cycle detection
+   - LeetCode #207
+
+4. Course Schedule II
+   - Return order to finish courses
+   - Approach: Topological sort (Kahn's or DFS)
+   - LeetCode #210
+
+5. Pacific Atlantic Water Flow
+   - Cells that can reach both oceans
+   - Approach: BFS from both oceans
+   - LeetCode #417
+
+6. Number of Connected Components
+   - Count connected components
+   - Approach: Union Find or DFS
+   - LeetCode #323
+
+7. Graph Valid Tree
+   - Check if graph is valid tree
+   - Approach: n-1 edges + connected + no cycle
+   - LeetCode #261
+
+8. Word Ladder
+   - Shortest transformation sequence
+   - Approach: BFS
+   - LeetCode #127
+
+9. Rotting Oranges
+   - Time to rot all oranges
+   - Approach: Multi-source BFS
+   - LeetCode #994
+
+10. Alien Dictionary
+    - Derive order of letters
+    - Approach: Build graph + topological sort
+    - LeetCode #269
+
+11. Network Delay Time
+    - Time for all nodes to receive signal
+    - Approach: Dijkstra's algorithm
+    - LeetCode #743
+
+12. Accounts Merge
+    - Merge accounts by email
+    - Approach: Union Find
+    - LeetCode #721
+
+
+================================================================================
+                    DYNAMIC PROGRAMMING (15 Problems)
+================================================================================
+
+1. Climbing Stairs
+   - Ways to climb n stairs
+   - Approach: Fibonacci pattern
+   - LeetCode #70
+
+2. House Robber
+   - Max money without adjacent houses
+   - Approach: Linear DP
+   - LeetCode #198
+
+3. House Robber II
+   - Circular house arrangement
+   - Approach: Two passes (exclude first/last)
+   - LeetCode #213
+
+4. Coin Change
+   - Minimum coins for amount
+   - Approach: Unbounded knapsack
+   - LeetCode #322
+
+5. Longest Increasing Subsequence
+   - Length of LIS
+   - Approach: DP O(n²) or Binary Search O(n log n)
+   - LeetCode #300
+
+6. Longest Common Subsequence
+   - Length of LCS
+   - Approach: 2D DP
+   - LeetCode #1143
+
+7. Word Break
+   - Can segment string into dictionary words
+   - Approach: DP with set lookup
+   - LeetCode #139
+
+8. Unique Paths
+   - Count paths in grid
+   - Approach: 2D DP or math
+   - LeetCode #62
+
+9. Jump Game
+   - Can reach last index
+   - Approach: Greedy or DP
+   - LeetCode #55
+
+10. Edit Distance
+    - Minimum edits to transform string
+    - Approach: 2D DP
+    - LeetCode #72
+
+11. 0/1 Knapsack
+    - Maximum value within weight limit
+    - Approach: 2D DP
+    - Classic Problem
+
+12. Partition Equal Subset Sum
+    - Can partition into equal sum subsets
+    - Approach: Subset sum DP
+    - LeetCode #416
+
+13. Decode Ways
+    - Number of ways to decode string
+    - Approach: Linear DP
+    - LeetCode #91
+
+14. Target Sum
+    - Ways to assign +/- to reach target
+    - Approach: Subset sum DP
+    - LeetCode #494
+
+15. Interleaving String
+    - Check if s3 is interleaving of s1, s2
+    - Approach: 2D DP
+    - LeetCode #97
+
+
+================================================================================
+                    HEAP / PRIORITY QUEUE (6 Problems)
+================================================================================
+
+1. Kth Largest Element in Array
+   - Find kth largest
+   - Approach: Min heap of size k
+   - LeetCode #215
+
+2. Top K Frequent Elements
+   - Find k most frequent elements
+   - Approach: Heap or bucket sort
+   - LeetCode #347
+
+3. Find Median from Data Stream
+   - Median in streaming data
+   - Approach: Two heaps (max + min)
+   - LeetCode #295
+
+4. Merge K Sorted Lists
+   - Merge k sorted linked lists
+   - Approach: Min heap
+   - LeetCode #23
+
+5. Task Scheduler
+   - Minimum time to complete tasks
+   - Approach: Max heap + cooldown queue
+   - LeetCode #621
+
+6. K Closest Points to Origin
+   - Find k closest points
+   - Approach: Max heap of size k
+   - LeetCode #973
+
+
+================================================================================
+                    BACKTRACKING (8 Problems)
+================================================================================
+
+1. Subsets
+   - All subsets of array
+   - Approach: Include/exclude each element
+   - LeetCode #78
+
+2. Subsets II
+   - Subsets with duplicates
+   - Approach: Sort + skip duplicates
+   - LeetCode #90
+
+3. Permutations
+   - All permutations
+   - Approach: Swap positions
+   - LeetCode #46
+
+4. Permutations II
+   - Permutations with duplicates
+   - Approach: Sort + skip duplicates
+   - LeetCode #47
+
+5. Combination Sum
+   - Combinations that sum to target
+   - Approach: Unbounded selection
+   - LeetCode #39
+
+6. Combination Sum II
+   - Each number used once
+   - Approach: Skip duplicates
+   - LeetCode #40
+
+7. Word Search
+   - Find word in grid
+   - Approach: DFS with visited tracking
+   - LeetCode #79
+
+8. N-Queens
+   - Place n queens on n×n board
+   - Approach: Column by column placement
+   - LeetCode #51
+
+
+================================================================================
+                    BINARY SEARCH (6 Problems)
+================================================================================
+
+1. Binary Search
+   - Find target in sorted array
+   - Approach: Standard binary search
+   - LeetCode #704
+
+2. Search a 2D Matrix
+   - Search in row-column sorted matrix
+   - Approach: Treat as 1D or two binary searches
+   - LeetCode #74
+
+3. Koko Eating Bananas
+   - Minimum eating speed
+   - Approach: Binary search on speed
+   - LeetCode #875
+
+4. Find Minimum in Rotated Sorted Array
+   - Min in rotated array
+   - Approach: Modified binary search
+   - LeetCode #153
+
+5. Search in Rotated Sorted Array
+   - Find target in rotated array
+   - Approach: Identify sorted half
+   - LeetCode #33
+
+6. Time Based Key-Value Store
+   - Get value at timestamp
+   - Approach: Binary search on timestamps
+   - LeetCode #981
+
+
+================================================================================
+                    GREEDY (5 Problems)
+================================================================================
+
+1. Maximum Subarray
+   - Kadane's algorithm
+   - Approach: Track running max
+   - LeetCode #53
+
+2. Jump Game
+   - Can reach end
+   - Approach: Track farthest reachable
+   - LeetCode #55
+
+3. Jump Game II
+   - Minimum jumps to reach end
+   - Approach: BFS-like greedy
+   - LeetCode #45
+
+4. Gas Station
+   - Starting point to complete circuit
+   - Approach: Track deficit and surplus
+   - LeetCode #134
+
+5. Hand of Straights
+   - Divide into groups of consecutive cards
+   - Approach: Greedy with counting
+   - LeetCode #846
+
+
+================================================================================
+                    INTERVALS (4 Problems)
+================================================================================
+
+1. Merge Intervals
+   - Merge overlapping intervals
+   - Approach: Sort by start, merge
+   - LeetCode #56
+
+2. Insert Interval
+   - Insert and merge new interval
+   - Approach: Three-phase processing
+   - LeetCode #57
+
+3. Non-overlapping Intervals
+   - Min removals for no overlap
+   - Approach: Sort by end, count conflicts
+   - LeetCode #435
+
+4. Meeting Rooms II
+   - Minimum rooms needed
+   - Approach: Separate starts/ends or heap
+   - LeetCode #253
+
+
+================================================================================
+                    BIT MANIPULATION (5 Problems)
+================================================================================
+
+1. Single Number
+   - Find unique element (others appear twice)
+   - Approach: XOR all elements
+   - LeetCode #136
+
+2. Number of 1 Bits
+   - Count set bits
+   - Approach: n & (n-1) trick
+   - LeetCode #191
+
+3. Counting Bits
+   - Count bits for 0 to n
+   - Approach: DP with i & (i-1)
+   - LeetCode #338
+
+4. Reverse Bits
+   - Reverse 32 bits
+   - Approach: Bit by bit reversal
+   - LeetCode #190
+
+5. Missing Number
+   - Find missing number in 0 to n
+   - Approach: XOR or math
+   - LeetCode #268
+
+
+================================================================================
+                    STUDY STRATEGY
+================================================================================
+
+1. BEGINNER (Week 1-2):
+   Start with: Arrays, Strings, Hash Maps
+   Focus on: Two Sum, Valid Anagram, Contains Duplicate
+
+2. INTERMEDIATE (Week 3-4):
+   Move to: Linked Lists, Stacks, Trees
+   Focus on: Reverse LL, Valid Parentheses, Tree Traversals
+
+3. ADVANCED (Week 5-6):
+   Learn: DP, Graphs, Backtracking
+   Focus on: Coin Change, Number of Islands, Subsets
+
+4. MASTERY (Week 7-8):
+   Practice: Mixed problems, optimize solutions
+   Focus on: Time management, edge cases
+
+TIPS:
+- Solve each problem yourself before looking at solution
+- Understand multiple approaches for each problem
+- Practice explaining your approach out loud
+- Time yourself (45 mins per problem max)
+- Review and redo problems after 1 week
+
+================================================================================
+                    END OF MUST-DO PROBLEMS
+================================================================================

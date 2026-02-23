@@ -1,0 +1,316 @@
+================================================================================
+                        PYTHON FILE HANDLING
+================================================================================
+
+File handling allows reading from and writing to files on disk.
+
+
+1. OPENING FILES
+================================================================================
+
+Syntax: open(filename, mode)
+
+MODES:
+------
+Mode    Description
+----    -----------
+'r'     Read (default) - Error if file doesn't exist
+'w'     Write - Creates new or truncates existing
+'a'     Append - Creates new or appends to existing
+'x'     Create - Creates new, error if exists
+'r+'    Read and Write
+'w+'    Write and Read (truncates)
+'a+'    Append and Read
+
+BINARY MODES (add 'b'):
+-----------------------
+'rb'    Read binary
+'wb'    Write binary
+'ab'    Append binary
+
+Examples:
+    f = open("file.txt", "r")       # Read text
+    f = open("image.png", "rb")     # Read binary
+    f = open("log.txt", "a")        # Append text
+
+
+2. READING FILES
+================================================================================
+
+read()      : Read entire file
+    content = f.read()           # Entire file as string
+    content = f.read(100)        # First 100 characters
+
+readline()  : Read one line
+    line = f.readline()          # First line
+    line = f.readline()          # Next line
+
+readlines() : Read all lines as list
+    lines = f.readlines()        # List of all lines
+
+Iterate line by line (memory efficient):
+    for line in f:
+        print(line)
+
+
+3. WRITING FILES
+================================================================================
+
+write()     : Write string to file
+    f.write("Hello World")
+
+writelines(): Write list of strings
+    lines = ["Line 1\n", "Line 2\n", "Line 3\n"]
+    f.writelines(lines)
+
+Note: write() doesn't add newline automatically!
+
+
+4. CLOSING FILES
+================================================================================
+
+Always close files to free resources:
+    f = open("file.txt", "r")
+    content = f.read()
+    f.close()
+
+Better way - using 'with' statement (recommended):
+    with open("file.txt", "r") as f:
+        content = f.read()
+    # File automatically closed after with block
+
+
+5. FILE METHODS
+================================================================================
+
+f.read(n)       : Read n characters (or all if n not specified)
+f.readline()    : Read one line
+f.readlines()   : Read all lines as list
+f.write(s)      : Write string s
+f.writelines(l) : Write list of strings
+f.close()       : Close file
+f.seek(pos)     : Move cursor to position
+f.tell()        : Return current cursor position
+f.truncate(n)   : Truncate file to n bytes
+f.flush()       : Flush internal buffer
+f.name          : File name
+f.mode          : File mode
+f.closed        : True if file is closed
+
+
+6. FILE POSITION
+================================================================================
+
+tell()  : Get current position
+seek()  : Move to position
+
+    f = open("file.txt", "r")
+    print(f.tell())          # 0 (beginning)
+
+    content = f.read(5)
+    print(f.tell())          # 5
+
+    f.seek(0)                # Go back to beginning
+    f.seek(10)               # Go to position 10
+    f.seek(0, 2)             # Go to end (0 offset from end)
+
+seek() parameters:
+    seek(offset, whence)
+    whence: 0 = beginning (default)
+            1 = current position
+            2 = end
+
+
+7. WORKING WITH PATHS
+================================================================================
+
+Using os module:
+    import os
+
+    os.getcwd()              # Get current directory
+    os.chdir("/path")        # Change directory
+    os.listdir(".")          # List files in directory
+    os.path.exists("file")   # Check if exists
+    os.path.isfile("file")   # Check if file
+    os.path.isdir("dir")     # Check if directory
+    os.path.join("a", "b")   # Join paths
+    os.makedirs("a/b/c")     # Create directories
+    os.remove("file")        # Delete file
+    os.rmdir("dir")          # Remove empty directory
+
+Using pathlib (modern approach):
+    from pathlib import Path
+
+    p = Path("folder/file.txt")
+    p.exists()               # Check if exists
+    p.is_file()              # Check if file
+    p.is_dir()               # Check if directory
+    p.parent                 # Parent directory
+    p.name                   # File name
+    p.suffix                 # Extension (.txt)
+    p.stem                   # Name without extension
+    p.read_text()            # Read file content
+    p.write_text("content")  # Write to file
+
+
+8. READING/WRITING CSV FILES
+================================================================================
+
+Using csv module:
+    import csv
+
+    # Reading CSV
+    with open("data.csv", "r") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            print(row)  # Each row is a list
+
+    # Reading as dictionary
+    with open("data.csv", "r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            print(row["name"], row["age"])
+
+    # Writing CSV
+    with open("output.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Name", "Age"])  # Header
+        writer.writerow(["John", 25])
+        writer.writerows([["Alice", 30], ["Bob", 35]])
+
+    # Writing from dictionary
+    with open("output.csv", "w", newline="") as f:
+        fieldnames = ["name", "age"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerow({"name": "John", "age": 25})
+
+
+9. READING/WRITING JSON FILES
+================================================================================
+
+Using json module:
+    import json
+
+    # Reading JSON
+    with open("data.json", "r") as f:
+        data = json.load(f)  # Parse JSON to Python object
+
+    # Writing JSON
+    data = {"name": "John", "age": 25, "city": "NYC"}
+    with open("output.json", "w") as f:
+        json.dump(data, f, indent=4)  # Python to JSON
+
+    # String conversion
+    json_string = json.dumps(data)     # Python to JSON string
+    python_obj = json.loads(json_str)  # JSON string to Python
+
+
+10. PICKLE (Binary Serialization)
+================================================================================
+
+Save any Python object to file:
+    import pickle
+
+    # Save object
+    data = {"name": "John", "scores": [90, 85, 95]}
+    with open("data.pkl", "wb") as f:
+        pickle.dump(data, f)
+
+    # Load object
+    with open("data.pkl", "rb") as f:
+        loaded_data = pickle.load(f)
+
+Warning: Don't unpickle data from untrusted sources!
+
+
+11. COMMON PATTERNS
+================================================================================
+
+Copy file:
+    with open("source.txt", "r") as src:
+        with open("dest.txt", "w") as dst:
+            dst.write(src.read())
+
+    # Or using shutil
+    import shutil
+    shutil.copy("source.txt", "dest.txt")
+
+Read large files efficiently:
+    with open("large.txt", "r") as f:
+        for line in f:  # Memory efficient
+            process(line)
+
+    # Or read in chunks
+    with open("large.txt", "r") as f:
+        while True:
+            chunk = f.read(1024)
+            if not chunk:
+                break
+            process(chunk)
+
+Count lines in file:
+    with open("file.txt", "r") as f:
+        count = sum(1 for line in f)
+
+Search in file:
+    with open("file.txt", "r") as f:
+        for i, line in enumerate(f, 1):
+            if "search_term" in line:
+                print(f"Found at line {i}")
+
+
+12. ENCODING
+================================================================================
+
+Default encoding is platform-dependent.
+Always specify encoding for text files:
+
+    with open("file.txt", "r", encoding="utf-8") as f:
+        content = f.read()
+
+Common encodings:
+- utf-8     : Universal, supports all characters
+- ascii     : Basic English characters
+- latin-1   : Western European
+- utf-16    : Wide characters
+
+
+13. INTERVIEW QUESTIONS
+================================================================================
+
+Q: Difference between r, w, a modes?
+A: r = read (must exist)
+   w = write (creates/truncates)
+   a = append (creates/appends)
+
+Q: Why use 'with' statement?
+A: Automatically closes file, even if exception occurs.
+   Cleaner and safer than manual open/close.
+
+Q: How to read large files efficiently?
+A: Iterate line by line (for line in f:) or read in chunks.
+   Don't use read() or readlines() for large files.
+
+Q: Difference between read() and readline()?
+A: read() reads entire file (or n chars)
+   readline() reads one line at a time
+
+Q: What is binary mode?
+A: Opens file as binary (bytes instead of string).
+   Used for images, executables, etc.
+
+Q: How to check if file exists?
+A: os.path.exists(filename) or Path(filename).exists()
+
+Q: Difference between json and pickle?
+A: JSON is text, human-readable, cross-language
+   Pickle is binary, Python-only, can store any object
+
+Q: What is file encoding?
+A: How characters are represented as bytes.
+   UTF-8 is most common and recommended.
+
+================================================================================
+                         END OF FILE HANDLING
+================================================================================

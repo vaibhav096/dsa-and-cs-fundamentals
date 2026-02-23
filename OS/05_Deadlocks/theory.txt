@@ -1,0 +1,434 @@
+================================================================================
+                    DEADLOCKS
+================================================================================
+
+A deadlock is a situation where processes are waiting for each other
+indefinitely, and none can proceed.
+
+
+================================================================================
+                    1. DEADLOCK DEFINITION
+================================================================================
+
+EXAMPLE:
+
+Process P1 holds Resource R1, waiting for R2.
+Process P2 holds Resource R2, waiting for R1.
+
+    P1 ──holds──→ R1
+    ↑             ↓
+  waits         waits
+    ↑             ↓
+    P2 ←──holds── R2
+
+Neither can proceed → DEADLOCK
+
+
+SYSTEM MODEL:
+- Resources: R1, R2, ..., Rm (CPU, memory, files, etc.)
+- Each resource has instances
+- Process: Request → Use → Release
+
+
+================================================================================
+                    2. CONDITIONS FOR DEADLOCK
+================================================================================
+
+ALL FOUR must hold simultaneously:
+
+1. MUTUAL EXCLUSION:
+   - At least one resource held in non-sharable mode
+   - Only one process can use resource at a time
+
+2. HOLD AND WAIT:
+   - Process holds at least one resource
+   - AND waits for additional resources held by others
+
+3. NO PREEMPTION:
+   - Resources cannot be forcibly taken
+   - Only released voluntarily by holding process
+
+4. CIRCULAR WAIT:
+   - Set of processes {P0, P1, ..., Pn}
+   - P0 waits for resource held by P1
+   - P1 waits for resource held by P2
+   - ...
+   - Pn waits for resource held by P0
+
+
+================================================================================
+                    3. RESOURCE ALLOCATION GRAPH (RAG)
+================================================================================
+
+Visual representation of resource allocation.
+
+COMPONENTS:
+- Process: Circle (O)
+- Resource: Rectangle with dots (instances) [□]
+- Request Edge: Process → Resource (Pi → Rj)
+- Assignment Edge: Resource → Process (Rj → Pi)
+
+
+EXAMPLE 1 (No Deadlock):
+
+    P1 ──→ R1 ──→ P2
+           │
+           └──→ R2 ──→ P3
+
+P1 requests R1 (held by P2)
+R2 assigned to P3
+No cycle → No deadlock
+
+
+EXAMPLE 2 (Deadlock):
+
+    P1 ←── R1 ←── P2
+    │             ↑
+    ↓             │
+    R2 ──────────→│
+
+P1 holds R2, waits for R1
+P2 holds R1, waits for R2
+Cycle exists → Deadlock (if single instance per resource)
+
+
+RULES:
+- If no cycle → No deadlock
+- If cycle + single instance per resource → Deadlock
+- If cycle + multiple instances → May or may not be deadlock
+
+
+================================================================================
+                    4. METHODS FOR HANDLING DEADLOCKS
+================================================================================
+
+1. PREVENTION: Ensure at least one condition never holds
+
+2. AVOIDANCE: Dynamically avoid unsafe states
+
+3. DETECTION & RECOVERY: Allow deadlock, detect and recover
+
+4. IGNORANCE: Ignore the problem (Ostrich Algorithm)
+   - Used by most OS (Unix, Windows)
+   - Deadlocks are rare, handling cost is high
+
+
+================================================================================
+                    5. DEADLOCK PREVENTION
+================================================================================
+
+Break one of the four necessary conditions.
+
+
+1. MUTUAL EXCLUSION:
+   - Cannot be prevented for non-sharable resources
+   - Some resources must be exclusive (printer)
+   - Sharable resources (read-only files) don't need ME
+
+
+2. HOLD AND WAIT:
+
+   Option A: Request all resources before execution
+   - Process requests all resources at start
+   - Disadvantage: Low utilization, starvation
+
+   Option B: Release all before requesting new
+   - Process releases all resources before new request
+   - Disadvantage: May not be practical
+
+
+3. NO PREEMPTION:
+
+   Option A: If process can't get resource, release all held
+   - Process must release and re-request later
+
+   Option B: Preempt resources from waiting processes
+   - If P1 waits for resource held by P2 (also waiting),
+     preempt from P2 and give to P1
+
+
+4. CIRCULAR WAIT:
+
+   Impose ordering on resources:
+   - Assign number to each resource type
+   - Process must request in increasing order
+   - R1 < R2 < R3 means request R1 before R2 before R3
+
+   Example:
+   F(tape) = 1, F(disk) = 5, F(printer) = 12
+
+   Process must request tape before disk before printer.
+   Breaks circular wait.
+
+
+================================================================================
+                    6. DEADLOCK AVOIDANCE
+================================================================================
+
+System has additional information about resource needs.
+Avoids entering unsafe states.
+
+
+SAFE STATE:
+- System can allocate resources in some order to all processes
+- All processes can finish
+- Safe sequence exists
+
+UNSAFE STATE:
+- No guarantee all processes can finish
+- May or may not lead to deadlock
+
+
+          +──────────────────────────+
+          │      All States          │
+          │  +────────────────────+  │
+          │  │    Safe States     │  │
+          │  │                    │  │
+          │  +────────────────────+  │
+          │         Unsafe States   │
+          │    +──────────+         │
+          │    │ Deadlock │         │
+          │    +──────────+         │
+          +──────────────────────────+
+
+
+RESOURCE ALLOCATION GRAPH ALGORITHM:
+- For single instance resources
+- Add claim edge (Pi --→ Rj) for future requests
+- Request granted only if no cycle formed
+
+
+BANKER'S ALGORITHM:
+- For multiple instance resources
+- Named after bank loan analogy
+
+
+DATA STRUCTURES:
+n = number of processes
+m = number of resource types
+
+Available[m]: Available instances of each resource
+Max[n][m]: Maximum demand of each process
+Allocation[n][m]: Currently allocated to each process
+Need[n][m]: Remaining need (Need = Max - Allocation)
+
+
+SAFETY ALGORITHM:
+
+1. Work = Available
+   Finish[i] = false for all i
+
+2. Find i such that:
+   Finish[i] == false AND Need[i] <= Work
+
+   If no such i exists, go to step 4
+
+3. Work = Work + Allocation[i]
+   Finish[i] = true
+   Go to step 2
+
+4. If Finish[i] == true for all i → Safe state
+   Else → Unsafe state
+
+
+RESOURCE REQUEST ALGORITHM:
+
+Request[i] = request vector for process Pi
+
+1. If Request[i] > Need[i] → Error (exceeded max claim)
+
+2. If Request[i] > Available → Wait
+
+3. Pretend to allocate:
+   Available = Available - Request[i]
+   Allocation[i] = Allocation[i] + Request[i]
+   Need[i] = Need[i] - Request[i]
+
+4. Run Safety Algorithm
+   If safe → Grant request
+   If unsafe → Rollback and wait
+
+
+BANKER'S ALGORITHM EXAMPLE:
+
+5 processes (P0-P4), 3 resource types (A, B, C)
+Available = [3, 3, 2]
+
+         Allocation    Max       Need
+         A  B  C      A  B  C    A  B  C
+P0       0  1  0      7  5  3    7  4  3
+P1       2  0  0      3  2  2    1  2  2
+P2       3  0  2      9  0  2    6  0  0
+P3       2  1  1      2  2  2    0  1  1
+P4       0  0  2      4  3  3    4  3  1
+
+Is system in safe state?
+
+Work = [3, 3, 2]
+
+Step 1: P1 (Need [1,2,2] <= Work [3,3,2])
+        Work = [3,3,2] + [2,0,0] = [5,3,2]
+        Finish = [F, T, F, F, F]
+
+Step 2: P3 (Need [0,1,1] <= Work [5,3,2])
+        Work = [5,3,2] + [2,1,1] = [7,4,3]
+        Finish = [F, T, F, T, F]
+
+Step 3: P4 (Need [4,3,1] <= Work [7,4,3])
+        Work = [7,4,3] + [0,0,2] = [7,4,5]
+        Finish = [F, T, F, T, T]
+
+Step 4: P0 (Need [7,4,3] <= Work [7,4,5])
+        Work = [7,4,5] + [0,1,0] = [7,5,5]
+        Finish = [T, T, F, T, T]
+
+Step 5: P2 (Need [6,0,0] <= Work [7,5,5])
+        Work = [7,5,5] + [3,0,2] = [10,5,7]
+        Finish = [T, T, T, T, T]
+
+Safe sequence: <P1, P3, P4, P0, P2>
+System is in SAFE state.
+
+
+================================================================================
+                    7. DEADLOCK DETECTION
+================================================================================
+
+Allow deadlock to occur, detect it, and recover.
+
+
+FOR SINGLE INSTANCE RESOURCES:
+- Use wait-for graph
+- Edge Pi → Pj means Pi waits for resource held by Pj
+- Cycle = Deadlock
+
+    Wait-For Graph:
+    P1 → P2 → P3
+         ↑    ↓
+         └────┘
+
+    Cycle exists → Deadlock
+
+
+FOR MULTIPLE INSTANCE RESOURCES:
+- Use algorithm similar to Banker's
+
+Detection Algorithm:
+
+1. Work = Available
+   Finish[i] = false if Allocation[i] != 0
+               true if Allocation[i] == 0
+
+2. Find i such that:
+   Finish[i] == false AND Request[i] <= Work
+
+3. Work = Work + Allocation[i]
+   Finish[i] = true
+   Go to step 2
+
+4. If Finish[i] == false for some i → Deadlocked
+   Processes with Finish[i] == false are in deadlock
+
+
+WHEN TO RUN DETECTION?
+- On every resource request (expensive)
+- Periodically (e.g., every 5 minutes)
+- When CPU utilization drops below threshold
+
+
+================================================================================
+                    8. DEADLOCK RECOVERY
+================================================================================
+
+Once detected, system must recover.
+
+
+1. PROCESS TERMINATION:
+
+   Option A: Abort all deadlocked processes
+   - Expensive, loses all work
+
+   Option B: Abort one at a time until deadlock broken
+   - Which to abort? Consider:
+     * Priority
+     * Time executed
+     * Resources used
+     * Resources needed to complete
+     * Number of processes to terminate
+
+
+2. RESOURCE PREEMPTION:
+
+   Take resources from processes and give to others.
+
+   Issues:
+   - Selecting victim: Which process to preempt from?
+   - Rollback: Process must restart from safe state
+   - Starvation: Same process may always be victim
+     Solution: Include rollback count in selection
+
+
+================================================================================
+                    9. COMPARISON OF METHODS
+================================================================================
+
++-------------+------------------+------------------+------------------+
+| Method      | Advantages       | Disadvantages    | Used When        |
++-------------+------------------+------------------+------------------+
+| Prevention  | No deadlock      | Low utilization  | Critical systems |
+|             | Simple           | Restrictive      |                  |
++-------------+------------------+------------------+------------------+
+| Avoidance   | No deadlock      | Requires future  | Known resource   |
+|             | Better util.     | knowledge        | needs            |
+|             |                  | Algorithm cost   |                  |
++-------------+------------------+------------------+------------------+
+| Detection   | No prevention    | Detection cost   | Deadlocks rare   |
+| & Recovery  | overhead         | Recovery loss    |                  |
++-------------+------------------+------------------+------------------+
+| Ignorance   | No overhead      | Deadlock happens | Most general OS  |
++-------------+------------------+------------------+------------------+
+
+
+================================================================================
+                    10. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is deadlock?
+A: Situation where processes wait for each other indefinitely.
+   P1 holds R1, waits for R2. P2 holds R2, waits for R1.
+
+Q2: What are the four necessary conditions for deadlock?
+A: Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait.
+   All four must hold for deadlock.
+
+Q3: How to prevent deadlock?
+A: Break one of four conditions:
+   - ME: Use sharable resources
+   - Hold&Wait: Request all at once
+   - No Preemption: Allow preemption
+   - Circular Wait: Order resources
+
+Q4: What is safe state?
+A: System can allocate resources so all processes finish.
+   Safe sequence exists. Unsafe may lead to deadlock.
+
+Q5: Explain Banker's Algorithm.
+A: Deadlock avoidance algorithm. Checks if granting request keeps
+   system in safe state. Uses Available, Max, Allocation, Need.
+
+Q6: Difference between deadlock prevention and avoidance?
+A: Prevention: Ensure condition never holds (static).
+   Avoidance: Check each request, deny if unsafe (dynamic).
+
+Q7: How to detect deadlock?
+A: Single instance: Wait-for graph, find cycle.
+   Multiple: Algorithm similar to safety algorithm.
+
+Q8: How to recover from deadlock?
+A: Process termination (abort all or one-by-one).
+   Resource preemption (take from one, give to another).
+
+
+================================================================================
+                    END OF DEADLOCKS
+================================================================================

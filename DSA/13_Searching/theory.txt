@@ -1,0 +1,441 @@
+================================================================================
+                         SEARCHING ALGORITHMS
+================================================================================
+
+
+================================================================================
+                    1. LINEAR SEARCH
+================================================================================
+
+Check each element one by one.
+
+    def linear_search(arr, target):
+        for i, val in enumerate(arr):
+            if val == target:
+                return i
+        return -1
+
+Time: O(n)
+Space: O(1)
+
+Use when:
+- Array is unsorted
+- Array is small
+- Search only once
+
+
+================================================================================
+                    2. BINARY SEARCH
+================================================================================
+
+Works on SORTED arrays. Eliminate half of elements each step.
+
+ITERATIVE:
+    def binary_search(arr, target):
+        left, right = 0, len(arr) - 1
+
+        while left <= right:
+            mid = left + (right - left) // 2  # Avoids overflow
+
+            if arr[mid] == target:
+                return mid
+            elif arr[mid] < target:
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        return -1
+
+RECURSIVE:
+    def binary_search_recursive(arr, target, left, right):
+        if left > right:
+            return -1
+
+        mid = left + (right - left) // 2
+
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            return binary_search_recursive(arr, target, mid + 1, right)
+        else:
+            return binary_search_recursive(arr, target, left, mid - 1)
+
+Time: O(log n)
+Space: O(1) iterative, O(log n) recursive
+
+
+================================================================================
+                    3. BINARY SEARCH VARIATIONS
+================================================================================
+
+FIND FIRST OCCURRENCE:
+----------------------
+    def first_occurrence(arr, target):
+        left, right = 0, len(arr) - 1
+        result = -1
+
+        while left <= right:
+            mid = left + (right - left) // 2
+
+            if arr[mid] == target:
+                result = mid
+                right = mid - 1  # Continue searching left
+            elif arr[mid] < target:
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        return result
+
+
+FIND LAST OCCURRENCE:
+---------------------
+    def last_occurrence(arr, target):
+        left, right = 0, len(arr) - 1
+        result = -1
+
+        while left <= right:
+            mid = left + (right - left) // 2
+
+            if arr[mid] == target:
+                result = mid
+                left = mid + 1  # Continue searching right
+            elif arr[mid] < target:
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        return result
+
+
+COUNT OCCURRENCES:
+------------------
+    def count_occurrences(arr, target):
+        first = first_occurrence(arr, target)
+        if first == -1:
+            return 0
+        last = last_occurrence(arr, target)
+        return last - first + 1
+
+
+LOWER BOUND (first >= target):
+------------------------------
+    def lower_bound(arr, target):
+        left, right = 0, len(arr)
+
+        while left < right:
+            mid = left + (right - left) // 2
+            if arr[mid] < target:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+
+UPPER BOUND (first > target):
+-----------------------------
+    def upper_bound(arr, target):
+        left, right = 0, len(arr)
+
+        while left < right:
+            mid = left + (right - left) // 2
+            if arr[mid] <= target:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+
+PYTHON BISECT MODULE:
+---------------------
+    import bisect
+
+    bisect.bisect_left(arr, x)   # Lower bound
+    bisect.bisect_right(arr, x)  # Upper bound
+    bisect.bisect(arr, x)        # Same as bisect_right
+    bisect.insort_left(arr, x)   # Insert maintaining sort
+    bisect.insort_right(arr, x)
+
+
+================================================================================
+                    4. BINARY SEARCH PROBLEMS
+================================================================================
+
+PROBLEM 1: Search in Rotated Sorted Array
+-----------------------------------------
+    def search(nums, target):
+        left, right = 0, len(nums) - 1
+
+        while left <= right:
+            mid = left + (right - left) // 2
+
+            if nums[mid] == target:
+                return mid
+
+            # Left half is sorted
+            if nums[left] <= nums[mid]:
+                if nums[left] <= target < nums[mid]:
+                    right = mid - 1
+                else:
+                    left = mid + 1
+            # Right half is sorted
+            else:
+                if nums[mid] < target <= nums[right]:
+                    left = mid + 1
+                else:
+                    right = mid - 1
+
+        return -1
+
+
+PROBLEM 2: Find Minimum in Rotated Sorted Array
+-----------------------------------------------
+    def find_min(nums):
+        left, right = 0, len(nums) - 1
+
+        while left < right:
+            mid = left + (right - left) // 2
+            if nums[mid] > nums[right]:
+                left = mid + 1
+            else:
+                right = mid
+
+        return nums[left]
+
+
+PROBLEM 3: Find Peak Element
+----------------------------
+    def find_peak_element(nums):
+        left, right = 0, len(nums) - 1
+
+        while left < right:
+            mid = left + (right - left) // 2
+            if nums[mid] < nums[mid + 1]:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+
+PROBLEM 4: Search a 2D Matrix
+-----------------------------
+Matrix is sorted row-wise, first element of each row > last of previous.
+
+    def search_matrix(matrix, target):
+        if not matrix:
+            return False
+
+        rows, cols = len(matrix), len(matrix[0])
+        left, right = 0, rows * cols - 1
+
+        while left <= right:
+            mid = left + (right - left) // 2
+            mid_val = matrix[mid // cols][mid % cols]
+
+            if mid_val == target:
+                return True
+            elif mid_val < target:
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        return False
+
+
+PROBLEM 5: Find First and Last Position
+---------------------------------------
+    def search_range(nums, target):
+        def find_bound(is_first):
+            left, right = 0, len(nums) - 1
+            result = -1
+
+            while left <= right:
+                mid = left + (right - left) // 2
+                if nums[mid] == target:
+                    result = mid
+                    if is_first:
+                        right = mid - 1
+                    else:
+                        left = mid + 1
+                elif nums[mid] < target:
+                    left = mid + 1
+                else:
+                    right = mid - 1
+
+            return result
+
+        return [find_bound(True), find_bound(False)]
+
+
+PROBLEM 6: Sqrt(x) - Integer Square Root
+----------------------------------------
+    def my_sqrt(x):
+        if x < 2:
+            return x
+
+        left, right = 1, x // 2
+
+        while left <= right:
+            mid = left + (right - left) // 2
+            if mid * mid == x:
+                return mid
+            elif mid * mid < x:
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        return right
+
+
+PROBLEM 7: Kth Smallest Element in Sorted Matrix
+------------------------------------------------
+    def kth_smallest(matrix, k):
+        n = len(matrix)
+        left, right = matrix[0][0], matrix[n-1][n-1]
+
+        def count_less_equal(mid):
+            count = 0
+            row, col = n - 1, 0
+            while row >= 0 and col < n:
+                if matrix[row][col] <= mid:
+                    count += row + 1
+                    col += 1
+                else:
+                    row -= 1
+            return count
+
+        while left < right:
+            mid = left + (right - left) // 2
+            if count_less_equal(mid) < k:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+
+PROBLEM 8: Find Median of Two Sorted Arrays
+-------------------------------------------
+    def find_median_sorted_arrays(nums1, nums2):
+        if len(nums1) > len(nums2):
+            nums1, nums2 = nums2, nums1
+
+        m, n = len(nums1), len(nums2)
+        left, right = 0, m
+
+        while left <= right:
+            i = (left + right) // 2
+            j = (m + n + 1) // 2 - i
+
+            max_left1 = float('-inf') if i == 0 else nums1[i-1]
+            min_right1 = float('inf') if i == m else nums1[i]
+            max_left2 = float('-inf') if j == 0 else nums2[j-1]
+            min_right2 = float('inf') if j == n else nums2[j]
+
+            if max_left1 <= min_right2 and max_left2 <= min_right1:
+                if (m + n) % 2 == 0:
+                    return (max(max_left1, max_left2) +
+                            min(min_right1, min_right2)) / 2
+                else:
+                    return max(max_left1, max_left2)
+            elif max_left1 > min_right2:
+                right = i - 1
+            else:
+                left = i + 1
+
+
+PROBLEM 9: Capacity to Ship Packages (Binary Search on Answer)
+--------------------------------------------------------------
+    def ship_within_days(weights, days):
+        def can_ship(capacity):
+            current_weight = 0
+            required_days = 1
+            for weight in weights:
+                if current_weight + weight > capacity:
+                    required_days += 1
+                    current_weight = weight
+                else:
+                    current_weight += weight
+            return required_days <= days
+
+        left, right = max(weights), sum(weights)
+
+        while left < right:
+            mid = left + (right - left) // 2
+            if can_ship(mid):
+                right = mid
+            else:
+                left = mid + 1
+
+        return left
+
+
+PROBLEM 10: Koko Eating Bananas
+-------------------------------
+    def min_eating_speed(piles, h):
+        def can_finish(k):
+            hours = sum((pile + k - 1) // k for pile in piles)
+            return hours <= h
+
+        left, right = 1, max(piles)
+
+        while left < right:
+            mid = left + (right - left) // 2
+            if can_finish(mid):
+                right = mid
+            else:
+                left = mid + 1
+
+        return left
+
+
+================================================================================
+                    5. BINARY SEARCH ON ANSWER
+================================================================================
+
+When to use:
+- Find minimum/maximum value that satisfies condition
+- Monotonic condition (if x works, all x+1 also work)
+
+Template:
+    def binary_search_answer(left, right):
+        while left < right:
+            mid = left + (right - left) // 2
+            if condition(mid):
+                right = mid  # For minimum
+                # left = mid + 1  # For maximum
+            else:
+                left = mid + 1  # For minimum
+                # right = mid  # For maximum
+        return left
+
+
+================================================================================
+                    6. INTERVIEW TIPS
+================================================================================
+
+1. WHEN TO USE BINARY SEARCH:
+   - Sorted array
+   - Finding boundary
+   - Monotonic condition
+   - "Minimum/Maximum that satisfies..."
+
+2. COMMON MISTAKES:
+   - Off-by-one errors (left <= right vs left < right)
+   - Overflow (use left + (right - left) // 2)
+   - Infinite loops (ensure progress)
+
+3. VARIATIONS:
+   - left <= right: search for exact value
+   - left < right: search for boundary
+
+4. TIME COMPLEXITY:
+   - Binary search: O(log n)
+   - Binary search on answer: O(n * log(range))
+
+================================================================================
+                         END OF SEARCHING
+================================================================================

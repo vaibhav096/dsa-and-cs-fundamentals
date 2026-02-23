@@ -1,0 +1,566 @@
+================================================================================
+                    PROCESS MANAGEMENT
+================================================================================
+
+A process is a program in execution. Process management is a core
+function of operating systems.
+
+
+================================================================================
+                    1. PROCESS vs PROGRAM
+================================================================================
+
+PROGRAM:
+- Passive entity
+- Stored on disk
+- Set of instructions
+- Static
+
+PROCESS:
+- Active entity
+- Running in memory
+- Program + execution state
+- Dynamic
+
+
+PROCESS = Program + Program Counter + Stack + Data Section + Heap
+
+
+================================================================================
+                    2. PROCESS MEMORY LAYOUT
+================================================================================
+
+High Address
++------------------+
+|      Stack       |  ← Local variables, function calls
+|        ↓         |     Grows downward
++------------------+
+|                  |
+|    Free Space    |
+|                  |
++------------------+
+|        ↑         |
+|       Heap       |  ← Dynamic memory (malloc)
++------------------+     Grows upward
+|       Data       |  ← Global/static variables
+|  (BSS + Data)    |     Initialized + Uninitialized
++------------------+
+|       Text       |  ← Program code (read-only)
++------------------+
+Low Address
+
+
+SEGMENTS:
+
+1. TEXT (Code):
+   - Executable instructions
+   - Read-only
+   - Shared among processes
+
+2. DATA:
+   - Initialized global/static variables
+   - Example: int x = 10;
+
+3. BSS (Block Started by Symbol):
+   - Uninitialized global/static variables
+   - Initialized to zero
+   - Example: int y;
+
+4. HEAP:
+   - Dynamic memory allocation
+   - malloc(), new
+   - Programmer managed
+
+5. STACK:
+   - Function calls
+   - Local variables
+   - Return addresses
+   - Auto-managed
+
+
+================================================================================
+                    3. PROCESS STATES
+================================================================================
+
+FIVE-STATE MODEL:
+
+           +--------+
+           |  New   |  ← Process created
+           +---+----+
+               |
+               v
+           +--------+      +------------+
+           | Ready  |<---->|  Running   |
+           +---+----+      +-----+------+
+               ^                 |
+               |                 v
+               |           +----------+
+               +-----------|  Waiting |
+               |           | (Blocked)|
+               |           +----------+
+               v
+           +--------+
+           |Terminated| ← Process finished
+           +--------+
+
+
+STATE TRANSITIONS:
+
+1. New → Ready:
+   - Process admitted to ready queue
+   - Allocated resources
+
+2. Ready → Running:
+   - Scheduler dispatches process
+   - CPU allocated
+
+3. Running → Ready:
+   - Time slice expired (preemption)
+   - Higher priority process arrives
+
+4. Running → Waiting:
+   - Process requests I/O
+   - Waiting for event
+
+5. Waiting → Ready:
+   - I/O completed
+   - Event occurred
+
+6. Running → Terminated:
+   - Process completes execution
+   - Error/killed
+
+
+SEVEN-STATE MODEL (with Suspend):
+
+Adds:
+- Ready Suspended: Swapped out but ready
+- Blocked Suspended: Swapped out and waiting
+
+
+================================================================================
+                    4. PROCESS CONTROL BLOCK (PCB)
+================================================================================
+
+Data structure containing all information about a process.
+Also called Task Control Block (TCB).
+
+
+PCB CONTENTS:
+
++------------------------+
+| Process ID (PID)       |
++------------------------+
+| Process State          |
++------------------------+
+| Program Counter (PC)   |
++------------------------+
+| CPU Registers          |
++------------------------+
+| CPU Scheduling Info    |
+| (priority, pointers)   |
++------------------------+
+| Memory Management Info |
+| (page tables, limits)  |
++------------------------+
+| Accounting Info        |
+| (CPU time, time limits)|
++------------------------+
+| I/O Status Info        |
+| (open files, devices)  |
++------------------------+
+
+
+PCB FIELDS EXPLAINED:
+
+1. Process ID: Unique identifier
+2. State: Current state (ready, running, etc.)
+3. Program Counter: Next instruction address
+4. Registers: CPU register contents
+5. Scheduling Info: Priority, queue pointers
+6. Memory Info: Page table, segment table, limits
+7. Accounting: CPU time used, time limits
+8. I/O Info: Open files, assigned devices
+
+
+================================================================================
+                    5. CONTEXT SWITCHING
+================================================================================
+
+Saving state of one process and loading state of another.
+
+
+CONTEXT SWITCH STEPS:
+
+1. Save context of current process in its PCB
+2. Update PCB (state = ready/waiting)
+3. Move PCB to appropriate queue
+4. Select new process (scheduler)
+5. Update new PCB (state = running)
+6. Load context of new process
+7. Resume new process execution
+
+
+          Process P0              OS              Process P1
+          =========             ====              ===========
+        executing
+                    interrupt/system call
+              -----→  save state in PCB0
+                      ...
+                      load state from PCB1
+                                              ←-----
+                                                executing
+                                  interrupt/system call
+              ←-----  save state in PCB1
+                      ...
+                      load state from PCB0
+        executing  ←-----
+
+
+CONTEXT SWITCH OVERHEAD:
+- Time spent not doing useful work
+- Save/restore registers
+- Memory access for PCB
+- TLB flush (may be needed)
+- Cache invalidation
+
+Typical time: 1-1000 microseconds
+
+
+================================================================================
+                    6. PROCESS CREATION
+================================================================================
+
+METHODS:
+
+1. System Initialization:
+   - Boot-time processes
+   - Daemons/services
+
+2. System Call (fork):
+   - Parent creates child
+   - Child is copy of parent
+
+3. User Request:
+   - User starts program
+   - Double-click, command line
+
+
+FORK() SYSTEM CALL (UNIX):
+
+- Creates new process (child)
+- Child is exact copy of parent
+- Returns:
+  * To parent: Child's PID
+  * To child: 0
+  * On error: -1
+
+
+EXAMPLE:
+
+pid_t pid = fork();
+
+if (pid < 0) {
+    // Error
+} else if (pid == 0) {
+    // Child process
+    exec("/bin/ls");  // Replace with new program
+} else {
+    // Parent process
+    wait(NULL);  // Wait for child
+}
+
+
+PARENT-CHILD RELATIONSHIPS:
+
+1. Resource Sharing:
+   - Share all resources
+   - Share subset
+   - Share none
+
+2. Execution:
+   - Parent and child execute concurrently
+   - Parent waits for child
+
+3. Address Space:
+   - Child is duplicate of parent
+   - Child has new program loaded
+
+
+================================================================================
+                    7. PROCESS TERMINATION
+================================================================================
+
+NORMAL TERMINATION:
+- exit() system call
+- Return from main()
+- Process completes work
+
+ABNORMAL TERMINATION:
+- Segmentation fault
+- Killed by another process
+- Resource limit exceeded
+
+
+EXIT() SYSTEM CALL:
+- Releases resources
+- Returns exit status to parent
+- Process becomes zombie until parent reads status
+
+
+WAIT() SYSTEM CALL:
+- Parent waits for child to terminate
+- Reads child's exit status
+- Prevents zombie processes
+
+
+ZOMBIE PROCESS:
+- Terminated but PCB still exists
+- Parent hasn't called wait()
+- Takes up PID
+
+ORPHAN PROCESS:
+- Parent terminated before child
+- Adopted by init process (PID 1)
+
+
+================================================================================
+                    8. PROCESS QUEUES
+================================================================================
+
+1. JOB QUEUE:
+   - All processes in system
+
+2. READY QUEUE:
+   - Processes ready to execute
+   - Waiting for CPU
+
+3. DEVICE QUEUES:
+   - Processes waiting for I/O device
+   - One queue per device
+
+
+QUEUE DIAGRAM:
+
+                    +-------+
+    Job Queue  →    | Ready |  → CPU → Terminated
+                    | Queue |
+                    +---+---+
+                        ↑
+          +-------------+-------------+
+          |             |             |
+    +-----+----+  +-----+----+  +-----+----+
+    | Disk     |  | Terminal |  | Tape     |
+    | Queue    |  | Queue    |  | Queue    |
+    +----------+  +----------+  +----------+
+
+
+================================================================================
+                    9. SCHEDULERS
+================================================================================
+
+1. LONG-TERM SCHEDULER (Job Scheduler):
+   - Selects processes from disk to memory
+   - Controls degree of multiprogramming
+   - Runs infrequently
+   - Balances I/O-bound and CPU-bound
+
+2. SHORT-TERM SCHEDULER (CPU Scheduler):
+   - Selects process from ready queue for CPU
+   - Runs very frequently (milliseconds)
+   - Must be fast
+
+3. MEDIUM-TERM SCHEDULER:
+   - Swapping
+   - Removes processes from memory
+   - Reduces degree of multiprogramming
+
+
+                    Long-term
+     Disk ──────────────────────→ Ready Queue
+              (Job Scheduler)         │
+                   ↑                  │ Short-term
+                   │                  │ (CPU Scheduler)
+                   │                  ↓
+              Medium-term          CPU
+              (Swapper)              │
+                   ↑                  │
+                   │                  ↓
+     Memory ←──────+──────────── Terminated
+
+
+================================================================================
+                    10. THREADS
+================================================================================
+
+A thread is a lightweight process - smallest unit of CPU execution.
+
+PROCESS vs THREAD:
+
++------------------+------------------+
+| Process          | Thread           |
++------------------+------------------+
+| Heavy-weight     | Light-weight     |
+| Own memory space | Shared memory    |
+| Own resources    | Shared resources |
+| Isolated         | Not isolated     |
+| Expensive IPC    | Easy communication|
+| Slow creation    | Fast creation    |
++------------------+------------------+
+
+
+THREAD COMPONENTS:
+- Thread ID
+- Program Counter
+- Register Set
+- Stack
+
+SHARED BETWEEN THREADS:
+- Code section
+- Data section
+- OS resources (files, signals)
+
+
+SINGLE vs MULTITHREADED PROCESS:
+
+Single-threaded:           Multithreaded:
++---------------+          +---------------+
+|    Code       |          |    Code       |
++---------------+          +---------------+
+|    Data       |          |    Data       |
++---------------+          +---------------+
+|    Files      |          |    Files      |
++---------------+          +---------------+
+|  Registers    |          | Reg | Reg | Reg |
++---------------+          +-----+-----+-----+
+|    Stack      |          |Stack|Stack|Stack|
++---------------+          +-----+-----+-----+
+    Thread                  Thread Thread Thread
+
+
+TYPES OF THREADS:
+
+1. USER-LEVEL THREADS (ULT):
+   - Managed by user library
+   - OS doesn't know about threads
+   - Fast creation/switching
+   - One blocks → all block
+
+2. KERNEL-LEVEL THREADS (KLT):
+   - Managed by OS kernel
+   - OS aware of threads
+   - Slower creation/switching
+   - One blocks → others continue
+
+
+MULTITHREADING MODELS:
+
+1. Many-to-One:
+   - Many user threads → one kernel thread
+   - Green threads
+   - One blocks all
+
+2. One-to-One:
+   - One user thread → one kernel thread
+   - True parallelism
+   - Linux, Windows
+
+3. Many-to-Many:
+   - Many user threads → many kernel threads
+   - Best of both
+   - Solaris, Windows (Thread Fiber)
+
+
+================================================================================
+                    11. INTER-PROCESS COMMUNICATION (IPC)
+================================================================================
+
+Processes need to communicate and synchronize.
+
+TYPES:
+
+1. SHARED MEMORY:
+   - Common memory region
+   - Fast communication
+   - Needs synchronization
+
+   Process A                Process B
+   +--------+              +--------+
+   |        |              |        |
+   +--------+              +--------+
+        \                      /
+         \    +--------+      /
+          +-->| Shared |<----+
+              | Memory |
+              +--------+
+
+2. MESSAGE PASSING:
+   - Send/receive messages
+   - No shared memory
+   - OS handles communication
+
+   Process A    send(msg)    Process B
+   +--------+  ─────────→   +--------+
+   |        |               |        |
+   |        |  ←─────────   |        |
+   +--------+  receive(msg)  +--------+
+
+
+MESSAGE PASSING TYPES:
+
+1. Direct Communication:
+   - Name the process explicitly
+   - send(P, msg), receive(Q, msg)
+
+2. Indirect Communication:
+   - Through mailboxes/ports
+   - send(A, msg), receive(A, msg)
+
+
+SYNCHRONIZATION:
+
+1. Blocking (Synchronous):
+   - Send blocks until received
+   - Receive blocks until message available
+
+2. Non-blocking (Asynchronous):
+   - Send and continue
+   - Receive returns immediately (null if no message)
+
+
+================================================================================
+                    12. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is a process? How is it different from a program?
+A: Process is program in execution. Program is passive (file),
+   process is active (running). Process = Program + State + Resources.
+
+Q2: What are the different process states?
+A: New, Ready, Running, Waiting, Terminated.
+   Process transitions based on events (scheduler, I/O, completion).
+
+Q3: What is PCB?
+A: Process Control Block - data structure with all process info.
+   Contains PID, state, PC, registers, memory info, I/O info.
+
+Q4: What is context switching?
+A: Saving state of one process and loading another.
+   Overhead includes saving/loading registers, updating PCB.
+
+Q5: Difference between process and thread?
+A: Process has own address space, thread shares parent's space.
+   Threads are lightweight, faster to create, easier to communicate.
+
+Q6: What are the different IPC mechanisms?
+A: Shared Memory: Common memory region, needs synchronization.
+   Message Passing: Send/receive messages through OS.
+
+Q7: What is a zombie process? Orphan process?
+A: Zombie: Terminated but parent hasn't called wait().
+   Orphan: Parent died, adopted by init (PID 1).
+
+
+================================================================================
+                    END OF PROCESS MANAGEMENT
+================================================================================

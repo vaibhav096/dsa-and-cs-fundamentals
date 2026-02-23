@@ -1,0 +1,468 @@
+================================================================================
+                    NORMALIZATION
+================================================================================
+
+Normalization is the process of organizing database to reduce redundancy
+and improve data integrity.
+
+
+================================================================================
+                    1. WHY NORMALIZATION?
+================================================================================
+
+PROBLEMS WITHOUT NORMALIZATION (Anomalies):
+
+1. INSERTION ANOMALY:
+   - Cannot insert data without other unrelated data
+   - Example: Cannot add new department without employee
+
+2. UPDATE ANOMALY:
+   - Updating one fact requires updating multiple rows
+   - Example: Changing department name in all employee records
+
+3. DELETION ANOMALY:
+   - Deleting data causes loss of other important data
+   - Example: Deleting last employee deletes department info
+
+
+EXAMPLE - UNNORMALIZED TABLE:
+
+EMPLOYEE_DEPT:
++-----+-------+--------+---------+----------+-----------+
+| EID | EName | Salary | DeptID  | DeptName | DeptLoc   |
++-----+-------+--------+---------+----------+-----------+
+| 1   | John  | 50000  | D1      | Sales    | NYC       |
+| 2   | Jane  | 60000  | D1      | Sales    | NYC       |
+| 3   | Bob   | 55000  | D2      | HR       | Chicago   |
++-----+-------+--------+---------+----------+-----------+
+
+Problems:
+- DeptName and DeptLoc repeated (redundancy)
+- Change Sales location? Update multiple rows
+- Delete Bob? Lose HR department info
+
+
+================================================================================
+                    2. NORMAL FORMS OVERVIEW
+================================================================================
+
+1NF  → No repeating groups, atomic values
+2NF  → 1NF + No partial dependencies
+3NF  → 2NF + No transitive dependencies
+BCNF → 3NF + Every determinant is candidate key
+4NF  → BCNF + No multi-valued dependencies
+5NF  → 4NF + No join dependencies
+
+Most databases are normalized to 3NF or BCNF.
+
+
+================================================================================
+                    3. FIRST NORMAL FORM (1NF)
+================================================================================
+
+RULES:
+1. Each column contains atomic (indivisible) values
+2. Each column has unique name
+3. Order of rows/columns doesn't matter
+4. Each row is unique (has primary key)
+5. No repeating groups
+
+
+VIOLATION EXAMPLE:
+
+STUDENT:
++-----+--------+----------------+
+| SID | Name   | Courses        |
++-----+--------+----------------+
+| 1   | John   | Math, Physics  |  ← Multiple values (NOT atomic)
+| 2   | Jane   | Math, Chemistry|
++-----+--------+----------------+
+
+
+SOLUTION - CONVERT TO 1NF:
+
+Option 1: Separate rows
+STUDENT:
++-----+--------+-----------+
+| SID | Name   | Course    |
++-----+--------+-----------+
+| 1   | John   | Math      |
+| 1   | John   | Physics   |
+| 2   | Jane   | Math      |
+| 2   | Jane   | Chemistry |
++-----+--------+-----------+
+PK = (SID, Course)
+
+
+Option 2: Separate table
+STUDENT:                    ENROLLMENT:
++-----+--------+            +-----+-----------+
+| SID | Name   |            | SID | Course    |
++-----+--------+            +-----+-----------+
+| 1   | John   |            | 1   | Math      |
+| 2   | Jane   |            | 1   | Physics   |
++-----+--------+            | 2   | Math      |
+                            | 2   | Chemistry |
+                            +-----+-----------+
+
+
+================================================================================
+                    4. SECOND NORMAL FORM (2NF)
+================================================================================
+
+RULES:
+1. Must be in 1NF
+2. No partial dependency (non-key attribute must depend on ENTIRE primary key)
+
+Only relevant when primary key is composite.
+
+
+PARTIAL DEPENDENCY:
+- When attribute depends on only PART of composite key
+- X → Y where X is part of candidate key
+
+
+VIOLATION EXAMPLE:
+
+ENROLLMENT:
++-----+-----+------------+--------+----------+
+| SID | CID | CourseName | Grade  | Credits  |
++-----+-----+------------+--------+----------+
+| 1   | C1  | DBMS       | A      | 3        |
+| 1   | C2  | OS         | B      | 4        |
+| 2   | C1  | DBMS       | A      | 3        |
++-----+-----+------------+--------+----------+
+PK = (SID, CID)
+
+Functional Dependencies:
+- (SID, CID) → Grade         ✓ Full dependency
+- CID → CourseName, Credits  ✗ Partial dependency
+
+
+SOLUTION - CONVERT TO 2NF:
+
+ENROLLMENT:                  COURSE:
++-----+-----+--------+       +-----+------------+---------+
+| SID | CID | Grade  |       | CID | CourseName | Credits |
++-----+-----+--------+       +-----+------------+---------+
+| 1   | C1  | A      |       | C1  | DBMS       | 3       |
+| 1   | C2  | B      |       | C2  | OS         | 4       |
+| 2   | C1  | A      |       +-----+------------+---------+
++-----+-----+--------+
+
+
+================================================================================
+                    5. THIRD NORMAL FORM (3NF)
+================================================================================
+
+RULES:
+1. Must be in 2NF
+2. No transitive dependency (non-key attribute should not depend on another non-key)
+
+
+TRANSITIVE DEPENDENCY:
+- X → Y → Z where X is key, Y is non-key, Z is non-key
+- Z depends on X through Y
+
+
+VIOLATION EXAMPLE:
+
+EMPLOYEE:
++-----+-------+--------+----------+-----------+
+| EID | EName | DeptID | DeptName | DeptLoc   |
++-----+-------+--------+----------+-----------+
+| 1   | John  | D1     | Sales    | NYC       |
+| 2   | Jane  | D1     | Sales    | NYC       |
+| 3   | Bob   | D2     | HR       | Chicago   |
++-----+-------+--------+----------+-----------+
+PK = EID
+
+Functional Dependencies:
+- EID → EName, DeptID, DeptName, DeptLoc
+- DeptID → DeptName, DeptLoc  (Transitive!)
+
+EID → DeptID → DeptName, DeptLoc
+
+
+SOLUTION - CONVERT TO 3NF:
+
+EMPLOYEE:                    DEPARTMENT:
++-----+-------+--------+     +--------+----------+-----------+
+| EID | EName | DeptID |     | DeptID | DeptName | DeptLoc   |
++-----+-------+--------+     +--------+----------+-----------+
+| 1   | John  | D1     |     | D1     | Sales    | NYC       |
+| 2   | Jane  | D1     |     | D2     | HR       | Chicago   |
+| 3   | Bob   | D2     |     +--------+----------+-----------+
++-----+-------+--------+
+
+
+3NF DEFINITION (Formal):
+A relation R is in 3NF if for every FD X → Y:
+- X is a superkey, OR
+- Y is part of some candidate key (prime attribute)
+
+
+================================================================================
+                    6. BOYCE-CODD NORMAL FORM (BCNF)
+================================================================================
+
+RULES:
+1. Must be in 3NF
+2. For every FD X → Y, X must be a superkey
+
+Stricter than 3NF - no exceptions for prime attributes.
+
+
+DIFFERENCE FROM 3NF:
+- 3NF allows X → Y if Y is prime attribute
+- BCNF requires X to be superkey in ALL cases
+
+
+VIOLATION EXAMPLE:
+
+COURSE_TEACHER:
++---------+--------+---------+
+| Student | Course | Teacher |
++---------+--------+---------+
+| S1      | DBMS   | T1      |
+| S2      | DBMS   | T1      |
+| S1      | OS     | T2      |
+| S3      | OS     | T3      |
++---------+--------+---------+
+
+Candidate Key: (Student, Course)
+FDs:
+- (Student, Course) → Teacher  ✓
+- Teacher → Course             ✗ Teacher is not superkey
+
+This violates BCNF because Teacher → Course but Teacher is not a superkey.
+
+
+SOLUTION - CONVERT TO BCNF:
+
+TEACHES:                    ENROLLMENT:
++---------+---------+       +---------+---------+
+| Teacher | Course  |       | Student | Teacher |
++---------+---------+       +---------+---------+
+| T1      | DBMS    |       | S1      | T1      |
+| T2      | OS      |       | S2      | T1      |
+| T3      | OS      |       | S1      | T2      |
++---------+---------+       | S3      | T3      |
+                            +---------+---------+
+
+
+================================================================================
+                    7. FOURTH NORMAL FORM (4NF)
+================================================================================
+
+RULES:
+1. Must be in BCNF
+2. No multi-valued dependencies (MVD)
+
+
+MULTI-VALUED DEPENDENCY (MVD):
+- X →→ Y means for each X, there's a set of Y values independent of other attributes
+- Notation: X →→ Y
+
+
+VIOLATION EXAMPLE:
+
+EMPLOYEE_SKILLS_HOBBIES:
++-----+--------+---------+
+| EID | Skill  | Hobby   |
++-----+--------+---------+
+| 1   | Java   | Chess   |
+| 1   | Java   | Music   |
+| 1   | Python | Chess   |
+| 1   | Python | Music   |
++-----+--------+---------+
+
+MVDs:
+- EID →→ Skill
+- EID →→ Hobby
+
+Skills and hobbies are independent, causing redundancy.
+
+
+SOLUTION - CONVERT TO 4NF:
+
+EMP_SKILL:                   EMP_HOBBY:
++-----+--------+             +-----+---------+
+| EID | Skill  |             | EID | Hobby   |
++-----+--------+             +-----+---------+
+| 1   | Java   |             | 1   | Chess   |
+| 1   | Python |             | 1   | Music   |
++-----+--------+             +-----+---------+
+
+
+================================================================================
+                    8. FIFTH NORMAL FORM (5NF)
+================================================================================
+
+Also called Project-Join Normal Form (PJNF).
+
+RULES:
+1. Must be in 4NF
+2. No join dependencies that are not implied by candidate keys
+
+
+JOIN DEPENDENCY:
+- A table can be reconstructed by joining its projections
+- If decomposing causes information loss, there's a join dependency
+
+
+Rarely needed in practice. Most designs stop at BCNF or 3NF.
+
+
+================================================================================
+                    9. DENORMALIZATION
+================================================================================
+
+Intentionally adding redundancy for performance.
+
+WHEN TO DENORMALIZE:
+1. Read-heavy systems
+2. Complex joins hurting performance
+3. Reporting/analytics databases
+4. Caching frequently accessed data
+
+
+TECHNIQUES:
+1. Add redundant columns
+2. Create summary tables
+3. Pre-compute joins
+4. Store calculated values
+
+
+TRADE-OFFS:
++------------------+------------------+
+| Normalization    | Denormalization  |
++------------------+------------------+
+| Less redundancy  | More redundancy  |
+| Data integrity   | Possible anomalies|
+| Slower reads     | Faster reads     |
+| Faster writes    | Slower writes    |
+| More joins       | Fewer joins      |
+| Less storage     | More storage     |
++------------------+------------------+
+
+
+================================================================================
+                    10. NORMALIZATION STEPS SUMMARY
+================================================================================
+
+STEP 1: Identify all attributes and FDs
+
+STEP 2: Find candidate keys
+   - Attributes not on RHS must be in key
+   - Compute closures to verify
+
+STEP 3: Check 1NF
+   - Atomic values? No repeating groups?
+   - Fix: Separate into rows or new table
+
+STEP 4: Check 2NF
+   - Partial dependencies?
+   - Fix: Move partial-dependent attrs to new table
+
+STEP 5: Check 3NF
+   - Transitive dependencies?
+   - Fix: Move transitively-dependent attrs to new table
+
+STEP 6: Check BCNF
+   - Every determinant a superkey?
+   - Fix: Decompose based on violating FD
+
+
+================================================================================
+                    11. COMPLETE EXAMPLE
+================================================================================
+
+UNNORMALIZED:
+ORDER_DETAILS:
++--------+----------+--------+--------+---------+----------+--------+
+| OrdID  | OrdDate  | CustID | CName  | Items   | ItemPrice| Total  |
++--------+----------+--------+--------+---------+----------+--------+
+| O1     | 2023-1-1 | C1     | John   | A,B     | 10,20    | 30     |
+| O2     | 2023-1-2 | C2     | Jane   | A       | 10       | 10     |
++--------+----------+--------+--------+---------+----------+--------+
+
+
+TO 1NF (atomic values):
++--------+----------+--------+--------+------+-----------+
+| OrdID  | OrdDate  | CustID | CName  | Item | ItemPrice |
++--------+----------+--------+--------+------+-----------+
+| O1     | 2023-1-1 | C1     | John   | A    | 10        |
+| O1     | 2023-1-1 | C1     | John   | B    | 20        |
+| O2     | 2023-1-2 | C2     | Jane   | A    | 10        |
++--------+----------+--------+--------+------+-----------+
+PK = (OrdID, Item)
+
+
+TO 2NF (remove partial dependencies):
+FDs:
+- OrdID → OrdDate, CustID, CName
+- Item → ItemPrice
+- (OrdID, Item) → full row
+
+ORDERS:                      ORDER_ITEMS:         ITEMS:
++-------+----------+--------+--------+   +-------+------+   +------+-------+
+| OrdID | OrdDate  | CustID | CName  |   | OrdID | Item |   | Item | Price |
++-------+----------+--------+--------+   +-------+------+   +------+-------+
+| O1    | 2023-1-1 | C1     | John   |   | O1    | A    |   | A    | 10    |
+| O2    | 2023-1-2 | C2     | Jane   |   | O1    | B    |   | B    | 20    |
++-------+----------+--------+--------+   | O2    | A    |   +------+-------+
+                                         +-------+------+
+
+
+TO 3NF (remove transitive dependencies):
+FD: CustID → CName (transitive)
+
+ORDERS:                 CUSTOMERS:           ORDER_ITEMS:      ITEMS:
++-------+----------+--------+   +--------+-------+   +-------+------+   +------+-------+
+| OrdID | OrdDate  | CustID |   | CustID | CName |   | OrdID | Item |   | Item | Price |
++-------+----------+--------+   +--------+-------+   +-------+------+   +------+-------+
+| O1    | 2023-1-1 | C1     |   | C1     | John  |   | O1    | A    |   | A    | 10    |
+| O2    | 2023-1-2 | C2     |   | C2     | Jane  |   | O1    | B    |   | B    | 20    |
++-------+----------+--------+   +--------+-------+   | O2    | A    |   +------+-------+
+                                                     +-------+------+
+
+Now in 3NF/BCNF!
+
+
+================================================================================
+                    12. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is Normalization?
+A: Process of organizing database to reduce redundancy and eliminate
+   anomalies (insertion, update, deletion).
+
+Q2: What are the normal forms?
+A: 1NF (atomic), 2NF (no partial dep), 3NF (no transitive dep),
+   BCNF (determinant is superkey), 4NF (no MVD), 5NF (no join dep).
+
+Q3: Difference between 3NF and BCNF?
+A: 3NF allows X → Y if Y is prime attribute.
+   BCNF requires X to be superkey for ALL FDs.
+
+Q4: What is partial dependency?
+A: When non-key attribute depends on part of composite key.
+   Violates 2NF.
+
+Q5: What is transitive dependency?
+A: When non-key attribute depends on another non-key attribute.
+   A → B → C where B is non-key. Violates 3NF.
+
+Q6: When to denormalize?
+A: Read-heavy systems, complex joins, reporting databases,
+   when performance outweighs redundancy concerns.
+
+Q7: How to find candidate key?
+A: Find attributes not on RHS of any FD (must be in key).
+   Compute closure to verify it determines all attributes.
+
+
+================================================================================
+                    END OF NORMALIZATION
+================================================================================

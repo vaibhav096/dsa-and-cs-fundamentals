@@ -1,0 +1,358 @@
+================================================================================
+                    TRANSPORT LAYER
+================================================================================
+
+Layer 4 of OSI model. Provides end-to-end communication.
+
+
+================================================================================
+                    1. TRANSPORT LAYER FUNCTIONS
+================================================================================
+
+1. SEGMENTATION:
+   - Break data into segments
+   - Add sequence numbers
+
+2. PORT ADDRESSING:
+   - Identify applications using ports
+   - Source and destination ports
+
+3. CONNECTION CONTROL:
+   - Connectionless (UDP)
+   - Connection-oriented (TCP)
+
+4. FLOW CONTROL:
+   - Prevent receiver overflow
+
+5. ERROR CONTROL:
+   - Detect and retransmit lost segments
+
+
+================================================================================
+                    2. PORT NUMBERS
+================================================================================
+
+16-bit numbers (0-65535)
+
+WELL-KNOWN PORTS (0-1023):
+| Port | Protocol | Service         |
+|------|----------|-----------------|
+|  20  |   TCP    | FTP Data        |
+|  21  |   TCP    | FTP Control     |
+|  22  |   TCP    | SSH             |
+|  23  |   TCP    | Telnet          |
+|  25  |   TCP    | SMTP            |
+|  53  | TCP/UDP  | DNS             |
+|  67  |   UDP    | DHCP Server     |
+|  68  |   UDP    | DHCP Client     |
+|  80  |   TCP    | HTTP            |
+| 110  |   TCP    | POP3            |
+| 143  |   TCP    | IMAP            |
+| 443  |   TCP    | HTTPS           |
+
+REGISTERED PORTS (1024-49151):
+- Assigned to specific applications
+
+DYNAMIC/PRIVATE (49152-65535):
+- Client-side, temporary
+
+
+SOCKET:
+IP Address + Port Number
+Example: 192.168.1.1:80
+
+
+================================================================================
+                    3. UDP (User Datagram Protocol)
+================================================================================
+
+Simple, connectionless protocol.
+
+
+CHARACTERISTICS:
+- Connectionless
+- Unreliable (no guarantees)
+- No flow control
+- No congestion control
+- Fast, low overhead
+
+
+UDP HEADER (8 bytes):
+
++──────────────────+──────────────────+
+|   Source Port    | Destination Port |
+|       16b        |        16b       |
++──────────────────+──────────────────+
+|     Length       |     Checksum     |
+|       16b        |        16b       |
++──────────────────+──────────────────+
+|               Data                  |
++─────────────────────────────────────+
+
+
+USE CASES:
+- DNS queries
+- Streaming (audio/video)
+- Gaming
+- VoIP
+- DHCP
+
+
+================================================================================
+                    4. TCP (Transmission Control Protocol)
+================================================================================
+
+Reliable, connection-oriented protocol.
+
+
+CHARACTERISTICS:
+- Connection-oriented
+- Reliable delivery
+- Ordered data
+- Flow control
+- Congestion control
+- Full duplex
+
+
+TCP HEADER (20-60 bytes):
+
++──────────────────+──────────────────+
+|   Source Port    | Destination Port |
+|       16b        |        16b       |
++──────────────────────────────────────+
+|           Sequence Number            |
+|                32b                   |
++──────────────────────────────────────+
+|       Acknowledgment Number          |
+|                32b                   |
++──────+────────+──────────────────────+
+|Offset| Flags  |      Window          |
+|  4b  |   6b   |        16b           |
++──────+────────+──────────────────────+
+|    Checksum    |   Urgent Pointer    |
+|       16b      |        16b          |
++────────────────+─────────────────────+
+|              Options                 |
++──────────────────────────────────────+
+
+
+FLAGS:
+- SYN: Synchronize (connection setup)
+- ACK: Acknowledgment
+- FIN: Finish (connection teardown)
+- RST: Reset (abort connection)
+- PSH: Push (deliver immediately)
+- URG: Urgent data
+
+
+================================================================================
+                    5. TCP CONNECTION MANAGEMENT
+================================================================================
+
+THREE-WAY HANDSHAKE (Connection Establishment):
+
+Client                          Server
+   |                               |
+   |──── SYN (seq=x) ────────────→|
+   |                               |
+   |←──── SYN+ACK (seq=y, ack=x+1)─|
+   |                               |
+   |──── ACK (seq=x+1, ack=y+1) ──→|
+   |                               |
+   |       Connection Established   |
+
+
+FOUR-WAY HANDSHAKE (Connection Termination):
+
+Client                          Server
+   |                               |
+   |──── FIN (seq=x) ────────────→|
+   |                               |
+   |←──── ACK (ack=x+1) ──────────|
+   |                               |
+   |←──── FIN (seq=y) ────────────|
+   |                               |
+   |──── ACK (ack=y+1) ──────────→|
+   |                               |
+   |       Connection Closed        |
+
+
+TCP STATES:
+
+CLOSED → LISTEN → SYN_RECEIVED → ESTABLISHED
+                                      ↓
+              FIN_WAIT_1 ← ESTABLISHED
+                    ↓
+              FIN_WAIT_2
+                    ↓
+              TIME_WAIT
+                    ↓
+                 CLOSED
+
+
+================================================================================
+                    6. TCP FLOW CONTROL
+================================================================================
+
+SLIDING WINDOW:
+- Receiver advertises window size
+- Sender limits unacknowledged data to window
+
+Example:
+Receiver window = 5000 bytes
+Sender can send 5000 bytes before waiting for ACK
+
+Window updates:
+- Shrinks as data sent
+- Grows as ACKs received
+
+
+ZERO WINDOW:
+- Receiver buffer full
+- Sender stops, waits for window update
+- Persist timer prevents deadlock
+
+
+================================================================================
+                    7. TCP CONGESTION CONTROL
+================================================================================
+
+Prevent network overload.
+
+
+CONGESTION WINDOW (cwnd):
+- Sender-side limit
+- Actual window = min(cwnd, receiver window)
+
+
+ALGORITHMS:
+
+1. SLOW START:
+   - cwnd starts at 1 MSS
+   - Double cwnd each RTT (exponential)
+   - Until threshold (ssthresh) reached
+
+   cwnd: 1 → 2 → 4 → 8 → 16...
+
+
+2. CONGESTION AVOIDANCE:
+   - After threshold
+   - Increase cwnd by 1 MSS per RTT (linear)
+
+   cwnd: 16 → 17 → 18 → 19...
+
+
+3. ON PACKET LOSS:
+
+   a) Timeout:
+      - ssthresh = cwnd/2
+      - cwnd = 1 MSS
+      - Back to slow start
+
+   b) Triple Duplicate ACK (Fast Recovery):
+      - ssthresh = cwnd/2
+      - cwnd = ssthresh + 3
+      - Skip slow start (TCP Reno)
+
+
+CONGESTION CONTROL GRAPH:
+
+cwnd
+ ↑              /\
+ │           /    \
+ │         /        \  ← Loss
+ │       /            \
+ │     /                \
+ │   /                    \ → Slow Start
+ │ /                        \
+ +─────────────────────────────→ Time
+   Slow    Congestion    Loss
+   Start   Avoidance
+
+
+================================================================================
+                    8. TCP TIMERS
+================================================================================
+
+1. RETRANSMISSION TIMER:
+   - Wait for ACK
+   - Timeout → retransmit
+   - RTO = SRTT + 4*RTTVAR
+
+2. PERSIST TIMER:
+   - Probe receiver when window = 0
+   - Prevent deadlock
+
+3. KEEPALIVE TIMER:
+   - Check if connection alive
+   - Send probe if idle too long
+
+4. TIME_WAIT TIMER:
+   - Wait after close (2*MSL)
+   - Ensure all packets delivered
+
+
+================================================================================
+                    9. TCP vs UDP COMPARISON
+================================================================================
+
++─────────────────+──────────────────+──────────────────+
+| Feature         |       TCP        |       UDP        |
++─────────────────+──────────────────+──────────────────+
+| Connection      | Connection-      | Connectionless   |
+|                 | oriented         |                  |
++─────────────────+──────────────────+──────────────────+
+| Reliability     | Reliable         | Unreliable       |
++─────────────────+──────────────────+──────────────────+
+| Ordering        | Ordered          | No ordering      |
++─────────────────+──────────────────+──────────────────+
+| Flow Control    | Yes              | No               |
++─────────────────+──────────────────+──────────────────+
+| Congestion      | Yes              | No               |
+| Control         |                  |                  |
++─────────────────+──────────────────+──────────────────+
+| Header Size     | 20-60 bytes      | 8 bytes          |
++─────────────────+──────────────────+──────────────────+
+| Speed           | Slower           | Faster           |
++─────────────────+──────────────────+──────────────────+
+| Use Case        | Web, Email,      | DNS, Streaming,  |
+|                 | File transfer    | Gaming, VoIP     |
++─────────────────+──────────────────+──────────────────+
+
+
+================================================================================
+                    10. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: Difference between TCP and UDP?
+A: TCP: Connection-oriented, reliable, ordered, flow/congestion control.
+   UDP: Connectionless, unreliable, faster, less overhead.
+
+Q2: Explain TCP three-way handshake.
+A: SYN → SYN+ACK → ACK
+   Client sends SYN, server responds SYN+ACK, client sends ACK.
+
+Q3: Why three-way handshake? Why not two?
+A: Ensures both sides know the other is ready.
+   Two-way can't confirm client received server's response.
+
+Q4: What is TCP congestion control?
+A: Mechanisms to prevent network overload.
+   Slow start, congestion avoidance, fast recovery.
+
+Q5: What is a port number?
+A: 16-bit number identifying application.
+   Combined with IP forms socket.
+
+Q6: What is TCP sliding window?
+A: Flow control mechanism. Receiver advertises window size.
+   Sender limits outstanding data to window.
+
+Q7: What happens if packet lost in TCP?
+A: Timeout → retransmit, or
+   3 duplicate ACKs → fast retransmit.
+
+
+================================================================================
+                    END OF TRANSPORT LAYER
+================================================================================

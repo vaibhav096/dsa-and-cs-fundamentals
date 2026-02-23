@@ -1,0 +1,555 @@
+================================================================================
+                    OBJECT-ORIENTED PROGRAMMING (OOP) IN PYTHON
+================================================================================
+
+OOP is a programming paradigm based on the concept of "objects" which contain
+data (attributes) and code (methods).
+
+
+================================================================================
+                          1. CLASSES AND OBJECTS
+================================================================================
+
+CLASS: Blueprint for creating objects
+OBJECT: Instance of a class
+
+Basic Syntax:
+    class ClassName:
+        # class attributes
+        # methods
+
+    # Create object
+    obj = ClassName()
+
+
+Example:
+    class Dog:
+        # Class attribute (shared by all instances)
+        species = "Canine"
+
+        # Constructor (initializer)
+        def __init__(self, name, age):
+            # Instance attributes
+            self.name = name
+            self.age = age
+
+        # Instance method
+        def bark(self):
+            return f"{self.name} says Woof!"
+
+    # Create objects
+    dog1 = Dog("Buddy", 3)
+    dog2 = Dog("Max", 5)
+
+    print(dog1.name)       # Buddy
+    print(dog1.bark())     # Buddy says Woof!
+    print(Dog.species)     # Canine
+
+
+SELF KEYWORD:
+-------------
+- Refers to the current instance of the class
+- Must be first parameter of instance methods
+- Used to access instance attributes and methods
+- Name "self" is convention, can be anything (but don't!)
+
+
+================================================================================
+                          2. __init__ METHOD (Constructor)
+================================================================================
+
+Special method called when object is created.
+
+    class Person:
+        def __init__(self, name, age):
+            self.name = name
+            self.age = age
+
+    p = Person("John", 25)  # __init__ is called automatically
+
+
+Multiple Ways to Initialize:
+    class Rectangle:
+        def __init__(self, length=0, width=0):
+            self.length = length
+            self.width = width
+
+    r1 = Rectangle()           # length=0, width=0
+    r2 = Rectangle(5)          # length=5, width=0
+    r3 = Rectangle(5, 3)       # length=5, width=3
+    r4 = Rectangle(width=10)   # length=0, width=10
+
+
+================================================================================
+                          3. INSTANCE vs CLASS ATTRIBUTES
+================================================================================
+
+INSTANCE ATTRIBUTES:
+--------------------
+- Unique to each object
+- Defined in __init__ using self.attr
+- Accessed via self.attr or obj.attr
+
+CLASS ATTRIBUTES:
+-----------------
+- Shared by all instances
+- Defined directly in class body
+- Accessed via ClassName.attr or self.attr
+
+    class Employee:
+        # Class attribute
+        company = "TechCorp"
+        employee_count = 0
+
+        def __init__(self, name):
+            # Instance attribute
+            self.name = name
+            Employee.employee_count += 1
+
+    e1 = Employee("Alice")
+    e2 = Employee("Bob")
+
+    print(Employee.company)         # TechCorp
+    print(Employee.employee_count)  # 2
+    print(e1.company)               # TechCorp (looks up to class)
+
+
+================================================================================
+                          4. METHODS
+================================================================================
+
+INSTANCE METHODS:
+-----------------
+- Take self as first parameter
+- Can access and modify instance state
+
+    class Circle:
+        def __init__(self, radius):
+            self.radius = radius
+
+        def area(self):
+            return 3.14159 * self.radius ** 2
+
+
+CLASS METHODS:
+--------------
+- Take cls as first parameter (class itself)
+- Can access class attributes
+- Use @classmethod decorator
+- Often used as alternative constructors
+
+    class Date:
+        def __init__(self, day, month, year):
+            self.day = day
+            self.month = month
+            self.year = year
+
+        @classmethod
+        def from_string(cls, date_string):
+            day, month, year = map(int, date_string.split('-'))
+            return cls(day, month, year)
+
+    d1 = Date(25, 12, 2023)
+    d2 = Date.from_string("25-12-2023")  # Alternative constructor
+
+
+STATIC METHODS:
+---------------
+- Don't take self or cls
+- Cannot access instance or class state
+- Use @staticmethod decorator
+- Utility functions related to class
+
+    class Math:
+        @staticmethod
+        def add(a, b):
+            return a + b
+
+        @staticmethod
+        def is_even(n):
+            return n % 2 == 0
+
+    print(Math.add(5, 3))      # 8
+    print(Math.is_even(4))     # True
+
+
+================================================================================
+                          5. ENCAPSULATION
+================================================================================
+
+Bundling data and methods together, hiding internal details.
+
+ACCESS MODIFIERS (by convention):
+---------------------------------
+public     : name        (accessible everywhere)
+protected  : _name       (accessible in class and subclasses)
+private    : __name      (name mangling - accessible within class)
+
+    class BankAccount:
+        def __init__(self, balance):
+            self.__balance = balance      # Private attribute
+
+        def deposit(self, amount):
+            if amount > 0:
+                self.__balance += amount
+
+        def get_balance(self):           # Getter method
+            return self.__balance
+
+    acc = BankAccount(1000)
+    # acc.__balance        # AttributeError!
+    print(acc.get_balance())   # 1000
+
+    # Name mangling (still accessible but don't use)
+    print(acc._BankAccount__balance)  # 1000
+
+
+PROPERTY DECORATOR:
+-------------------
+Create getters and setters elegantly.
+
+    class Person:
+        def __init__(self, name):
+            self._name = name
+
+        @property
+        def name(self):           # Getter
+            return self._name
+
+        @name.setter
+        def name(self, value):    # Setter
+            if isinstance(value, str):
+                self._name = value
+            else:
+                raise ValueError("Name must be string")
+
+        @name.deleter
+        def name(self):           # Deleter
+            del self._name
+
+    p = Person("John")
+    print(p.name)        # John (calls getter)
+    p.name = "Alice"     # Calls setter
+    # p.name = 123       # Raises ValueError
+
+
+================================================================================
+                          6. INHERITANCE
+================================================================================
+
+Creating new class from existing class. Child class inherits attributes
+and methods from parent class.
+
+Basic Syntax:
+    class ParentClass:
+        pass
+
+    class ChildClass(ParentClass):
+        pass
+
+
+Example:
+    class Animal:
+        def __init__(self, name):
+            self.name = name
+
+        def speak(self):
+            pass
+
+    class Dog(Animal):
+        def speak(self):
+            return f"{self.name} says Woof!"
+
+    class Cat(Animal):
+        def speak(self):
+            return f"{self.name} says Meow!"
+
+    dog = Dog("Buddy")
+    cat = Cat("Whiskers")
+    print(dog.speak())   # Buddy says Woof!
+    print(cat.speak())   # Whiskers says Meow!
+
+
+SUPER() FUNCTION:
+-----------------
+Call parent class methods.
+
+    class Animal:
+        def __init__(self, name):
+            self.name = name
+
+    class Dog(Animal):
+        def __init__(self, name, breed):
+            super().__init__(name)   # Call parent's __init__
+            self.breed = breed
+
+
+TYPES OF INHERITANCE:
+---------------------
+
+1. Single Inheritance:
+   class B(A): pass
+
+2. Multiple Inheritance:
+   class C(A, B): pass
+
+3. Multilevel Inheritance:
+   class A: pass
+   class B(A): pass
+   class C(B): pass
+
+4. Hierarchical Inheritance:
+   class B(A): pass
+   class C(A): pass
+
+
+MULTIPLE INHERITANCE:
+---------------------
+    class A:
+        def method(self):
+            return "A"
+
+    class B:
+        def method(self):
+            return "B"
+
+    class C(A, B):   # A comes first
+        pass
+
+    c = C()
+    print(c.method())  # "A" (Method Resolution Order: C -> A -> B)
+
+
+MRO (Method Resolution Order):
+    print(C.__mro__)
+    # (<class 'C'>, <class 'A'>, <class 'B'>, <class 'object'>)
+
+
+================================================================================
+                          7. POLYMORPHISM
+================================================================================
+
+Same interface, different implementations.
+
+1. METHOD OVERRIDING (Runtime Polymorphism):
+-------------------------------------------
+Child class provides different implementation.
+
+    class Shape:
+        def area(self):
+            pass
+
+    class Rectangle(Shape):
+        def __init__(self, l, w):
+            self.l, self.w = l, w
+
+        def area(self):
+            return self.l * self.w
+
+    class Circle(Shape):
+        def __init__(self, r):
+            self.r = r
+
+        def area(self):
+            return 3.14 * self.r ** 2
+
+    # Polymorphic behavior
+    shapes = [Rectangle(4, 5), Circle(3)]
+    for shape in shapes:
+        print(shape.area())  # Different results, same method name
+
+
+2. DUCK TYPING:
+---------------
+"If it walks like a duck and quacks like a duck, it's a duck"
+Python doesn't check type, only behavior.
+
+    class Duck:
+        def speak(self):
+            return "Quack!"
+
+    class Person:
+        def speak(self):
+            return "Hello!"
+
+    def make_speak(obj):
+        print(obj.speak())  # Works with any object that has speak()
+
+    make_speak(Duck())    # Quack!
+    make_speak(Person())  # Hello!
+
+
+3. OPERATOR OVERLOADING:
+------------------------
+Define behavior of operators for custom classes.
+
+    class Vector:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+        def __add__(self, other):
+            return Vector(self.x + other.x, self.y + other.y)
+
+        def __str__(self):
+            return f"Vector({self.x}, {self.y})"
+
+    v1 = Vector(2, 3)
+    v2 = Vector(4, 5)
+    v3 = v1 + v2      # Calls __add__
+    print(v3)         # Vector(6, 8)
+
+
+================================================================================
+                          8. ABSTRACTION
+================================================================================
+
+Hiding complex implementation, showing only necessary features.
+
+ABSTRACT BASE CLASS (ABC):
+--------------------------
+    from abc import ABC, abstractmethod
+
+    class Shape(ABC):
+        @abstractmethod
+        def area(self):
+            pass
+
+        @abstractmethod
+        def perimeter(self):
+            pass
+
+    class Rectangle(Shape):
+        def __init__(self, l, w):
+            self.l, self.w = l, w
+
+        def area(self):
+            return self.l * self.w
+
+        def perimeter(self):
+            return 2 * (self.l + self.w)
+
+    # shape = Shape()      # TypeError! Can't instantiate abstract class
+    rect = Rectangle(4, 5)
+    print(rect.area())     # 20
+
+
+================================================================================
+                     9. SPECIAL (DUNDER/MAGIC) METHODS
+================================================================================
+
+Methods with double underscores. Define behavior for built-in operations.
+
+COMMON DUNDER METHODS:
+----------------------
+__init__(self)          : Constructor
+__str__(self)           : String representation (print, str())
+__repr__(self)          : Developer representation (repr())
+__len__(self)           : Length (len())
+__getitem__(self, key)  : Indexing (obj[key])
+__setitem__(self, k, v) : Assignment (obj[key] = value)
+__delitem__(self, key)  : Deletion (del obj[key])
+__iter__(self)          : Iteration
+__next__(self)          : Next in iteration
+__contains__(self, item): Membership (item in obj)
+__call__(self)          : Make object callable
+__eq__(self, other)     : Equality (==)
+__lt__(self, other)     : Less than (<)
+__add__(self, other)    : Addition (+)
+__sub__(self, other)    : Subtraction (-)
+__mul__(self, other)    : Multiplication (*)
+__bool__(self)          : Boolean conversion
+
+
+Example:
+    class Book:
+        def __init__(self, title, pages):
+            self.title = title
+            self.pages = pages
+
+        def __str__(self):
+            return f"'{self.title}'"
+
+        def __repr__(self):
+            return f"Book('{self.title}', {self.pages})"
+
+        def __len__(self):
+            return self.pages
+
+        def __eq__(self, other):
+            return self.title == other.title
+
+        def __lt__(self, other):
+            return self.pages < other.pages
+
+        def __bool__(self):
+            return self.pages > 0
+
+    book = Book("Python Guide", 500)
+    print(str(book))     # 'Python Guide'
+    print(repr(book))    # Book('Python Guide', 500)
+    print(len(book))     # 500
+
+
+================================================================================
+                         10. INTERVIEW QUESTIONS
+================================================================================
+
+Q: What is OOP?
+A: Programming paradigm based on objects containing data (attributes)
+   and code (methods). Four pillars: Encapsulation, Inheritance,
+   Polymorphism, Abstraction.
+
+Q: What is a class and object?
+A: Class is blueprint/template. Object is instance of class.
+
+Q: What is self?
+A: Reference to current instance. Used to access instance attributes
+   and methods.
+
+Q: What is __init__?
+A: Constructor method, called when object is created to initialize
+   attributes.
+
+Q: Class vs Instance attributes?
+A: Class attributes are shared by all instances (defined in class body).
+   Instance attributes are unique to each instance (defined with self).
+
+Q: What is encapsulation?
+A: Bundling data and methods, restricting direct access to internals.
+   Achieved using private attributes (__attr) and getters/setters.
+
+Q: What is inheritance?
+A: Creating new class from existing class. Child inherits parent's
+   attributes and methods.
+
+Q: What is polymorphism?
+A: Same interface, different implementations. Method overriding,
+   duck typing, operator overloading.
+
+Q: What is abstraction?
+A: Hiding complex implementation, showing only necessary interface.
+   Achieved using abstract base classes (ABC).
+
+Q: What is super()?
+A: Function to call parent class methods from child class.
+
+Q: Multiple inheritance vs Multilevel inheritance?
+A: Multiple: class C(A, B) - inherits from multiple parents
+   Multilevel: A -> B -> C - chain of inheritance
+
+Q: What is MRO?
+A: Method Resolution Order. Order in which Python looks for methods
+   in inheritance hierarchy. Use ClassName.__mro__ to see.
+
+Q: What are dunder methods?
+A: Special methods with double underscores (__method__).
+   Define behavior for built-in operations.
+
+Q: Difference between __str__ and __repr__?
+A: __str__: User-friendly string (print, str())
+   __repr__: Developer/debug string (repr(), interpreter)
+
+================================================================================
+                            END OF OOP
+================================================================================

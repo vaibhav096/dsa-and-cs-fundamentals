@@ -1,0 +1,523 @@
+================================================================================
+                    NoSQL DATABASES
+================================================================================
+
+NoSQL = "Not Only SQL"
+Databases designed for specific use cases beyond traditional relational model.
+
+
+================================================================================
+                    1. WHY NoSQL?
+================================================================================
+
+LIMITATIONS OF RELATIONAL DATABASES:
+
+1. Scalability: Vertical scaling is expensive
+2. Schema Rigidity: Fixed schema, hard to change
+3. Complex Joins: Slow for distributed data
+4. Big Data: Not designed for massive unstructured data
+
+
+WHEN TO USE NoSQL:
+
+1. Large scale data (petabytes)
+2. Flexible/evolving schema
+3. High read/write throughput
+4. Distributed systems
+5. Real-time applications
+6. Unstructured/semi-structured data
+
+
+================================================================================
+                    2. CAP THEOREM
+================================================================================
+
+In distributed systems, you can only have 2 of 3:
+
+C - CONSISTENCY:
+Every read receives most recent write or error.
+
+A - AVAILABILITY:
+Every request receives a response (not necessarily latest data).
+
+P - PARTITION TOLERANCE:
+System continues operating despite network partitions.
+
+
+        C
+       / \
+      /   \
+     CA    CP
+     /      \
+    A--------P
+       AP
+
+Since network partitions are unavoidable in distributed systems,
+the real choice is between CONSISTENCY and AVAILABILITY.
+
+CP Systems: MongoDB, HBase, Redis
+AP Systems: Cassandra, DynamoDB, CouchDB
+
+
+BASE vs ACID:
+
+ACID (Relational):
+- Atomicity
+- Consistency
+- Isolation
+- Durability
+
+BASE (NoSQL):
+- Basically Available
+- Soft state
+- Eventually consistent
+
+
+================================================================================
+                    3. TYPES OF NoSQL DATABASES
+================================================================================
+
+1. KEY-VALUE STORES
+2. DOCUMENT STORES
+3. COLUMN-FAMILY STORES
+4. GRAPH DATABASES
+
+
+================================================================================
+                    4. KEY-VALUE STORES
+================================================================================
+
+Simplest NoSQL model. Data stored as key-value pairs.
+Like a hash map / dictionary.
+
+
+STRUCTURE:
++--------+-----------------+
+| Key    | Value           |
++--------+-----------------+
+| user:1 | {name: "John"}  |
+| user:2 | {name: "Jane"}  |
+| cart:1 | [item1, item2]  |
++--------+-----------------+
+
+Value can be anything: string, JSON, binary blob.
+
+
+OPERATIONS:
+- GET(key) → value
+- PUT(key, value)
+- DELETE(key)
+
+
+EXAMPLES:
+- Redis
+- Amazon DynamoDB
+- Memcached
+- Riak
+
+
+USE CASES:
+- Session management
+- Caching
+- Shopping carts
+- User preferences
+- Real-time analytics
+
+
+REDIS EXAMPLE:
+
+SET user:1 '{"name": "John", "email": "john@example.com"}'
+GET user:1
+DEL user:1
+
+-- Data structures
+LPUSH mylist "item1"
+LPUSH mylist "item2"
+LRANGE mylist 0 -1
+
+HSET user:1 name "John"
+HSET user:1 email "john@example.com"
+HGET user:1 name
+HGETALL user:1
+
+
+================================================================================
+                    5. DOCUMENT STORES
+================================================================================
+
+Store data as documents (usually JSON or BSON).
+Each document is self-contained, no fixed schema.
+
+
+STRUCTURE:
+
+Collection: users
++----------------------------------------+
+| {                                      |
+|   "_id": "1",                          |
+|   "name": "John",                      |
+|   "email": "john@example.com",         |
+|   "address": {                         |
+|     "city": "NYC",                     |
+|     "zip": "10001"                     |
+|   },                                   |
+|   "orders": [101, 102, 103]            |
+| }                                      |
++----------------------------------------+
+| {                                      |
+|   "_id": "2",                          |
+|   "name": "Jane",                      |
+|   "phone": "555-1234"                  |  ← Different fields OK!
+| }                                      |
++----------------------------------------+
+
+
+EXAMPLES:
+- MongoDB
+- CouchDB
+- Amazon DocumentDB
+- Firebase Firestore
+
+
+USE CASES:
+- Content management
+- User profiles
+- Product catalogs
+- Mobile apps
+- Real-time analytics
+
+
+MONGODB EXAMPLE:
+
+// Create
+db.users.insertOne({
+    name: "John",
+    email: "john@example.com",
+    age: 25
+})
+
+// Read
+db.users.find({ age: { $gt: 20 } })
+db.users.findOne({ name: "John" })
+
+// Update
+db.users.updateOne(
+    { name: "John" },
+    { $set: { age: 26 } }
+)
+
+// Delete
+db.users.deleteOne({ name: "John" })
+
+// Query with conditions
+db.users.find({
+    age: { $gte: 20, $lte: 30 },
+    "address.city": "NYC"
+}).sort({ name: 1 })
+
+// Aggregation
+db.orders.aggregate([
+    { $match: { status: "completed" } },
+    { $group: { _id: "$customerId", total: { $sum: "$amount" } } },
+    { $sort: { total: -1 } }
+])
+
+
+================================================================================
+                    6. COLUMN-FAMILY STORES
+================================================================================
+
+Data stored in columns instead of rows.
+Good for analytical queries on specific columns.
+
+
+STRUCTURE:
+
+Row Key    | Column Family: Personal    | Column Family: Contact
+-----------+----------------------------+--------------------------
+user:1     | name: "John", age: 25      | email: "john@ex.com"
+user:2     | name: "Jane", age: 30      | phone: "555-1234"
+
+
+Each row can have different columns within a family.
+Columns stored together on disk.
+
+
+WIDE-COLUMN STORE STRUCTURE:
+
+Row Key → Column Family → Columns
+
+user:1 → personal → {name: "John", age: 25}
+       → contact  → {email: "john@ex.com"}
+
+user:2 → personal → {name: "Jane"}
+       → contact  → {phone: "555-1234", city: "NYC"}
+
+
+EXAMPLES:
+- Apache Cassandra
+- Apache HBase
+- Google Bigtable
+- ScyllaDB
+
+
+USE CASES:
+- Time-series data
+- IoT sensor data
+- Logging and analytics
+- Recommendation engines
+- Large-scale data warehousing
+
+
+CASSANDRA CQL EXAMPLE:
+
+-- Create keyspace (database)
+CREATE KEYSPACE myapp WITH replication = {
+    'class': 'SimpleStrategy',
+    'replication_factor': 3
+};
+
+-- Create table
+CREATE TABLE users (
+    user_id UUID PRIMARY KEY,
+    name TEXT,
+    email TEXT,
+    created_at TIMESTAMP
+);
+
+-- Insert
+INSERT INTO users (user_id, name, email, created_at)
+VALUES (uuid(), 'John', 'john@example.com', toTimestamp(now()));
+
+-- Query
+SELECT * FROM users WHERE user_id = some-uuid;
+
+
+================================================================================
+                    7. GRAPH DATABASES
+================================================================================
+
+Data stored as nodes and edges (relationships).
+Optimized for connected data and traversals.
+
+
+STRUCTURE:
+
+    (User: John)----[FRIENDS]---->(User: Jane)
+          |                            |
+     [PURCHASED]                  [PURCHASED]
+          |                            |
+          v                            v
+    (Product: Phone)            (Product: Laptop)
+
+
+COMPONENTS:
+- Nodes: Entities (User, Product)
+- Edges: Relationships (FRIENDS, PURCHASED)
+- Properties: Attributes on nodes/edges
+
+
+EXAMPLES:
+- Neo4j
+- Amazon Neptune
+- ArangoDB
+- JanusGraph
+
+
+USE CASES:
+- Social networks
+- Recommendation engines
+- Fraud detection
+- Knowledge graphs
+- Network analysis
+- Path finding
+
+
+NEO4J CYPHER EXAMPLE:
+
+// Create nodes
+CREATE (john:User {name: "John", age: 25})
+CREATE (jane:User {name: "Jane", age: 30})
+CREATE (phone:Product {name: "iPhone", price: 999})
+
+// Create relationships
+MATCH (john:User {name: "John"}), (jane:User {name: "Jane"})
+CREATE (john)-[:FRIENDS]->(jane)
+
+MATCH (john:User {name: "John"}), (phone:Product {name: "iPhone"})
+CREATE (john)-[:PURCHASED {date: "2023-01-01"}]->(phone)
+
+// Query
+MATCH (u:User)-[:FRIENDS]->(friend)
+WHERE u.name = "John"
+RETURN friend.name
+
+// Find friends of friends
+MATCH (u:User {name: "John"})-[:FRIENDS*2]->(fof)
+RETURN DISTINCT fof.name
+
+// Shortest path
+MATCH path = shortestPath(
+    (a:User {name: "John"})-[*]-(b:User {name: "Alice"})
+)
+RETURN path
+
+
+================================================================================
+                    8. COMPARISON TABLE
+================================================================================
+
++----------------+------------+------------+------------+------------+
+| Feature        | Key-Value  | Document   | Column     | Graph      |
++----------------+------------+------------+------------+------------+
+| Data Model     | Key:Value  | JSON docs  | Columns    | Nodes/Edges|
+| Schema         | None       | Flexible   | Flexible   | Flexible   |
+| Query          | By key     | Rich       | Column-    | Traversal  |
+|                |            | queries    | based      |            |
+| Scalability    | High       | High       | Very High  | Moderate   |
+| Use Case       | Caching    | Content    | Analytics  | Relations  |
+| Examples       | Redis      | MongoDB    | Cassandra  | Neo4j      |
++----------------+------------+------------+------------+------------+
+
+
+================================================================================
+                    9. SQL vs NoSQL
+================================================================================
+
++------------------+--------------------+--------------------+
+| Criteria         | SQL (RDBMS)        | NoSQL              |
++------------------+--------------------+--------------------+
+| Data Model       | Tables, rows       | Various (doc,KV)   |
+| Schema           | Fixed, predefined  | Flexible, dynamic  |
+| Scaling          | Vertical           | Horizontal         |
+| Transactions     | ACID               | BASE (eventual)    |
+| Joins            | Supported          | Limited/None       |
+| Query Language   | SQL                | Varies by DB       |
+| Best For         | Structured data    | Unstructured data  |
+| Consistency      | Strong             | Eventual           |
++------------------+--------------------+--------------------+
+
+
+WHEN TO USE SQL:
+- Complex queries with joins
+- ACID transactions required
+- Structured, consistent data
+- Financial applications
+- Traditional business apps
+
+
+WHEN TO USE NoSQL:
+- Big data, high volume
+- Flexible schema needs
+- High availability required
+- Distributed systems
+- Real-time applications
+- Rapid development
+
+
+================================================================================
+                    10. SHARDING AND REPLICATION
+================================================================================
+
+SHARDING (Horizontal Partitioning):
+Split data across multiple servers by key range or hash.
+
+    Shard 1: Users A-M
+    Shard 2: Users N-Z
+
+Benefits:
+- Distribute load
+- Increase capacity
+- Parallel processing
+
+Challenges:
+- Cross-shard queries
+- Rebalancing
+- Consistency
+
+
+REPLICATION:
+Copy data to multiple servers.
+
+Types:
+1. Master-Slave: One write node, multiple read nodes
+2. Master-Master: Multiple write nodes
+3. Peer-to-Peer: All nodes equal
+
+Benefits:
+- High availability
+- Fault tolerance
+- Read scaling
+
+Challenges:
+- Consistency lag
+- Conflict resolution
+
+
+================================================================================
+                    11. CHOOSING THE RIGHT DATABASE
+================================================================================
+
+QUESTIONS TO ASK:
+
+1. What is the data structure?
+   - Structured → SQL
+   - Semi-structured → Document
+   - Highly connected → Graph
+   - Simple lookups → Key-Value
+
+2. What are the query patterns?
+   - Complex joins → SQL
+   - Aggregations → Column-family
+   - Traversals → Graph
+   - Key lookups → Key-Value
+
+3. What are consistency requirements?
+   - Strong ACID → SQL
+   - Eventual OK → NoSQL
+
+4. What is the scale?
+   - Small-Medium → SQL often fine
+   - Massive scale → NoSQL
+
+5. What is read/write ratio?
+   - Write-heavy → Cassandra, HBase
+   - Read-heavy → Redis, MongoDB
+
+
+================================================================================
+                    12. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is NoSQL? Why use it?
+A: "Not Only SQL" - databases for specific use cases.
+   Use for: scalability, flexible schema, big data, high performance.
+
+Q2: What is CAP theorem?
+A: In distributed systems, can only have 2 of 3: Consistency,
+   Availability, Partition Tolerance. Usually choose CP or AP.
+
+Q3: What are types of NoSQL databases?
+A: Key-Value (Redis), Document (MongoDB), Column-Family (Cassandra),
+   Graph (Neo4j).
+
+Q4: When to use SQL vs NoSQL?
+A: SQL for complex queries, ACID transactions, structured data.
+   NoSQL for scalability, flexible schema, big data.
+
+Q5: What is eventual consistency?
+A: Data will become consistent over time, not immediately.
+   Trades immediate consistency for availability.
+
+Q6: What is MongoDB? When to use it?
+A: Document database storing JSON documents.
+   Use for: content management, user profiles, real-time apps.
+
+Q7: What is sharding?
+A: Splitting data across multiple servers for scalability.
+   Each shard holds portion of data.
+
+
+================================================================================
+                    END OF NoSQL
+================================================================================

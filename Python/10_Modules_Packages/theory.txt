@@ -1,0 +1,324 @@
+================================================================================
+                      PYTHON MODULES AND PACKAGES
+================================================================================
+
+Modules help organize code into reusable files.
+
+
+1. WHAT IS A MODULE?
+================================================================================
+
+Module: A file containing Python code (functions, classes, variables).
+        Any .py file is a module.
+
+Why modules?
+- Code organization
+- Reusability
+- Namespace management
+- Maintainability
+
+
+2. IMPORTING MODULES
+================================================================================
+
+IMPORT ENTIRE MODULE:
+    import math
+
+    math.sqrt(16)       # 4.0
+    math.pi             # 3.14159...
+
+IMPORT WITH ALIAS:
+    import numpy as np
+
+    np.array([1, 2, 3])
+
+IMPORT SPECIFIC ITEMS:
+    from math import sqrt, pi
+
+    sqrt(16)            # No need for math.
+    pi
+
+IMPORT ALL (not recommended):
+    from math import *
+
+    sqrt(16)            # All items available directly
+
+
+3. CREATING YOUR OWN MODULE
+================================================================================
+
+Create a file: mymodule.py
+
+    # mymodule.py
+    """This is my module docstring"""
+
+    PI = 3.14159
+
+    def add(a, b):
+        return a + b
+
+    def multiply(a, b):
+        return a * b
+
+    class Calculator:
+        def __init__(self):
+            self.result = 0
+
+Use in another file:
+
+    import mymodule
+
+    mymodule.add(5, 3)        # 8
+    mymodule.PI               # 3.14159
+
+    from mymodule import add, Calculator
+    add(5, 3)
+
+
+4. __name__ AND __main__
+================================================================================
+
+__name__ is a special variable:
+- When file is run directly: __name__ == "__main__"
+- When file is imported: __name__ == "module_name"
+
+Use case - test code that runs only when file is executed directly:
+
+    # mymodule.py
+    def greet(name):
+        return f"Hello, {name}!"
+
+    if __name__ == "__main__":
+        # This only runs when executing mymodule.py directly
+        print(greet("World"))
+        print("Running tests...")
+
+
+5. PACKAGES
+================================================================================
+
+Package: A directory containing modules and __init__.py file.
+
+Directory structure:
+    mypackage/
+    ├── __init__.py     # Makes it a package
+    ├── module1.py
+    ├── module2.py
+    └── subpackage/
+        ├── __init__.py
+        └── module3.py
+
+Importing from package:
+    import mypackage.module1
+    from mypackage import module1
+    from mypackage.module1 import some_function
+    from mypackage.subpackage import module3
+
+
+6. __init__.py
+================================================================================
+
+- Required to make directory a package (optional in Python 3.3+)
+- Executed when package is imported
+- Can initialize package, define __all__, import submodules
+
+Example __init__.py:
+
+    # mypackage/__init__.py
+    from .module1 import function1
+    from .module2 import function2
+
+    __all__ = ['function1', 'function2']
+
+    print("mypackage initialized")
+
+
+7. RELATIVE AND ABSOLUTE IMPORTS
+================================================================================
+
+ABSOLUTE IMPORT:
+    from mypackage.module1 import function1
+
+RELATIVE IMPORT (within package):
+    from . import module1           # Same directory
+    from .module1 import function1
+    from .. import module2          # Parent directory
+    from ..subpackage import module3
+
+Note: Relative imports only work inside packages.
+
+
+8. COMMON BUILT-IN MODULES
+================================================================================
+
+MATH:
+    import math
+    math.sqrt(16)           # 4.0
+    math.ceil(4.2)          # 5
+    math.floor(4.8)         # 4
+    math.pow(2, 3)          # 8.0
+    math.factorial(5)       # 120
+    math.gcd(12, 8)         # 4
+    math.pi, math.e         # Constants
+
+RANDOM:
+    import random
+    random.random()         # 0.0 to 1.0
+    random.randint(1, 10)   # 1 to 10 inclusive
+    random.choice([1,2,3])  # Random element
+    random.shuffle(lst)     # Shuffle in place
+    random.sample(lst, 3)   # 3 random elements
+
+DATETIME:
+    from datetime import datetime, date, timedelta
+    datetime.now()          # Current datetime
+    date.today()            # Current date
+    datetime.strptime("2023-12-25", "%Y-%m-%d")
+    datetime.strftime(dt, "%d/%m/%Y")
+    timedelta(days=7)       # Time difference
+
+OS:
+    import os
+    os.getcwd()             # Current directory
+    os.listdir(".")         # List files
+    os.path.exists("file")
+    os.path.join("a", "b")
+    os.makedirs("dir")
+    os.remove("file")
+
+SYS:
+    import sys
+    sys.argv                # Command line arguments
+    sys.path                # Module search path
+    sys.version             # Python version
+    sys.exit()              # Exit program
+
+JSON:
+    import json
+    json.dumps(obj)         # Python to JSON string
+    json.loads(string)      # JSON string to Python
+    json.dump(obj, file)    # Write to file
+    json.load(file)         # Read from file
+
+RE (Regular Expressions):
+    import re
+    re.match(pattern, string)
+    re.search(pattern, string)
+    re.findall(pattern, string)
+    re.sub(pattern, repl, string)
+
+COLLECTIONS:
+    from collections import Counter, defaultdict, deque, namedtuple
+    Counter([1,1,2,3])          # Count occurrences
+    defaultdict(list)           # Dict with default value
+    deque()                     # Double-ended queue
+    namedtuple('Point', ['x','y'])
+
+ITERTOOLS:
+    import itertools
+    itertools.count(10)         # 10, 11, 12, ...
+    itertools.cycle([1,2,3])    # 1,2,3,1,2,3,...
+    itertools.permutations([1,2,3])
+    itertools.combinations([1,2,3], 2)
+
+
+9. INSTALLING EXTERNAL PACKAGES (pip)
+================================================================================
+
+pip: Python package manager
+
+Install package:
+    pip install package_name
+    pip install numpy pandas matplotlib
+
+Install specific version:
+    pip install numpy==1.21.0
+
+Upgrade package:
+    pip install --upgrade package_name
+
+Uninstall:
+    pip uninstall package_name
+
+List installed packages:
+    pip list
+    pip freeze
+
+Install from requirements.txt:
+    pip install -r requirements.txt
+
+Create requirements.txt:
+    pip freeze > requirements.txt
+
+
+10. VIRTUAL ENVIRONMENTS
+================================================================================
+
+Why? Isolate project dependencies.
+
+Create virtual environment:
+    python -m venv myenv
+
+Activate:
+    # Windows
+    myenv\Scripts\activate
+
+    # Linux/Mac
+    source myenv/bin/activate
+
+Deactivate:
+    deactivate
+
+
+11. MODULE SEARCH PATH
+================================================================================
+
+Python searches for modules in this order:
+1. Current directory
+2. PYTHONPATH environment variable
+3. Standard library directories
+4. Site-packages (installed packages)
+
+Check search path:
+    import sys
+    print(sys.path)
+
+Add to path:
+    sys.path.append("/custom/path")
+
+
+12. INTERVIEW QUESTIONS
+================================================================================
+
+Q: Difference between module and package?
+A: Module is single .py file.
+   Package is directory with __init__.py containing modules.
+
+Q: What is __name__ == "__main__"?
+A: Checks if file is run directly (vs imported).
+   Code in this block runs only when file is executed.
+
+Q: Difference between import x and from x import y?
+A: import x: imports entire module, access via x.y
+   from x import y: imports specific item, access directly as y
+
+Q: What is __init__.py?
+A: Makes directory a package, runs on import,
+   can define package interface.
+
+Q: Difference between absolute and relative import?
+A: Absolute: full path from project root
+   Relative: path relative to current module (., ..)
+
+Q: How to see all functions in a module?
+A: dir(module) or help(module)
+
+Q: What is pip?
+A: Package manager for installing Python packages.
+
+Q: What is virtual environment?
+A: Isolated Python environment with its own packages.
+
+================================================================================
+                     END OF MODULES AND PACKAGES
+================================================================================

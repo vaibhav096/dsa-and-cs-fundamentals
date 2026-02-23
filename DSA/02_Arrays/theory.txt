@@ -1,0 +1,460 @@
+================================================================================
+                              ARRAYS
+================================================================================
+
+Array is a contiguous block of memory storing elements of the same type.
+In Python, we use lists (dynamic arrays).
+
+
+================================================================================
+                    1. ARRAY BASICS
+================================================================================
+
+WHAT IS AN ARRAY?
+- Collection of elements stored at contiguous memory locations
+- Elements accessed by index (0-based in Python)
+- Fixed size in traditional arrays, dynamic in Python lists
+
+PYTHON LIST vs ARRAY:
+- Python list is dynamic (can grow/shrink)
+- Python list can hold mixed types
+- For DSA interviews, treat Python lists as arrays
+
+DECLARATION:
+    arr = [1, 2, 3, 4, 5]       # List literal
+    arr = [0] * n               # Array of n zeros
+    arr = list(range(n))        # [0, 1, 2, ..., n-1]
+    matrix = [[0]*cols for _ in range(rows)]  # 2D array
+
+
+================================================================================
+                    2. BASIC OPERATIONS & COMPLEXITY
+================================================================================
+
+Operation               Code                    Time        Space
+---------               ----                    ----        -----
+Access by index         arr[i]                  O(1)        O(1)
+Update by index         arr[i] = x              O(1)        O(1)
+Append                  arr.append(x)           O(1)*       O(1)
+Insert at index         arr.insert(i, x)        O(n)        O(1)
+Delete by index         del arr[i]              O(n)        O(1)
+Delete by value         arr.remove(x)           O(n)        O(1)
+Pop last                arr.pop()               O(1)        O(1)
+Pop at index            arr.pop(i)              O(n)        O(1)
+Search (unsorted)       x in arr                O(n)        O(1)
+Search (sorted)         Binary search           O(log n)    O(1)
+Length                  len(arr)                O(1)        O(1)
+Slice                   arr[i:j]                O(j-i)      O(j-i)
+Copy                    arr.copy()              O(n)        O(n)
+Sort                    arr.sort()              O(n log n)  O(n)
+Reverse                 arr.reverse()           O(n)        O(1)
+Min/Max                 min(arr), max(arr)      O(n)        O(1)
+
+*Amortized O(1) for append
+
+
+================================================================================
+                    3. COMMON ARRAY TECHNIQUES
+================================================================================
+
+TECHNIQUE 1: TWO POINTERS
+-------------------------
+Use two pointers moving towards each other or in same direction.
+
+Example: Check if sorted array has pair with given sum
+    def has_pair_sum(arr, target):
+        left, right = 0, len(arr) - 1
+        while left < right:
+            current_sum = arr[left] + arr[right]
+            if current_sum == target:
+                return True
+            elif current_sum < target:
+                left += 1
+            else:
+                right -= 1
+        return False
+    # Time: O(n), Space: O(1)
+
+
+TECHNIQUE 2: SLIDING WINDOW
+---------------------------
+Maintain a window of elements, slide it across array.
+
+Example: Maximum sum subarray of size k
+    def max_sum_subarray(arr, k):
+        window_sum = sum(arr[:k])
+        max_sum = window_sum
+
+        for i in range(k, len(arr)):
+            window_sum += arr[i] - arr[i-k]  # Slide window
+            max_sum = max(max_sum, window_sum)
+
+        return max_sum
+    # Time: O(n), Space: O(1)
+
+
+TECHNIQUE 3: PREFIX SUM
+-----------------------
+Precompute cumulative sums for range queries.
+
+    # Build prefix sum
+    prefix = [0] * (len(arr) + 1)
+    for i in range(len(arr)):
+        prefix[i+1] = prefix[i] + arr[i]
+
+    # Sum of arr[i:j] = prefix[j] - prefix[i]
+    # Time: O(1) per query after O(n) preprocessing
+
+
+TECHNIQUE 4: KADANE'S ALGORITHM
+-------------------------------
+Maximum subarray sum in O(n).
+
+    def max_subarray_sum(arr):
+        max_sum = current_sum = arr[0]
+        for num in arr[1:]:
+            current_sum = max(num, current_sum + num)
+            max_sum = max(max_sum, current_sum)
+        return max_sum
+
+
+TECHNIQUE 5: DUTCH NATIONAL FLAG
+--------------------------------
+Sort array with 3 distinct values in O(n).
+
+    def sort_012(arr):
+        low, mid, high = 0, 0, len(arr) - 1
+        while mid <= high:
+            if arr[mid] == 0:
+                arr[low], arr[mid] = arr[mid], arr[low]
+                low += 1
+                mid += 1
+            elif arr[mid] == 1:
+                mid += 1
+            else:
+                arr[mid], arr[high] = arr[high], arr[mid]
+                high -= 1
+
+
+TECHNIQUE 6: MOORE'S VOTING ALGORITHM
+-------------------------------------
+Find majority element (appears > n/2 times) in O(n) time, O(1) space.
+
+    def majority_element(arr):
+        candidate = arr[0]
+        count = 1
+
+        for i in range(1, len(arr)):
+            if count == 0:
+                candidate = arr[i]
+                count = 1
+            elif arr[i] == candidate:
+                count += 1
+            else:
+                count -= 1
+
+        return candidate
+
+
+================================================================================
+                    4. IMPORTANT ARRAY PROBLEMS
+================================================================================
+
+PROBLEM 1: Two Sum
+------------------
+Find two numbers that add up to target.
+
+    def two_sum(nums, target):
+        seen = {}
+        for i, num in enumerate(nums):
+            complement = target - num
+            if complement in seen:
+                return [seen[complement], i]
+            seen[num] = i
+        return []
+    # Time: O(n), Space: O(n)
+
+
+PROBLEM 2: Best Time to Buy and Sell Stock
+------------------------------------------
+Find maximum profit from one transaction.
+
+    def max_profit(prices):
+        min_price = float('inf')
+        max_profit = 0
+
+        for price in prices:
+            min_price = min(min_price, price)
+            max_profit = max(max_profit, price - min_price)
+
+        return max_profit
+    # Time: O(n), Space: O(1)
+
+
+PROBLEM 3: Contains Duplicate
+-----------------------------
+Check if array has duplicates.
+
+    def contains_duplicate(nums):
+        return len(nums) != len(set(nums))
+    # Time: O(n), Space: O(n)
+
+
+PROBLEM 4: Product of Array Except Self
+---------------------------------------
+Product of all elements except current, without division.
+
+    def product_except_self(nums):
+        n = len(nums)
+        result = [1] * n
+
+        # Left products
+        left = 1
+        for i in range(n):
+            result[i] = left
+            left *= nums[i]
+
+        # Right products
+        right = 1
+        for i in range(n-1, -1, -1):
+            result[i] *= right
+            right *= nums[i]
+
+        return result
+    # Time: O(n), Space: O(1) excluding output
+
+
+PROBLEM 5: Maximum Product Subarray
+-----------------------------------
+Find contiguous subarray with largest product.
+
+    def max_product(nums):
+        max_prod = min_prod = result = nums[0]
+
+        for num in nums[1:]:
+            if num < 0:
+                max_prod, min_prod = min_prod, max_prod
+
+            max_prod = max(num, max_prod * num)
+            min_prod = min(num, min_prod * num)
+            result = max(result, max_prod)
+
+        return result
+    # Time: O(n), Space: O(1)
+
+
+PROBLEM 6: Find Minimum in Rotated Sorted Array
+-----------------------------------------------
+Array was sorted then rotated. Find minimum.
+
+    def find_min(nums):
+        left, right = 0, len(nums) - 1
+
+        while left < right:
+            mid = (left + right) // 2
+            if nums[mid] > nums[right]:
+                left = mid + 1
+            else:
+                right = mid
+
+        return nums[left]
+    # Time: O(log n), Space: O(1)
+
+
+PROBLEM 7: Search in Rotated Sorted Array
+-----------------------------------------
+    def search(nums, target):
+        left, right = 0, len(nums) - 1
+
+        while left <= right:
+            mid = (left + right) // 2
+
+            if nums[mid] == target:
+                return mid
+
+            # Left half is sorted
+            if nums[left] <= nums[mid]:
+                if nums[left] <= target < nums[mid]:
+                    right = mid - 1
+                else:
+                    left = mid + 1
+            # Right half is sorted
+            else:
+                if nums[mid] < target <= nums[right]:
+                    left = mid + 1
+                else:
+                    right = mid - 1
+
+        return -1
+    # Time: O(log n), Space: O(1)
+
+
+PROBLEM 8: 3Sum
+---------------
+Find all triplets that sum to zero.
+
+    def three_sum(nums):
+        nums.sort()
+        result = []
+
+        for i in range(len(nums) - 2):
+            if i > 0 and nums[i] == nums[i-1]:
+                continue
+
+            left, right = i + 1, len(nums) - 1
+            while left < right:
+                total = nums[i] + nums[left] + nums[right]
+                if total == 0:
+                    result.append([nums[i], nums[left], nums[right]])
+                    while left < right and nums[left] == nums[left+1]:
+                        left += 1
+                    while left < right and nums[right] == nums[right-1]:
+                        right -= 1
+                    left += 1
+                    right -= 1
+                elif total < 0:
+                    left += 1
+                else:
+                    right -= 1
+
+        return result
+    # Time: O(n²), Space: O(1)
+
+
+PROBLEM 9: Container With Most Water
+------------------------------------
+Find two lines that form container with most water.
+
+    def max_area(height):
+        left, right = 0, len(height) - 1
+        max_water = 0
+
+        while left < right:
+            width = right - left
+            h = min(height[left], height[right])
+            max_water = max(max_water, width * h)
+
+            if height[left] < height[right]:
+                left += 1
+            else:
+                right -= 1
+
+        return max_water
+    # Time: O(n), Space: O(1)
+
+
+PROBLEM 10: Merge Intervals
+---------------------------
+Merge overlapping intervals.
+
+    def merge(intervals):
+        intervals.sort(key=lambda x: x[0])
+        merged = [intervals[0]]
+
+        for start, end in intervals[1:]:
+            if start <= merged[-1][1]:
+                merged[-1][1] = max(merged[-1][1], end)
+            else:
+                merged.append([start, end])
+
+        return merged
+    # Time: O(n log n), Space: O(n)
+
+
+================================================================================
+                    5. 2D ARRAYS (MATRICES)
+================================================================================
+
+DECLARATION:
+    matrix = [[0]*cols for _ in range(rows)]
+    # DON'T: [[0]*cols]*rows (creates references!)
+
+TRAVERSAL:
+    # Row by row
+    for i in range(rows):
+        for j in range(cols):
+            print(matrix[i][j])
+
+    # Column by column
+    for j in range(cols):
+        for i in range(rows):
+            print(matrix[i][j])
+
+    # Diagonal (top-left to bottom-right)
+    for i in range(min(rows, cols)):
+        print(matrix[i][i])
+
+ROTATE 90° CLOCKWISE:
+    def rotate(matrix):
+        n = len(matrix)
+        # Transpose
+        for i in range(n):
+            for j in range(i, n):
+                matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
+        # Reverse each row
+        for row in matrix:
+            row.reverse()
+
+SPIRAL TRAVERSAL:
+    def spiral_order(matrix):
+        result = []
+        while matrix:
+            result += matrix.pop(0)  # Top row
+            if matrix and matrix[0]:
+                for row in matrix:
+                    result.append(row.pop())  # Right column
+            if matrix:
+                result += matrix.pop()[::-1]  # Bottom row
+            if matrix and matrix[0]:
+                for row in matrix[::-1]:
+                    result.append(row.pop(0))  # Left column
+        return result
+
+
+================================================================================
+                    6. SUBARRAY vs SUBSEQUENCE vs SUBSET
+================================================================================
+
+Array: [1, 2, 3]
+
+SUBARRAY: Contiguous elements
+    [1], [2], [3], [1,2], [2,3], [1,2,3]
+    Total: n(n+1)/2
+
+SUBSEQUENCE: Elements in order (not necessarily contiguous)
+    [], [1], [2], [3], [1,2], [1,3], [2,3], [1,2,3]
+    Total: 2^n
+
+SUBSET: Any combination (order doesn't matter)
+    Same as subsequence for distinct elements
+    Total: 2^n
+
+
+================================================================================
+                    7. INTERVIEW TIPS
+================================================================================
+
+1. CLARIFY:
+   - Is array sorted?
+   - Are there duplicates?
+   - Can I modify the array?
+   - What about negative numbers?
+   - What if array is empty?
+
+2. COMMON APPROACHES:
+   - Brute force first, then optimize
+   - Sorting often helps (enables binary search, two pointers)
+   - Hash map for O(1) lookup
+   - Two pointers for sorted arrays
+   - Sliding window for subarrays
+
+3. EDGE CASES:
+   - Empty array
+   - Single element
+   - All same elements
+   - Negative numbers
+   - Integer overflow
+
+================================================================================
+                         END OF ARRAYS
+================================================================================

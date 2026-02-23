@@ -1,0 +1,445 @@
+================================================================================
+                    RELATIONAL MODEL
+================================================================================
+
+The Relational Model represents data as relations (tables).
+Proposed by E.F. Codd in 1970 at IBM.
+
+
+================================================================================
+                    1. RELATIONAL MODEL CONCEPTS
+================================================================================
+
+RELATION (Table):
+- A 2D table with rows and columns
+- Named collection of tuples
+- Represents an entity type
+
+TUPLE (Row):
+- A single row in a relation
+- Represents one instance of entity
+- Unordered (order doesn't matter)
+
+ATTRIBUTE (Column):
+- Named column of a relation
+- Has a specific domain
+
+DOMAIN:
+- Set of atomic values for an attribute
+- Defines valid data types and constraints
+
+SCHEMA:
+- Structure/design of database
+- Relation name + attribute names + domains
+- Example: STUDENT(ID: int, Name: varchar, Age: int)
+
+INSTANCE:
+- Actual data in table at a point in time
+- Snapshot of database
+
+
+================================================================================
+                    2. PROPERTIES OF RELATIONS
+================================================================================
+
+1. Each cell contains atomic (indivisible) value
+2. Each column has a unique name
+3. All values in a column are of same domain
+4. Each row is unique (no duplicate tuples)
+5. Order of rows is insignificant
+6. Order of columns is insignificant
+
+
+================================================================================
+                    3. RELATIONAL ALGEBRA
+================================================================================
+
+Procedural query language with operations on relations.
+Foundation of SQL.
+
+BASIC OPERATIONS:
+
+1. SELECT (σ) - Selection
+----------------------------
+Selects tuples that satisfy condition.
+Horizontal operation (filters rows).
+
+Syntax: σ_condition(Relation)
+
+Examples:
+σ_age>20(STUDENT)          -- Students older than 20
+σ_dept='CSE'(EMPLOYEE)     -- Employees in CSE department
+σ_salary>50000 AND age<30(EMP)  -- Combined conditions
+
+
+2. PROJECT (π) - Projection
+----------------------------
+Selects specific attributes.
+Vertical operation (filters columns).
+Removes duplicate rows in result.
+
+Syntax: π_attributes(Relation)
+
+Examples:
+π_name,age(STUDENT)        -- Only name and age
+π_dept(EMPLOYEE)           -- Unique departments
+
+
+3. UNION (∪)
+----------------------------
+Combines tuples from two relations.
+Relations must be union-compatible (same attributes).
+
+Syntax: R1 ∪ R2
+
+Result contains all tuples from R1 and R2 (no duplicates).
+
+
+4. INTERSECTION (∩)
+----------------------------
+Common tuples in both relations.
+Relations must be union-compatible.
+
+Syntax: R1 ∩ R2
+
+
+5. DIFFERENCE (-)
+----------------------------
+Tuples in R1 but not in R2.
+Relations must be union-compatible.
+
+Syntax: R1 - R2
+
+
+6. CARTESIAN PRODUCT (×)
+----------------------------
+Combines every tuple in R1 with every tuple in R2.
+Result has n1 × n2 tuples.
+
+Syntax: R1 × R2
+
+If R1 has m attributes and R2 has n attributes:
+Result has m + n attributes.
+
+
+7. RENAME (ρ)
+----------------------------
+Renames relation or attributes.
+
+Syntax: ρ_newName(Relation)
+        ρ_newName(A1,A2,...)(Relation)  -- Rename attributes
+
+
+DERIVED OPERATIONS:
+
+8. JOIN (⋈)
+----------------------------
+Combines related tuples from two relations.
+
+a) NATURAL JOIN (⋈):
+   - Joins on common attributes
+   - Removes duplicate columns
+   Syntax: R1 ⋈ R2
+
+b) THETA JOIN (⋈_θ):
+   - Joins with any condition
+   Syntax: R1 ⋈_condition R2
+
+c) EQUI JOIN:
+   - Theta join with equality condition
+   - Keeps duplicate columns
+
+d) LEFT OUTER JOIN (⟕):
+   - All tuples from left + matched from right
+   - NULL for non-matching
+
+e) RIGHT OUTER JOIN (⟖):
+   - All tuples from right + matched from left
+
+f) FULL OUTER JOIN (⟗):
+   - All tuples from both relations
+
+
+9. DIVISION (÷)
+----------------------------
+R1 ÷ R2: Tuples in R1 that are associated with ALL tuples in R2.
+
+Example:
+STUDENT_COURSE(SID, CID) ÷ COURSE(CID)
+= Students enrolled in ALL courses
+
+
+================================================================================
+                    4. RELATIONAL ALGEBRA EXAMPLES
+================================================================================
+
+Given Tables:
+STUDENT(SID, Name, Age, Dept)
+COURSE(CID, Title, Credits)
+ENROLLMENT(SID, CID, Grade)
+
+
+QUERY 1: Names of students in CSE department
+π_Name(σ_Dept='CSE'(STUDENT))
+
+
+QUERY 2: Students who scored A grade
+π_Name(STUDENT ⋈ σ_Grade='A'(ENROLLMENT))
+
+
+QUERY 3: Courses with more than 3 credits
+σ_Credits>3(COURSE)
+
+
+QUERY 4: Students enrolled in 'DBMS' course
+Step 1: Get DBMS course ID
+        σ_Title='DBMS'(COURSE) → CID
+
+Step 2: Get enrolled students
+        π_Name(STUDENT ⋈ (ENROLLMENT ⋈ σ_Title='DBMS'(COURSE)))
+
+
+QUERY 5: Students NOT enrolled in any course
+π_SID(STUDENT) - π_SID(ENROLLMENT)
+
+
+================================================================================
+                    5. RELATIONAL CALCULUS
+================================================================================
+
+Non-procedural (declarative) query language.
+Specifies WHAT, not HOW.
+
+1. TUPLE RELATIONAL CALCULUS (TRC):
+-----------------------------------
+Variable represents a tuple.
+
+Syntax: { t | condition(t) }
+
+Examples:
+- All students: { t | STUDENT(t) }
+- Students with age > 20: { t | STUDENT(t) AND t.age > 20 }
+- Names of CSE students: { t.Name | STUDENT(t) AND t.Dept = 'CSE' }
+
+
+Existential Quantifier (∃):
+{ t | ∃s ∈ STUDENT (s.Age > 20 AND t.Name = s.Name) }
+
+Universal Quantifier (∀):
+{ t | ∀c ∈ COURSE ∃e ∈ ENROLLMENT (e.SID = t.SID AND e.CID = c.CID) }
+(Students enrolled in ALL courses)
+
+
+2. DOMAIN RELATIONAL CALCULUS (DRC):
+------------------------------------
+Variable represents domain value (attribute).
+
+Syntax: { <x1, x2, ...> | condition }
+
+Examples:
+- All student names: { <n> | ∃i,a,d (STUDENT(i, n, a, d)) }
+- CSE students: { <n> | ∃i,a (STUDENT(i, n, a, 'CSE')) }
+
+
+================================================================================
+                    6. CODD'S 12 RULES
+================================================================================
+
+Rules for a truly relational database:
+
+Rule 0: Foundation Rule
+- System must be relational, database, and management system
+
+Rule 1: Information Rule
+- All information in relations (tables) with values
+
+Rule 2: Guaranteed Access Rule
+- Every value accessible by table + key + column
+
+Rule 3: Systematic Treatment of NULL
+- NULL for missing/inapplicable data
+
+Rule 4: Dynamic Online Catalog
+- Database description in relational tables
+
+Rule 5: Comprehensive Data Sublanguage
+- At least one language for all operations
+
+Rule 6: View Updating Rule
+- All theoretically updatable views must be updatable
+
+Rule 7: High-level Insert, Update, Delete
+- Set-at-a-time operations
+
+Rule 8: Physical Data Independence
+- Physical storage changes don't affect applications
+
+Rule 9: Logical Data Independence
+- Logical changes don't affect applications
+
+Rule 10: Integrity Independence
+- Integrity constraints in catalog, not applications
+
+Rule 11: Distribution Independence
+- Distribution transparent to users
+
+Rule 12: Non-Subversion Rule
+- Low-level access cannot bypass integrity
+
+
+================================================================================
+                    7. FUNCTIONAL DEPENDENCY
+================================================================================
+
+If X → Y, then for each value of X, there is exactly one value of Y.
+X determines Y (Y is functionally dependent on X).
+
+EXAMPLE:
+STUDENT(SID, Name, Age, Dept)
+- SID → Name, Age, Dept (SID determines all)
+- SID → Name (SID determines Name)
+
+
+TYPES:
+
+1. Trivial FD:
+   - Y is subset of X
+   - Example: {SID, Name} → Name
+
+2. Non-trivial FD:
+   - Y is not subset of X
+   - Example: SID → Name
+
+3. Completely Non-trivial:
+   - No attribute of Y is in X
+   - Example: SID → Name, Age
+
+
+ARMSTRONG'S AXIOMS:
+
+Primary Rules:
+1. Reflexivity: If Y ⊆ X, then X → Y
+2. Augmentation: If X → Y, then XZ → YZ
+3. Transitivity: If X → Y and Y → Z, then X → Z
+
+Secondary Rules (derived):
+4. Union: If X → Y and X → Z, then X → YZ
+5. Decomposition: If X → YZ, then X → Y and X → Z
+6. Pseudo-transitivity: If X → Y and WY → Z, then WX → Z
+
+
+CLOSURE:
+
+Attribute Closure (X+):
+- All attributes determined by X
+
+Algorithm:
+1. Start with X+ = X
+2. For each FD A → B, if A ⊆ X+, add B to X+
+3. Repeat until no change
+
+Example:
+FDs: A → B, B → C, A → D
+A+ = A
+A+ = AB (using A → B)
+A+ = ABC (using B → C)
+A+ = ABCD (using A → D)
+
+
+================================================================================
+                    8. CANDIDATE KEY FINDING
+================================================================================
+
+Steps to find candidate keys:
+
+1. Find attributes that don't appear on RHS of any FD
+   - These MUST be in every candidate key
+
+2. Find closure of these attributes
+   - If closure = all attributes, it's candidate key
+
+3. If not, add other attributes one by one
+   - Check if closure = all attributes
+
+
+EXAMPLE:
+R(A, B, C, D, E)
+FDs: A → B, BC → D, D → E
+
+Step 1: A and C never appear on RHS
+        So A and C must be in every key
+
+Step 2: (AC)+ = ?
+        AC+ = AC
+        AC+ = ABC (A → B)
+        AC+ = ABCD (BC → D)
+        AC+ = ABCDE (D → E)
+        AC+ covers all, so AC is candidate key
+
+Answer: Candidate Key = AC
+
+
+================================================================================
+                    9. CANONICAL COVER
+================================================================================
+
+Minimal set of FDs equivalent to given FDs.
+
+Properties:
+1. No extraneous attributes
+2. Each FD has single attribute on RHS
+3. No redundant FDs
+
+Algorithm:
+1. Put each FD in standard form (single RHS)
+2. Remove extraneous attributes from LHS
+3. Remove redundant FDs
+
+
+EXAMPLE:
+FDs: A → BC, B → C, AB → D
+
+Step 1: Standard form
+        A → B, A → C, B → C, AB → D
+
+Step 2: Remove extraneous LHS
+        AB → D: Is A extraneous? Check if B → D. No.
+        AB → D: Is B extraneous? Check if A → D. No.
+
+Step 3: Remove redundant FDs
+        A → C redundant? Check if A → C derivable from others.
+        A → B, B → C ⟹ A → C. Yes! Remove A → C.
+
+Canonical Cover: A → B, B → C, AB → D
+
+
+================================================================================
+                    10. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is Relational Algebra?
+A: Procedural query language with operations on relations.
+   Basic ops: Select, Project, Union, Intersection, Difference, Cartesian Product
+
+Q2: Difference between SELECT and PROJECT?
+A: SELECT (σ) filters rows based on condition.
+   PROJECT (π) selects specific columns.
+
+Q3: What is Natural Join?
+A: Joins two relations on common attributes and removes duplicate columns.
+
+Q4: What is Functional Dependency?
+A: If X → Y, then each X value determines exactly one Y value.
+   Example: EmpID → EmpName
+
+Q5: What is Armstrong's Axioms?
+A: Rules to derive FDs - Reflexivity, Augmentation, Transitivity.
+
+Q6: How to find Candidate Key?
+A: Find attributes not on RHS of any FD, compute closure,
+   add attributes until closure covers all.
+
+
+================================================================================
+                    END OF RELATIONAL MODEL
+================================================================================

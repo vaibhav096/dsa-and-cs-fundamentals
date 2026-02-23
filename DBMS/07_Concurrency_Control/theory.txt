@@ -1,0 +1,478 @@
+================================================================================
+                    CONCURRENCY CONTROL
+================================================================================
+
+Techniques to manage simultaneous execution of transactions while
+maintaining database consistency.
+
+
+================================================================================
+                    1. WHY CONCURRENCY CONTROL?
+================================================================================
+
+PROBLEMS WITHOUT CONCURRENCY CONTROL:
+
+1. LOST UPDATE:
+   Two transactions update same item, one update is lost.
+
+   T1                    T2
+   Read(A) = 100
+                         Read(A) = 100
+   A = A + 50
+                         A = A - 30
+   Write(A) = 150
+                         Write(A) = 70  ← T1's update lost!
+
+
+2. DIRTY READ:
+   Reading uncommitted data.
+
+   T1                    T2
+   Write(A) = 150
+                         Read(A) = 150  ← Dirty read
+   Abort (A = 100)
+                         Uses invalid value!
+
+
+3. UNREPEATABLE READ:
+   Same read returns different values.
+
+   T1                    T2
+   Read(A) = 100
+                         Write(A) = 150
+                         Commit
+   Read(A) = 150         ← Different value!
+
+
+4. PHANTOM READ:
+   Set of rows changes between queries.
+
+   T1                        T2
+   SELECT * WHERE age > 20
+   (returns 5 rows)
+                             INSERT INTO t (age=25)
+                             Commit
+   SELECT * WHERE age > 20
+   (returns 6 rows)          ← Phantom row!
+
+
+================================================================================
+                    2. LOCK-BASED PROTOCOLS
+================================================================================
+
+Transactions acquire locks before accessing data.
+
+
+TYPES OF LOCKS:
+
+1. SHARED LOCK (S-Lock / Read Lock):
+   - Multiple transactions can hold S-lock
+   - Used for READ operations
+   - Other transactions can read, but cannot write
+
+2. EXCLUSIVE LOCK (X-Lock / Write Lock):
+   - Only one transaction can hold X-lock
+   - Used for WRITE operations
+   - Other transactions cannot read or write
+
+
+LOCK COMPATIBILITY MATRIX:
+
+          |  S-Lock  |  X-Lock  |
+----------+----------+----------+
+ S-Lock   |    ✓     |    ✗     |
+----------+----------+----------+
+ X-Lock   |    ✗     |    ✗     |
+----------+----------+----------+
+
+
+LOCK OPERATIONS:
+- Lock-S(X): Request shared lock on X
+- Lock-X(X): Request exclusive lock on X
+- Unlock(X): Release lock on X
+
+
+================================================================================
+                    3. TWO-PHASE LOCKING (2PL)
+================================================================================
+
+Most common locking protocol to ensure serializability.
+
+TWO PHASES:
+
+1. GROWING PHASE:
+   - Transaction can acquire locks
+   - Cannot release any lock
+
+2. SHRINKING PHASE:
+   - Transaction can release locks
+   - Cannot acquire new locks
+
+
+       Locks
+         ^
+         |      /\
+         |     /  \
+         |    /    \
+         |   /      \
+         +--/--------\-------> Time
+           Growing  Shrinking
+
+
+EXAMPLE:
+
+T1:
+Lock-X(A)           ← Growing
+Lock-S(B)           ← Growing
+Read(B)
+Write(A)
+Unlock(B)           ← Shrinking starts
+Unlock(A)           ← Shrinking
+
+
+THEOREM:
+If all transactions follow 2PL, the resulting schedule is conflict serializable.
+
+
+PROBLEMS WITH BASIC 2PL:
+
+1. Deadlock possible
+2. Cascading rollback possible
+
+
+VARIATIONS OF 2PL:
+
+1. STRICT 2PL:
+   - Hold all X-locks until commit/abort
+   - Prevents cascading rollback
+   - Most commonly used
+
+2. RIGOROUS 2PL:
+   - Hold ALL locks (S and X) until commit/abort
+   - Stronger than strict 2PL
+
+3. CONSERVATIVE 2PL:
+   - Acquire all locks before execution
+   - No deadlock, but reduces concurrency
+
+
+================================================================================
+                    4. LOCK GRANULARITY
+================================================================================
+
+Level at which locks are acquired.
+
+GRANULARITY LEVELS (coarse to fine):
+1. Database level
+2. Table level
+3. Page level
+4. Row level
+5. Field level
+
+
+TRADE-OFFS:
+
++------------------+------------------+
+| Coarse (Table)   | Fine (Row)       |
++------------------+------------------+
+| Less overhead    | More overhead    |
+| Less concurrency | More concurrency |
+| Simple           | Complex          |
+| Fewer locks      | More locks       |
++------------------+------------------+
+
+
+INTENTION LOCKS:
+Used in hierarchical locking.
+
+Types:
+- IS (Intention Shared): Want S-lock on lower level
+- IX (Intention Exclusive): Want X-lock on lower level
+- SIX (Shared + Intention Exclusive): S-lock here, X-lock below
+
+
+COMPATIBILITY MATRIX:
+
+     |  IS  |  IX  |  S   |  SIX |  X   |
+-----+------+------+------+------+------+
+ IS  |  ✓   |  ✓   |  ✓   |  ✓   |  ✗   |
+ IX  |  ✓   |  ✓   |  ✗   |  ✗   |  ✗   |
+ S   |  ✓   |  ✗   |  ✓   |  ✗   |  ✗   |
+ SIX |  ✓   |  ✗   |  ✗   |  ✗   |  ✗   |
+ X   |  ✗   |  ✗   |  ✗   |  ✗   |  ✗   |
+
+
+================================================================================
+                    5. DEADLOCK
+================================================================================
+
+Situation where transactions wait for each other indefinitely.
+
+
+EXAMPLE:
+
+T1                    T2
+Lock-X(A)
+                      Lock-X(B)
+Lock-X(B)             ← T1 waits for T2
+                      Lock-X(A)  ← T2 waits for T1
+
+DEADLOCK! Neither can proceed.
+
+
+CONDITIONS FOR DEADLOCK (All must hold):
+
+1. Mutual Exclusion: Resource held exclusively
+2. Hold and Wait: Hold one, wait for another
+3. No Preemption: Cannot forcefully take lock
+4. Circular Wait: Cycle of waiting transactions
+
+
+DEADLOCK HANDLING:
+
+1. PREVENTION (Stop deadlock from occurring):
+
+   a) Lock all at start (Conservative 2PL)
+   b) Lock in predefined order (breaks circular wait)
+   c) Wait-Die scheme:
+      - Older transaction waits for younger
+      - Younger transaction dies (restarts)
+   d) Wound-Wait scheme:
+      - Older transaction wounds (aborts) younger
+      - Younger transaction waits
+
+
+2. DETECTION (Find and resolve deadlock):
+
+   Wait-For Graph:
+   - Nodes = Transactions
+   - Edge Ti → Tj means Ti waits for Tj
+   - CYCLE = DEADLOCK
+
+       T1 → T2
+        ↑    ↓
+        T4 ← T3
+
+   Detection Algorithm:
+   - Periodically check for cycles
+   - Choose victim and abort
+
+   Victim Selection:
+   - Youngest transaction
+   - Transaction with fewest locks
+   - Transaction that has done least work
+
+
+3. TIMEOUT:
+   - If transaction waits too long, abort it
+   - Simple but may abort non-deadlocked transactions
+
+
+================================================================================
+                    6. TIMESTAMP-BASED PROTOCOLS
+================================================================================
+
+Each transaction gets unique timestamp when it starts.
+Used to determine serialization order.
+
+
+TIMESTAMP (TS):
+- Logical clock value assigned to transaction
+- Older transactions have smaller timestamps
+
+
+DATA ITEM TIMESTAMPS:
+- Read-TS(X): Largest timestamp of transaction that read X
+- Write-TS(X): Largest timestamp of transaction that wrote X
+
+
+BASIC TIMESTAMP ORDERING:
+
+Rules for Ti accessing X:
+
+1. Ti wants to READ X:
+   - If TS(Ti) < Write-TS(X): REJECT (Ti is too old)
+   - Else: Allow read, set Read-TS(X) = max(Read-TS(X), TS(Ti))
+
+2. Ti wants to WRITE X:
+   - If TS(Ti) < Read-TS(X): REJECT (Ti is too old)
+   - If TS(Ti) < Write-TS(X): REJECT (Ti is too old)
+   - Else: Allow write, set Write-TS(X) = TS(Ti)
+
+
+THOMAS WRITE RULE:
+Modification to handle obsolete writes.
+
+For Ti writing X:
+- If TS(Ti) < Write-TS(X): IGNORE (obsolete write, skip it)
+- Otherwise: Normal write
+
+This allows more schedules but may violate conflict serializability.
+
+
+================================================================================
+                    7. MULTIVERSION CONCURRENCY CONTROL (MVCC)
+================================================================================
+
+Maintain multiple versions of data items.
+Readers don't block writers, writers don't block readers.
+
+
+HOW IT WORKS:
+- Each write creates new version with timestamp
+- Reads see appropriate version based on timestamp
+- Old versions garbage collected
+
+
+EXAMPLE:
+
+Write(X) by T1 at TS=10: X has version V10
+Write(X) by T2 at TS=20: X has version V10, V20
+
+Read(X) by T3 at TS=15: Sees V10 (version ≤ 15)
+Read(X) by T4 at TS=25: Sees V20 (version ≤ 25)
+
+
+SNAPSHOT ISOLATION:
+- Transaction sees consistent snapshot at start time
+- Writes go to private workspace
+- At commit, check for conflicts
+- Used in PostgreSQL, Oracle
+
+
+================================================================================
+                    8. OPTIMISTIC CONCURRENCY CONTROL
+================================================================================
+
+Assume conflicts are rare. Execute freely, validate at commit.
+
+
+THREE PHASES:
+
+1. READ PHASE:
+   - Execute transaction
+   - Read from database
+   - Write to private workspace
+
+2. VALIDATION PHASE:
+   - Check for conflicts with other transactions
+   - If conflict detected, abort
+
+3. WRITE PHASE:
+   - If validation passes, write to database
+   - Make changes permanent
+
+
+VALIDATION RULES:
+For Ti to commit, for every Tj that committed:
+
+1. Tj completed before Ti started (no overlap)
+   OR
+2. Ti doesn't read anything Tj wrote
+   AND Tj completes write before Ti starts validation
+
+
+ADVANTAGES:
+- No locks needed
+- Good when conflicts are rare
+- No deadlock
+
+DISADVANTAGES:
+- Wasted work if validation fails
+- Repeated restarts possible
+
+
+================================================================================
+                    9. COMPARISON OF PROTOCOLS
+================================================================================
+
++---------------------+-------------+------------+---------------+
+| Protocol            | Deadlock    | Cascading  | Concurrency   |
+|                     | Free        | Rollback   |               |
++---------------------+-------------+------------+---------------+
+| Basic 2PL           | No          | Possible   | Medium        |
+| Strict 2PL          | No          | No         | Medium        |
+| Conservative 2PL    | Yes         | No         | Low           |
+| Timestamp Ordering  | Yes         | Possible   | Medium        |
+| MVCC                | Yes         | No         | High          |
+| Optimistic          | Yes         | No         | High*         |
++---------------------+-------------+------------+---------------+
+
+*High concurrency when conflicts are rare
+
+
+================================================================================
+                    10. LOCK TABLE
+================================================================================
+
+Data structure to track locks.
+
+STRUCTURE:
+- Hash table indexed by data item
+- Each entry: Data item, Lock mode, List of holding transactions, Waiting queue
+
+
+EXAMPLE:
+
++--------+-------+----------+----------+
+| Item   | Mode  | Holding  | Waiting  |
++--------+-------+----------+----------+
+| A      | X     | T1       | T2, T3   |
+| B      | S     | T2, T4   | T5       |
+| C      | -     | -        | -        |
++--------+-------+----------+----------+
+
+
+LOCK REQUEST ALGORITHM:
+
+1. Search lock table for data item
+2. If no entry, create one, grant lock
+3. If compatible with current mode, grant
+4. Else, add to waiting queue
+
+
+UNLOCK ALGORITHM:
+
+1. Remove transaction from holding list
+2. If no more holders, grant to first compatible waiter(s)
+3. If entry empty, remove from table
+
+
+================================================================================
+                    11. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is 2PL? Why does it ensure serializability?
+A: Two-Phase Locking - acquire locks in growing phase, release in
+   shrinking phase. Ensures serializable schedule because lock point
+   defines serialization order.
+
+Q2: Difference between Strict 2PL and Basic 2PL?
+A: Strict 2PL holds all X-locks until commit/abort.
+   Prevents cascading rollback, but basic 2PL allows it.
+
+Q3: What is deadlock? How to handle it?
+A: Cycle of transactions waiting for each other.
+   Handle by: Prevention (ordering, wait-die), Detection (wait-for graph),
+   or Timeout.
+
+Q4: What is MVCC?
+A: Multiversion Concurrency Control - maintain multiple versions of data.
+   Readers see consistent snapshot, don't block writers.
+
+Q5: Difference between pessimistic and optimistic concurrency?
+A: Pessimistic (locks) - assumes conflicts, prevents them upfront.
+   Optimistic - assumes no conflicts, validates at commit.
+
+Q6: What is timestamp ordering?
+A: Assign timestamps to transactions, use them to order operations.
+   Reject operations that would violate timestamp order.
+
+Q7: What are intention locks?
+A: Locks on higher-level resources indicating intent to lock lower level.
+   IS (intend shared), IX (intend exclusive), SIX (shared + intend exclusive).
+
+
+================================================================================
+                    END OF CONCURRENCY CONTROL
+================================================================================

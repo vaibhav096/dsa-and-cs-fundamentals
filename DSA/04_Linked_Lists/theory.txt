@@ -1,0 +1,485 @@
+================================================================================
+                            LINKED LISTS
+================================================================================
+
+A linked list is a linear data structure where elements are stored in nodes,
+and each node points to the next node.
+
+
+================================================================================
+                    1. TYPES OF LINKED LISTS
+================================================================================
+
+1. SINGLY LINKED LIST
+---------------------
+Each node has data and pointer to next node.
+
+    [data|next] -> [data|next] -> [data|next] -> None
+       Head                          Tail
+
+2. DOUBLY LINKED LIST
+---------------------
+Each node has data, pointer to next, and pointer to previous.
+
+    None <- [prev|data|next] <-> [prev|data|next] <-> [prev|data|next] -> None
+                  Head                                      Tail
+
+3. CIRCULAR LINKED LIST
+-----------------------
+Last node points back to first node.
+
+    [data|next] -> [data|next] -> [data|next] --+
+       Head                          Tail       |
+         ^------------------------------------ -+
+
+
+================================================================================
+                    2. NODE STRUCTURE
+================================================================================
+
+SINGLY LINKED LIST NODE:
+    class ListNode:
+        def __init__(self, val=0, next=None):
+            self.val = val
+            self.next = next
+
+DOUBLY LINKED LIST NODE:
+    class DoublyNode:
+        def __init__(self, val=0, prev=None, next=None):
+            self.val = val
+            self.prev = prev
+            self.next = next
+
+
+================================================================================
+                    3. BASIC OPERATIONS
+================================================================================
+
+Operation               Time Complexity
+---------               ---------------
+Access by index         O(n)
+Search                  O(n)
+Insert at head          O(1)
+Insert at tail          O(n) for singly, O(1) if tail pointer
+Insert at position      O(n)
+Delete at head          O(1)
+Delete at tail          O(n) for singly, O(1) for doubly
+Delete by value         O(n)
+Length                  O(n) or O(1) if maintained
+
+
+================================================================================
+                    4. ARRAY vs LINKED LIST
+================================================================================
+
+Feature             Array               Linked List
+-------             -----               -----------
+Memory              Contiguous          Non-contiguous
+Size                Fixed/Dynamic       Dynamic
+Access              O(1) by index       O(n) by index
+Insert/Delete       O(n)                O(1) at known position
+Memory overhead     Low                 High (pointers)
+Cache friendly      Yes                 No
+
+WHEN TO USE LINKED LIST:
+- Frequent insertions/deletions
+- Size unknown in advance
+- No random access needed
+- Implementation of stacks, queues
+
+
+================================================================================
+                    5. COMMON TECHNIQUES
+================================================================================
+
+TECHNIQUE 1: DUMMY HEAD NODE
+----------------------------
+Simplifies edge cases (empty list, insert at head).
+
+    def remove_elements(head, val):
+        dummy = ListNode(0)
+        dummy.next = head
+        current = dummy
+
+        while current.next:
+            if current.next.val == val:
+                current.next = current.next.next
+            else:
+                current = current.next
+
+        return dummy.next
+
+
+TECHNIQUE 2: TWO POINTERS (Slow and Fast)
+-----------------------------------------
+Fast moves 2 steps, slow moves 1 step.
+
+Uses:
+- Find middle of list
+- Detect cycle
+- Find nth node from end
+
+    # Find middle
+    def find_middle(head):
+        slow = fast = head
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+        return slow
+
+
+TECHNIQUE 3: REVERSE LINKED LIST
+--------------------------------
+Three pointer technique: prev, current, next
+
+    def reverse_list(head):
+        prev = None
+        current = head
+
+        while current:
+            next_node = current.next
+            current.next = prev
+            prev = current
+            current = next_node
+
+        return prev
+
+
+TECHNIQUE 4: MERGE TWO LISTS
+----------------------------
+Use dummy head and compare nodes.
+
+    def merge_lists(l1, l2):
+        dummy = ListNode(0)
+        current = dummy
+
+        while l1 and l2:
+            if l1.val <= l2.val:
+                current.next = l1
+                l1 = l1.next
+            else:
+                current.next = l2
+                l2 = l2.next
+            current = current.next
+
+        current.next = l1 or l2
+        return dummy.next
+
+
+================================================================================
+                    6. IMPORTANT PROBLEMS
+================================================================================
+
+PROBLEM 1: Reverse Linked List
+------------------------------
+Time: O(n), Space: O(1)
+
+    def reverse_list(head):
+        prev = None
+        while head:
+            next_node = head.next
+            head.next = prev
+            prev = head
+            head = next_node
+        return prev
+
+
+PROBLEM 2: Detect Cycle (Floyd's Algorithm)
+-------------------------------------------
+Time: O(n), Space: O(1)
+
+    def has_cycle(head):
+        slow = fast = head
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+            if slow == fast:
+                return True
+        return False
+
+
+PROBLEM 3: Find Cycle Start
+---------------------------
+Time: O(n), Space: O(1)
+
+    def detect_cycle(head):
+        slow = fast = head
+
+        # Detect cycle
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+            if slow == fast:
+                break
+        else:
+            return None
+
+        # Find start
+        slow = head
+        while slow != fast:
+            slow = slow.next
+            fast = fast.next
+
+        return slow
+
+
+PROBLEM 4: Find Middle of List
+------------------------------
+Time: O(n), Space: O(1)
+
+    def find_middle(head):
+        slow = fast = head
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+        return slow
+
+
+PROBLEM 5: Remove Nth Node From End
+-----------------------------------
+Time: O(n), Space: O(1)
+
+    def remove_nth_from_end(head, n):
+        dummy = ListNode(0)
+        dummy.next = head
+        fast = slow = dummy
+
+        # Move fast n+1 steps ahead
+        for _ in range(n + 1):
+            fast = fast.next
+
+        # Move both until fast reaches end
+        while fast:
+            slow = slow.next
+            fast = fast.next
+
+        # Remove nth node
+        slow.next = slow.next.next
+
+        return dummy.next
+
+
+PROBLEM 6: Merge Two Sorted Lists
+---------------------------------
+Time: O(n+m), Space: O(1)
+
+    def merge_two_lists(l1, l2):
+        dummy = ListNode(0)
+        current = dummy
+
+        while l1 and l2:
+            if l1.val <= l2.val:
+                current.next = l1
+                l1 = l1.next
+            else:
+                current.next = l2
+                l2 = l2.next
+            current = current.next
+
+        current.next = l1 or l2
+        return dummy.next
+
+
+PROBLEM 7: Check Palindrome
+---------------------------
+Time: O(n), Space: O(1)
+
+    def is_palindrome(head):
+        # Find middle
+        slow = fast = head
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+
+        # Reverse second half
+        prev = None
+        while slow:
+            next_node = slow.next
+            slow.next = prev
+            prev = slow
+            slow = next_node
+
+        # Compare both halves
+        left, right = head, prev
+        while right:
+            if left.val != right.val:
+                return False
+            left = left.next
+            right = right.next
+
+        return True
+
+
+PROBLEM 8: Intersection of Two Lists
+------------------------------------
+Time: O(n+m), Space: O(1)
+
+    def get_intersection(headA, headB):
+        if not headA or not headB:
+            return None
+
+        a, b = headA, headB
+
+        while a != b:
+            a = a.next if a else headB
+            b = b.next if b else headA
+
+        return a
+
+
+PROBLEM 9: Add Two Numbers (as Linked Lists)
+--------------------------------------------
+Numbers stored in reverse. Time: O(max(n,m)), Space: O(1)
+
+    def add_two_numbers(l1, l2):
+        dummy = ListNode(0)
+        current = dummy
+        carry = 0
+
+        while l1 or l2 or carry:
+            val1 = l1.val if l1 else 0
+            val2 = l2.val if l2 else 0
+
+            total = val1 + val2 + carry
+            carry = total // 10
+            current.next = ListNode(total % 10)
+            current = current.next
+
+            l1 = l1.next if l1 else None
+            l2 = l2.next if l2 else None
+
+        return dummy.next
+
+
+PROBLEM 10: Reverse Nodes in k-Group
+------------------------------------
+Time: O(n), Space: O(1)
+
+    def reverse_k_group(head, k):
+        # Count nodes
+        count = 0
+        node = head
+        while node:
+            count += 1
+            node = node.next
+
+        dummy = ListNode(0)
+        dummy.next = head
+        prev_group = dummy
+
+        while count >= k:
+            # Reverse k nodes
+            prev = None
+            current = prev_group.next
+
+            for _ in range(k):
+                next_node = current.next
+                current.next = prev
+                prev = current
+                current = next_node
+
+            # Connect groups
+            tail = prev_group.next
+            tail.next = current
+            prev_group.next = prev
+            prev_group = tail
+
+            count -= k
+
+        return dummy.next
+
+
+PROBLEM 11: Sort Linked List (Merge Sort)
+-----------------------------------------
+Time: O(n log n), Space: O(log n) for recursion
+
+    def sort_list(head):
+        if not head or not head.next:
+            return head
+
+        # Find middle
+        slow, fast = head, head.next
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+
+        mid = slow.next
+        slow.next = None
+
+        # Sort both halves
+        left = sort_list(head)
+        right = sort_list(mid)
+
+        # Merge
+        return merge_two_lists(left, right)
+
+
+PROBLEM 12: Copy List with Random Pointer
+-----------------------------------------
+Time: O(n), Space: O(1)
+
+    def copy_random_list(head):
+        if not head:
+            return None
+
+        # Step 1: Create interleaved list
+        current = head
+        while current:
+            new_node = Node(current.val)
+            new_node.next = current.next
+            current.next = new_node
+            current = new_node.next
+
+        # Step 2: Set random pointers
+        current = head
+        while current:
+            if current.random:
+                current.next.random = current.random.next
+            current = current.next.next
+
+        # Step 3: Separate lists
+        dummy = Node(0)
+        copy_current = dummy
+        current = head
+
+        while current:
+            copy_current.next = current.next
+            current.next = current.next.next
+            copy_current = copy_current.next
+            current = current.next
+
+        return dummy.next
+
+
+================================================================================
+                    7. INTERVIEW TIPS
+================================================================================
+
+1. ALWAYS handle edge cases:
+   - Empty list (head is None)
+   - Single node
+   - Two nodes
+
+2. USE dummy head to simplify:
+   - Insertion at head
+   - Deletion at head
+   - Returning modified list
+
+3. DRAW the list and pointers:
+   - Helps visualize pointer changes
+   - Prevents confusion
+
+4. COMMON patterns:
+   - Two pointers (slow/fast)
+   - Dummy head
+   - Reverse in-place
+   - Merge technique
+
+5. REMEMBER to:
+   - Update all necessary pointers
+   - Handle the last node's next (set to None)
+   - Return correct head
+
+================================================================================
+                    END OF LINKED LISTS
+================================================================================

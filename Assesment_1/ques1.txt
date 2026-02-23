@@ -1,0 +1,125 @@
+================================================================================
+                    QUESTION 1 - OPERATING SYSTEM CONCEPTS
+================================================================================
+
+QUESTION:
+Healthcare system needs:
+- Recovery from unexpected crashes (resource overload/unauthorized access)
+- Protection of patient data
+- Efficient resource management
+- Multiple users (doctors, nurses, admin)
+
+OPTIONS:
+A) Process isolation techniques
+B) User-level threading model
+C) Suspend/resume processes based on priority
+D) Journaling file system for crash recovery
+
+================================================================================
+                    CORRECT ANSWER: D
+================================================================================
+
+ANSWER: D) A journaling file system that keeps track of changes not yet
+committed for better crash recovery.
+
+================================================================================
+                    EXPLANATION
+================================================================================
+
+WHY D IS CORRECT:
+
+The question specifically emphasizes:
+1. "recover from unexpected crashes"
+2. "smooth recovery"
+3. "protection of patient data"
+
+JOURNALING FILE SYSTEM:
+- Keeps a log (journal) of changes BEFORE writing to main file system
+- If crash occurs, system can replay journal to recover
+- Ensures data consistency and integrity
+- Examples: NTFS, ext4, APFS
+
+How it works:
+1. Write changes to journal first
+2. Then write to actual location
+3. On crash → replay journal to recover uncommitted changes
+4. No data loss, consistent state guaranteed
+
+WHY OTHER OPTIONS ARE LESS APPROPRIATE:
+
+A) Process Isolation:
+   - Good for SECURITY (preventing interference)
+   - Does NOT help with CRASH RECOVERY
+   - Doesn't address the "recovery" aspect of question
+
+B) User-level Threading:
+   - Good for CONCURRENCY
+   - Does NOT help with crash recovery
+   - Doesn't protect data during crashes
+
+C) Priority-based Suspend/Resume:
+   - Good for RESOURCE MANAGEMENT
+   - Helps with scheduling
+   - Does NOT help recover DATA after crash
+
+KEY INSIGHT:
+The question asks about RECOVERY from crashes + DATA PROTECTION.
+Only journaling file system directly addresses BOTH requirements.
+
+
+================================================================================
+                    DID OUR CONTENT COVER THIS?
+================================================================================
+
+PARTIALLY COVERED:
+
+In OS/08_File_Systems/theory.txt, we covered:
+- File system concepts
+- Allocation methods
+- Directory structures
+- inode, FAT
+
+WHAT WAS MISSING:
+- Detailed explanation of JOURNALING FILE SYSTEMS
+- How journaling provides crash recovery
+- Types: Write-ahead logging, metadata journaling
+
+RECOMMENDATION:
+I will add a section on Journaling File Systems to enhance the content.
+
+
+================================================================================
+                    ADDITIONAL KNOWLEDGE FOR FUTURE
+================================================================================
+
+JOURNALING FILE SYSTEM TYPES:
+
+1. METADATA-ONLY JOURNALING:
+   - Only file metadata journaled
+   - Faster, less protection
+   - Example: ext3 default
+
+2. FULL JOURNALING:
+   - Both metadata and data journaled
+   - Slower, better protection
+   - Example: ext3 with data=journal
+
+3. ORDERED JOURNALING:
+   - Metadata journaled, data written first
+   - Balance of speed and safety
+   - Example: ext4 default
+
+JOURNALED FILE SYSTEMS:
+- NTFS (Windows)
+- ext3, ext4 (Linux)
+- HFS+, APFS (macOS)
+- XFS, JFS
+
+RECOVERY PROCESS:
+1. System boots after crash
+2. File system checks journal
+3. Replays uncommitted transactions
+4. File system now consistent
+5. Normal operation resumes
+
+================================================================================

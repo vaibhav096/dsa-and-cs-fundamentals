@@ -1,0 +1,57 @@
+Problem 2: Rotting Oranges
+Difficulty: Medium
+Topic: Graph (BFS / Matrix)
+
+-----------------------------------------------------------------------
+PROBLEM STATEMENT:
+You are given an `m x n` grid where each cell can have one of three values:
+-   0: representing an empty cell,
+-   1: representing a fresh orange, or
+-   2: representing a rotten orange.
+
+Every minute, any fresh orange that is **4-directionally adjacent** (up, down, left, right) to a rotten orange becomes rotten.
+
+Return the minimum number of minutes that must elapse until no cell has a fresh orange. If this is impossible, return -1.
+
+Example 1:
+Input: grid = [[2,1,1],[1,1,0],[0,1,1]]
+Output: 4
+
+Example 2:
+Input: grid = [[2,1,1],[0,1,1],[1,0,1]]
+Output: -1
+Explanation: The orange in the bottom left corner (row 2, col 0) is never rotten, because rotting only happens 4-directionally.
+
+-----------------------------------------------------------------------
+THINKING PROCESS & APPROACH:
+
+1.  **Identify the Type**: The rotting process spreads layer by layer (minute by minute). This "shortest path" or "level by level" expansion is a classic **Breadth-First Search (BFS)** signal. DFS is not suitable here because we need to simulate simultaneous rotting from all sources.
+
+2.  **Multi-Source BFS**:
+    We might have *multiple* rotten oranges initially. They all start rotting neighbors at Time = 0.
+    So, we shouldn't start a BFS from just one; we must add ALL initially rotten oranges to the queue at the start.
+
+3.  **The Algorithm**:
+    -   Initialize a `queue`.
+    -   Scan the grid.
+        -   If cell is `2` (rotten), add `(row, col, time=0)` to the queue.
+        -   If cell is `1` (fresh), increment a `fresh_count`.
+    -   If `fresh_count` is 0 initially, return 0 (nothing to rot).
+    
+    -   **Loop while Queue is not empty**:
+        -   Pop `(r, c, time)` from queue.
+        -   Update `max_time = time`.
+        -   For each neighbor (up, down, left, right):
+            -   If neighbor is valid (in bounds) AND is fresh (`1`):
+                -   Mark it as rotten (`2`).
+                -   Decrement `fresh_count`.
+                -   Push neighbor to queue with `(r, c, time + 1)`.
+
+    -   **Final Check**:
+        -   After BFS ends, if `fresh_count` > 0, it means some oranges were isolated and didn't rot. Return -1.
+        -   Otherwise, return `max_time`.
+
+-----------------------------------------------------------------------
+COMPLEXITY:
+-   Time: O(M * N). We visit each cell at most once.
+-   Space: O(M * N) for the queue in the worst case (if all are rotten).

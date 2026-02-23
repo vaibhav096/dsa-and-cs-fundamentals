@@ -1,0 +1,383 @@
+================================================================================
+                         GREEDY ALGORITHMS
+================================================================================
+
+Greedy makes locally optimal choice at each step, hoping for global optimum.
+
+
+================================================================================
+                    1. WHEN TO USE GREEDY
+================================================================================
+
+Greedy works when:
+1. GREEDY CHOICE PROPERTY
+   Local optimal leads to global optimal.
+
+2. OPTIMAL SUBSTRUCTURE
+   Optimal solution contains optimal solutions to subproblems.
+
+Common indicators:
+- "Minimum/Maximum number of..."
+- "Earliest/Latest..."
+- Scheduling problems
+- Interval problems
+- Can sort to make decisions easier
+
+
+================================================================================
+                    2. GREEDY vs DYNAMIC PROGRAMMING
+================================================================================
+
+GREEDY:
+- Makes one choice, never reconsiders
+- Faster, simpler
+- Doesn't always work
+
+DYNAMIC PROGRAMMING:
+- Considers all choices
+- Slower, more complex
+- Always finds optimal (if exists)
+
+Example - Coin Change:
+- Greedy: Take largest coin possible (fails for some coin systems)
+- DP: Try all possibilities (always works)
+
+
+================================================================================
+                    3. CLASSIC GREEDY PROBLEMS
+================================================================================
+
+PROBLEM 1: Activity Selection / Meeting Rooms
+---------------------------------------------
+Select maximum non-overlapping activities.
+Sort by end time, greedily pick earliest ending.
+
+    def max_activities(activities):
+        # activities = [(start, end), ...]
+        activities.sort(key=lambda x: x[1])  # Sort by end time
+
+        count = 1
+        last_end = activities[0][1]
+
+        for start, end in activities[1:]:
+            if start >= last_end:
+                count += 1
+                last_end = end
+
+        return count
+
+
+PROBLEM 2: Jump Game
+--------------------
+Can you reach the last index?
+
+    def can_jump(nums):
+        max_reach = 0
+
+        for i, jump in enumerate(nums):
+            if i > max_reach:
+                return False
+            max_reach = max(max_reach, i + jump)
+
+        return True
+
+
+PROBLEM 3: Jump Game II
+-----------------------
+Minimum jumps to reach last index.
+
+    def jump(nums):
+        if len(nums) <= 1:
+            return 0
+
+        jumps = 0
+        current_end = 0
+        farthest = 0
+
+        for i in range(len(nums) - 1):
+            farthest = max(farthest, i + nums[i])
+
+            if i == current_end:
+                jumps += 1
+                current_end = farthest
+
+                if current_end >= len(nums) - 1:
+                    break
+
+        return jumps
+
+
+PROBLEM 4: Gas Station
+----------------------
+    def can_complete_circuit(gas, cost):
+        if sum(gas) < sum(cost):
+            return -1
+
+        tank = 0
+        start = 0
+
+        for i in range(len(gas)):
+            tank += gas[i] - cost[i]
+            if tank < 0:
+                start = i + 1
+                tank = 0
+
+        return start
+
+
+PROBLEM 5: Candy Distribution
+-----------------------------
+Each child gets at least 1 candy. Higher rated child gets more than neighbors.
+
+    def candy(ratings):
+        n = len(ratings)
+        candies = [1] * n
+
+        # Left to right
+        for i in range(1, n):
+            if ratings[i] > ratings[i-1]:
+                candies[i] = candies[i-1] + 1
+
+        # Right to left
+        for i in range(n-2, -1, -1):
+            if ratings[i] > ratings[i+1]:
+                candies[i] = max(candies[i], candies[i+1] + 1)
+
+        return sum(candies)
+
+
+PROBLEM 6: Non-overlapping Intervals
+------------------------------------
+Minimum intervals to remove for no overlap.
+
+    def erase_overlap_intervals(intervals):
+        if not intervals:
+            return 0
+
+        intervals.sort(key=lambda x: x[1])  # Sort by end
+        count = 0
+        last_end = intervals[0][1]
+
+        for start, end in intervals[1:]:
+            if start < last_end:
+                count += 1  # Remove this interval
+            else:
+                last_end = end
+
+        return count
+
+
+PROBLEM 7: Merge Intervals
+--------------------------
+    def merge(intervals):
+        intervals.sort(key=lambda x: x[0])
+        merged = [intervals[0]]
+
+        for start, end in intervals[1:]:
+            if start <= merged[-1][1]:
+                merged[-1][1] = max(merged[-1][1], end)
+            else:
+                merged.append([start, end])
+
+        return merged
+
+
+PROBLEM 8: Insert Interval
+--------------------------
+    def insert(intervals, new_interval):
+        result = []
+        i = 0
+        n = len(intervals)
+
+        # Add all intervals before new_interval
+        while i < n and intervals[i][1] < new_interval[0]:
+            result.append(intervals[i])
+            i += 1
+
+        # Merge overlapping intervals
+        while i < n and intervals[i][0] <= new_interval[1]:
+            new_interval[0] = min(new_interval[0], intervals[i][0])
+            new_interval[1] = max(new_interval[1], intervals[i][1])
+            i += 1
+
+        result.append(new_interval)
+
+        # Add remaining intervals
+        while i < n:
+            result.append(intervals[i])
+            i += 1
+
+        return result
+
+
+PROBLEM 9: Meeting Rooms II
+---------------------------
+Minimum meeting rooms required.
+
+    def min_meeting_rooms(intervals):
+        if not intervals:
+            return 0
+
+        starts = sorted([i[0] for i in intervals])
+        ends = sorted([i[1] for i in intervals])
+
+        rooms = 0
+        end_ptr = 0
+
+        for start in starts:
+            if start < ends[end_ptr]:
+                rooms += 1
+            else:
+                end_ptr += 1
+
+        return rooms
+
+
+PROBLEM 10: Task Scheduler
+--------------------------
+    def least_interval(tasks, n):
+        count = Counter(tasks)
+        max_count = max(count.values())
+        max_count_tasks = sum(1 for c in count.values() if c == max_count)
+
+        # Formula: (max_count - 1) * (n + 1) + max_count_tasks
+        result = (max_count - 1) * (n + 1) + max_count_tasks
+
+        return max(result, len(tasks))
+
+
+PROBLEM 11: Partition Labels
+----------------------------
+Partition string so each letter appears in at most one part.
+
+    def partition_labels(s):
+        last_occurrence = {c: i for i, c in enumerate(s)}
+
+        result = []
+        start = end = 0
+
+        for i, c in enumerate(s):
+            end = max(end, last_occurrence[c])
+            if i == end:
+                result.append(end - start + 1)
+                start = i + 1
+
+        return result
+
+
+PROBLEM 12: Huffman Coding
+--------------------------
+Build optimal prefix code for data compression.
+
+    import heapq
+
+    def huffman_coding(freq):
+        # freq = {'a': 5, 'b': 9, ...}
+        heap = [[f, [c, ""]] for c, f in freq.items()]
+        heapq.heapify(heap)
+
+        while len(heap) > 1:
+            lo = heapq.heappop(heap)
+            hi = heapq.heappop(heap)
+
+            for pair in lo[1:]:
+                pair[1] = '0' + pair[1]
+            for pair in hi[1:]:
+                pair[1] = '1' + pair[1]
+
+            heapq.heappush(heap, [lo[0] + hi[0]] + lo[1:] + hi[1:])
+
+        return sorted(heap[0][1:], key=lambda p: (len(p[1]), p))
+
+
+PROBLEM 13: Fractional Knapsack
+-------------------------------
+Can take fractions of items.
+
+    def fractional_knapsack(weights, values, capacity):
+        # Calculate value per unit weight
+        items = [(v/w, w, v) for w, v in zip(weights, values)]
+        items.sort(reverse=True)  # Sort by value density
+
+        total_value = 0
+
+        for ratio, weight, value in items:
+            if capacity >= weight:
+                capacity -= weight
+                total_value += value
+            else:
+                total_value += ratio * capacity
+                break
+
+        return total_value
+
+
+PROBLEM 14: Minimum Number of Arrows to Burst Balloons
+------------------------------------------------------
+    def find_min_arrow_shots(points):
+        if not points:
+            return 0
+
+        points.sort(key=lambda x: x[1])  # Sort by end
+        arrows = 1
+        end = points[0][1]
+
+        for start, point_end in points[1:]:
+            if start > end:
+                arrows += 1
+                end = point_end
+
+        return arrows
+
+
+PROBLEM 15: Best Time to Buy and Sell Stock II
+----------------------------------------------
+Multiple transactions allowed.
+
+    def max_profit(prices):
+        profit = 0
+
+        for i in range(1, len(prices)):
+            if prices[i] > prices[i-1]:
+                profit += prices[i] - prices[i-1]
+
+        return profit
+
+
+================================================================================
+                    4. INTERVAL GREEDY TEMPLATE
+================================================================================
+
+For interval scheduling problems:
+
+1. SORT by end time for maximum non-overlapping
+2. SORT by start time for merging
+3. Use two pointers or heap for counting overlaps
+
+
+================================================================================
+                    5. INTERVIEW TIPS
+================================================================================
+
+1. PROVE GREEDY WORKS:
+   - Exchange argument
+   - Show local optimal leads to global optimal
+
+2. COMMON PATTERNS:
+   - Sort by some criteria
+   - Take best available option
+   - Track running state
+
+3. WHEN GREEDY FAILS:
+   - Coin change with arbitrary denominations
+   - 0/1 Knapsack
+   - Use DP instead
+
+4. TIPS:
+   - Draw out examples
+   - Consider counterexamples
+   - Sort often helps
+
+================================================================================
+                         END OF GREEDY
+================================================================================

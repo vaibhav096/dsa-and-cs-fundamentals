@@ -1,0 +1,55 @@
+LEARNING NOTE: The 0/1 Knapsack Pattern 
+(Relevant for Problem 1: Partition Equal Subset Sum)
+
+Why is this important?
+The "Partition Equal Subset Sum" problem is a direct application of the 0/1 Knapsack pattern. Mastering this pattern helps you solve a huge variety of DP problems asked in Infosys, Google, Amazon, etc.
+
+-----------------------------------------------------------------------
+THE CORE CONCEPT:
+You have a set of items, each with a value (and often a weight). You have a limit (capacity).
+For each item, you have a binary choice:
+1.  **INCLUDE it**: You gain its value, but use up some capacity.
+2.  **EXCLUDE it**: You save capacity, but gain no value.
+
+This binary choice tree creates the need for Dynamic Programming to cache results.
+
+-----------------------------------------------------------------------
+COMMON VARIATIONS:
+
+1.  **0/1 Knapsack**:
+    -   Items can be used ONCE.
+    -   Loop: Outer loop (items), Inner loop (capacity) -> **Decreasing order**.
+    -   Example: Partition Equal Subset Sum, Target Sum.
+
+2.  **Unbounded Knapsack**:
+    -   Items can be used UNLIMITED times.
+    -   Loop: Outer loop (items), Inner loop (capacity) -> **Increasing order**.
+    -   Example: Coin Change (Min coins), Rod Cutting.
+
+-----------------------------------------------------------------------
+TEMPLATE CODE (0/1 KNAPSACK - Boolean Reachability):
+
+def possible_sums(nums, target):
+    dp = {0} # Set of all possible sums initiated with 0
+    for num in nums:
+        new_sums = set()
+        for s in dp:
+            if s + num <= target:
+                new_sums.add(s + num)
+        dp.update(new_sums)
+    return target in dp
+
+# OR Array based (Faster)
+def possible_sums_array(nums, target):
+    dp = [False] * (target + 1)
+    dp[0] = True
+    for num in nums:
+        for j in range(target, num - 1, -1): # Backwards!
+            dp[j] = dp[j] or dp[j - num]
+    return dp[target]
+-----------------------------------------------------------------------
+KEY TAKEAWAY:
+Whenever you see a problem asking to "select a subset to equal a target" or "find max value with capacity limit", immediately think: **KNAPSACK DP**.
+Check if items can be reused.
+- No reuse -> Iterate capacity backwards.
+- Reuse -> Iterate capacity forwards.

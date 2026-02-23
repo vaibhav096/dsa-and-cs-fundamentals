@@ -1,0 +1,420 @@
+================================================================================
+                            PYTHON FUNCTIONS
+================================================================================
+
+A function is a reusable block of code that performs a specific task.
+
+
+1. FUNCTION DEFINITION
+================================================================================
+
+Syntax:
+    def function_name(parameters):
+        """docstring (optional)"""
+        # code
+        return value  # optional
+
+Example:
+    def greet(name):
+        """Greets the user with their name"""
+        return f"Hello, {name}!"
+
+    # Calling the function
+    message = greet("Alice")
+    print(message)  # Hello, Alice!
+
+Rules for function names:
+- Same as variable names
+- Use lowercase with underscores (snake_case)
+- Should be descriptive
+
+
+2. PARAMETERS AND ARGUMENTS
+================================================================================
+
+Parameter: Variable in function definition
+Argument: Value passed when calling function
+
+    def greet(name):    # 'name' is parameter
+        print(f"Hello, {name}")
+
+    greet("Alice")      # "Alice" is argument
+
+
+TYPES OF PARAMETERS:
+
+1. Positional Parameters
+------------------------
+Must be passed in correct order.
+
+    def add(a, b):
+        return a + b
+
+    add(5, 3)  # a=5, b=3
+
+
+2. Default Parameters
+---------------------
+Have default values if not provided.
+
+    def greet(name, greeting="Hello"):
+        return f"{greeting}, {name}!"
+
+    greet("Alice")            # "Hello, Alice!"
+    greet("Alice", "Hi")      # "Hi, Alice!"
+
+    # IMPORTANT: Default params must come after non-default
+    def func(a, b=10):  # Correct
+        pass
+    # def func(a=10, b):  # ERROR!
+
+
+3. Keyword Arguments
+--------------------
+Pass by parameter name.
+
+    def create_user(name, age, city):
+        return {"name": name, "age": age, "city": city}
+
+    # Can pass in any order using keywords
+    create_user(age=25, city="Delhi", name="John")
+
+
+4. *args (Arbitrary Positional Arguments)
+-----------------------------------------
+Accept any number of positional arguments.
+
+    def add_all(*args):
+        return sum(args)
+
+    add_all(1, 2)        # 3
+    add_all(1, 2, 3, 4)  # 10
+
+    # args is a tuple inside function
+    def show_args(*args):
+        print(type(args))  # <class 'tuple'>
+        for arg in args:
+            print(arg)
+
+
+5. **kwargs (Arbitrary Keyword Arguments)
+-----------------------------------------
+Accept any number of keyword arguments.
+
+    def show_info(**kwargs):
+        for key, value in kwargs.items():
+            print(f"{key}: {value}")
+
+    show_info(name="John", age=25, city="Delhi")
+
+    # kwargs is a dictionary inside function
+
+
+6. Combined Parameters
+----------------------
+Order must be: positional, *args, keyword, **kwargs
+
+    def func(a, b, *args, c=10, **kwargs):
+        pass
+
+
+3. RETURN STATEMENT
+================================================================================
+
+- Returns a value from function
+- Exits the function immediately
+- Without return, function returns None
+
+    def add(a, b):
+        return a + b
+
+    # Multiple return values (returns tuple)
+    def get_stats(numbers):
+        return min(numbers), max(numbers), sum(numbers)
+
+    low, high, total = get_stats([1, 2, 3, 4, 5])
+
+
+4. SCOPE OF VARIABLES
+================================================================================
+
+LOCAL SCOPE:
+------------
+Variables created inside function, accessible only within it.
+
+    def func():
+        x = 10      # local variable
+        print(x)
+
+    func()
+    # print(x)    # ERROR! x is not defined outside
+
+
+GLOBAL SCOPE:
+-------------
+Variables created outside functions, accessible everywhere.
+
+    x = 10          # global variable
+
+    def func():
+        print(x)    # Can read global
+
+    func()          # 10
+
+
+GLOBAL KEYWORD:
+---------------
+Modify global variable inside function.
+
+    x = 10
+
+    def func():
+        global x    # Now we can modify x
+        x = 20
+
+    func()
+    print(x)        # 20
+
+
+NONLOCAL KEYWORD:
+-----------------
+Modify variable from enclosing (outer) function.
+
+    def outer():
+        x = 10
+
+        def inner():
+            nonlocal x  # Modify outer's x
+            x = 20
+
+        inner()
+        print(x)    # 20
+
+
+5. LAMBDA FUNCTIONS (Anonymous Functions)
+================================================================================
+
+Small, single-expression functions without name.
+
+Syntax: lambda arguments: expression
+
+Examples:
+    # Regular function
+    def add(a, b):
+        return a + b
+
+    # Lambda equivalent
+    add = lambda a, b: a + b
+
+    # Use cases:
+    # 1. Sort with custom key
+    students = [("Alice", 25), ("Bob", 20), ("Charlie", 22)]
+    students.sort(key=lambda x: x[1])  # Sort by age
+
+    # 2. With map()
+    numbers = [1, 2, 3, 4]
+    squares = list(map(lambda x: x**2, numbers))
+
+    # 3. With filter()
+    numbers = [1, 2, 3, 4, 5, 6]
+    evens = list(filter(lambda x: x % 2 == 0, numbers))
+
+
+6. HIGHER-ORDER FUNCTIONS
+================================================================================
+
+Functions that take functions as arguments or return functions.
+
+
+MAP():
+------
+Apply function to each element.
+
+    numbers = [1, 2, 3, 4]
+    squares = list(map(lambda x: x**2, numbers))  # [1, 4, 9, 16]
+
+    # Multiple iterables
+    a = [1, 2, 3]
+    b = [4, 5, 6]
+    sums = list(map(lambda x, y: x + y, a, b))  # [5, 7, 9]
+
+
+FILTER():
+---------
+Filter elements based on condition.
+
+    numbers = [1, 2, 3, 4, 5, 6]
+    evens = list(filter(lambda x: x % 2 == 0, numbers))  # [2, 4, 6]
+
+
+REDUCE():
+---------
+Reduce sequence to single value (from functools).
+
+    from functools import reduce
+
+    numbers = [1, 2, 3, 4]
+    product = reduce(lambda x, y: x * y, numbers)  # 24
+
+    # How it works: ((1*2)*3)*4 = 24
+
+
+7. RECURSION
+================================================================================
+
+Function calling itself.
+
+Example: Factorial
+    def factorial(n):
+        if n <= 1:      # Base case
+            return 1
+        return n * factorial(n - 1)  # Recursive case
+
+    factorial(5)  # 120
+
+Example: Fibonacci
+    def fibonacci(n):
+        if n <= 1:
+            return n
+        return fibonacci(n-1) + fibonacci(n-2)
+
+Important:
+- Must have BASE CASE to stop recursion
+- Each call adds to stack (can cause StackOverflow)
+- Python has recursion limit (default ~1000)
+- Can increase with: sys.setrecursionlimit(10000)
+
+
+8. DOCSTRINGS
+================================================================================
+
+Documentation string for functions.
+
+    def add(a, b):
+        """
+        Add two numbers and return the result.
+
+        Parameters:
+            a (int): First number
+            b (int): Second number
+
+        Returns:
+            int: Sum of a and b
+
+        Example:
+            >>> add(2, 3)
+            5
+        """
+        return a + b
+
+    # Access docstring
+    print(add.__doc__)
+    help(add)
+
+
+9. FUNCTION ANNOTATIONS (Type Hints)
+================================================================================
+
+Optional type information for parameters and return value.
+
+    def greet(name: str, age: int = 0) -> str:
+        return f"Hello {name}, you are {age}"
+
+    # Annotations don't enforce types, just documentation
+    # Use mypy for type checking
+
+    # Check annotations
+    print(greet.__annotations__)
+    # {'name': <class 'str'>, 'age': <class 'int'>, 'return': <class 'str'>}
+
+
+10. FIRST-CLASS FUNCTIONS
+================================================================================
+
+In Python, functions are first-class citizens:
+- Can be assigned to variables
+- Can be passed as arguments
+- Can be returned from functions
+- Can be stored in data structures
+
+    # Assign to variable
+    def greet(name):
+        return f"Hello, {name}"
+
+    say_hello = greet
+    say_hello("Alice")  # "Hello, Alice"
+
+    # Pass as argument
+    def apply(func, value):
+        return func(value)
+
+    result = apply(lambda x: x**2, 5)  # 25
+
+    # Return from function
+    def multiplier(n):
+        def multiply(x):
+            return x * n
+        return multiply
+
+    double = multiplier(2)
+    double(5)  # 10
+
+
+11. CLOSURES
+================================================================================
+
+Function that remembers values from enclosing scope.
+
+    def outer(x):
+        def inner(y):
+            return x + y    # inner "closes over" x
+        return inner
+
+    add_10 = outer(10)
+    add_10(5)   # 15
+    add_10(20)  # 30
+
+Use cases:
+- Data hiding
+- Factory functions
+- Decorators
+
+
+12. INTERVIEW QUESTIONS
+================================================================================
+
+Q: Difference between parameters and arguments?
+A: Parameters are in function definition.
+   Arguments are values passed when calling.
+
+Q: What is *args and **kwargs?
+A: *args collects extra positional args into tuple.
+   **kwargs collects extra keyword args into dict.
+
+Q: What is the default return value of a function?
+A: None, if no return statement.
+
+Q: Difference between global and nonlocal?
+A: global refers to module-level variables.
+   nonlocal refers to enclosing function's variables.
+
+Q: What is a closure?
+A: Function that remembers variables from enclosing scope.
+
+Q: What is a lambda function?
+A: Anonymous function with single expression.
+   lambda args: expression
+
+Q: What is recursion?
+A: Function calling itself. Must have base case.
+
+Q: Difference between map() and filter()?
+A: map() transforms each element.
+   filter() selects elements based on condition.
+
+Q: What is a higher-order function?
+A: Function that takes function as argument or returns function.
+
+================================================================================
+                          END OF FUNCTIONS
+================================================================================

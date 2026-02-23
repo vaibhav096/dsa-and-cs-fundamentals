@@ -1,0 +1,486 @@
+================================================================================
+                    INDEXING IN DATABASES
+================================================================================
+
+Indexing is a technique to speed up data retrieval operations.
+Like a book's index - quickly find page without reading everything.
+
+
+================================================================================
+                    1. WHY INDEXING?
+================================================================================
+
+WITHOUT INDEX:
+- Full table scan required
+- O(n) time complexity
+- Slow for large tables
+
+WITH INDEX:
+- Direct access to rows
+- O(log n) or O(1) time
+- Much faster queries
+
+
+TRADE-OFFS:
+
+ADVANTAGES:
+- Faster SELECT queries
+- Faster WHERE clause evaluation
+- Faster JOIN operations
+- Faster ORDER BY
+
+DISADVANTAGES:
+- Extra storage space
+- Slower INSERT, UPDATE, DELETE
+- Index maintenance overhead
+
+
+================================================================================
+                    2. BASIC CONCEPTS
+================================================================================
+
+SEARCH KEY:
+- Attribute(s) used to look up records
+- Can be one or more columns
+
+INDEX FILE:
+- Contains index entries
+- Each entry: (Search key value, Pointer to record)
+- Smaller than data file
+
+
+TYPES OF INDICES:
+
+1. By Ordering:
+   - Ordered Index (Sorted)
+   - Hash Index (Hashed)
+
+2. By Structure:
+   - Dense Index
+   - Sparse Index
+
+3. By Clustering:
+   - Clustered Index (Primary)
+   - Non-clustered Index (Secondary)
+
+
+================================================================================
+                    3. ORDERED INDICES
+================================================================================
+
+DENSE INDEX:
+- Index entry for EVERY search key value in file
+- Every record has corresponding index entry
+
+    Index File          Data File
+    +-------+---+       +---+--------+
+    | 10    | →-+----→  | 10| Alice  |
+    +-------+---+       +---+--------+
+    | 20    | →-+----→  | 20| Bob    |
+    +-------+---+       +---+--------+
+    | 30    | →-+----→  | 30| Carol  |
+    +-------+---+       +---+--------+
+
+
+SPARSE INDEX:
+- Index entry for ONLY some search key values
+- Data file MUST be ordered on search key
+- Fewer index entries, less space
+
+    Index File          Data File
+    +-------+---+       +---+--------+
+    | 10    | →-+----→  | 10| Alice  |
+    +-------+---+       +---+--------+
+                        | 15| Amy    |
+    +-------+---+       +---+--------+
+    | 20    | →-+----→  | 20| Bob    |
+    +-------+---+       +---+--------+
+                        | 25| Brian  |
+                        +---+--------+
+
+To find 15: Go to 10 (largest ≤ 15), scan from there.
+
+
+================================================================================
+                    4. CLUSTERED VS NON-CLUSTERED INDEX
+================================================================================
+
+CLUSTERED INDEX (Primary Index):
+- Data file physically sorted on index attribute
+- Only ONE clustered index per table
+- Usually on primary key
+- Faster for range queries
+
+    Data File (Sorted by ID):
+    +---+-------+
+    | 1 | Alice |
+    | 2 | Bob   |
+    | 3 | Carol |
+    +---+-------+
+
+
+NON-CLUSTERED INDEX (Secondary Index):
+- Data file NOT sorted on index attribute
+- Multiple non-clustered indices possible
+- Requires extra level of indirection
+- Good for frequent lookup columns
+
+    Secondary Index (on Name)    Data File (Sorted by ID)
+    +-------+---+                +---+-------+
+    | Alice | →-+--------+       | 1 | Alice |←----+
+    +-------+---+        |       +---+-------+     |
+    | Bob   | →-+-----+  +----→  | 2 | Bob   |←-+  |
+    +-------+---+     |          +---+-------+  |  |
+    | Carol | →-+--+  +-------→  | 3 | Carol |  |  |
+    +-------+---+  |             +---+-------+  |  |
+                   +--------------------------→ |  |
+                   +--------------------------→-+--+
+
+
+================================================================================
+                    5. MULTILEVEL INDEX
+================================================================================
+
+When index itself is too large to fit in memory.
+
+Solution: Create index on index!
+
+    Outer Index (Sparse)
+    +-------+---+
+    | 1     | →-+-→  Inner Index Block 1
+    +-------+---+    +-------+---+
+    | 100   | →-+-→  | 1     | → | Data
+    +-------+---+    | 25    | → |
+                     | 50    | → |
+                     | 75    | → |
+                     +-------+---+
+
+                     Inner Index Block 2
+                     +-------+---+
+                     | 100   | → | Data
+                     | 150   | → |
+                     | 200   | → |
+                     +-------+---+
+
+
+================================================================================
+                    6. B-TREE INDEX
+================================================================================
+
+Balanced tree structure. Most common index in databases.
+
+
+PROPERTIES:
+- All leaf nodes at same level (balanced)
+- Each node has multiple keys
+- Logarithmic search time: O(log n)
+- Good for range queries
+
+
+B-TREE STRUCTURE:
+- Internal nodes: Keys + child pointers
+- Leaf nodes: Keys + data pointers
+- Keys in sorted order
+
+              [50]
+             /    \
+        [25]       [75]
+       /    \     /    \
+    [10,20] [30,40] [60,70] [80,90]
+
+
+B-TREE RULES (Order m):
+- Root has 2 to m children (or is leaf)
+- Internal nodes have ⌈m/2⌉ to m children
+- All leaves at same depth
+- Node with k children has k-1 keys
+
+
+================================================================================
+                    7. B+ TREE INDEX
+================================================================================
+
+Variation of B-tree. Used by most databases (MySQL, PostgreSQL, Oracle).
+
+
+DIFFERENCES FROM B-TREE:
+
+1. All data in leaf nodes only
+2. Internal nodes only have keys (routing)
+3. Leaf nodes linked (easy range scan)
+4. More keys per node (shallower tree)
+
+
+B+ TREE STRUCTURE:
+
+              [50]                    ← Internal (keys only)
+             /    \
+        [25]       [75]               ← Internal (keys only)
+       /    \     /    \
+    [10,20]→[25,40]→[50,70]→[75,90]   ← Leaves (data + linked)
+
+
+ADVANTAGES OF B+ TREE:
+1. More keys in internal nodes → shallower tree
+2. Leaf linking → efficient range queries
+3. All searches go to leaf → consistent time
+4. Sequential access follows links
+
+
+OPERATIONS:
+
+SEARCH:
+1. Start at root
+2. Follow appropriate child pointer
+3. Repeat until leaf
+4. Search leaf for key
+
+
+INSERT:
+1. Find leaf where key belongs
+2. If space, insert
+3. If full, split leaf and propagate
+
+
+DELETE:
+1. Find key in leaf
+2. Remove key
+3. If underflow, borrow or merge with sibling
+
+
+================================================================================
+                    8. HASH INDEX
+================================================================================
+
+Uses hash function to directly locate data.
+O(1) average time for equality searches.
+
+
+HOW IT WORKS:
+
+Hash Function: h(key) → bucket number
+
+Example: h(key) = key mod 10
+
+    key=25 → bucket 5
+    key=37 → bucket 7
+    key=42 → bucket 2
+
+
+STRUCTURE:
+
+    Hash Table
+    +---+
+    | 0 |→ [20] → [30] → ...
+    +---+
+    | 1 |→ [11] → [21] → ...
+    +---+
+    | 2 |→ [42] → [52] → ...
+    +---+
+    ...
+
+
+STATIC HASHING:
+- Fixed number of buckets
+- Problem: Overflow chains grow long
+
+DYNAMIC HASHING:
+- Buckets grow/shrink with data
+- Types: Extendible hashing, Linear hashing
+
+
+EXTENDIBLE HASHING:
+
+- Directory doubles when needed
+- Only splits overflowed bucket
+- Uses prefix of hash value
+
+    Global Depth: 2
+    Directory:
+    00 → Bucket A
+    01 → Bucket B
+    10 → Bucket C
+    11 → Bucket D
+
+
+LINEAR HASHING:
+
+- Buckets split in round-robin order
+- No directory needed
+- Split pointer tracks next bucket to split
+
+
+================================================================================
+                    9. HASH vs B+ TREE
+================================================================================
+
++----------------+------------------+------------------+
+| Criteria       | Hash Index       | B+ Tree Index    |
++----------------+------------------+------------------+
+| Equality (=)   | O(1) - Excellent | O(log n) - Good  |
+| Range (<, >)   | O(n) - Poor      | O(log n + k)     |
+| Order By       | Not supported    | Supported        |
+| Min/Max        | Full scan        | First/Last leaf  |
+| Pattern (LIKE) | Not supported    | Prefix only      |
+| Space          | More             | Less             |
++----------------+------------------+------------------+
+
+USE HASH FOR:
+- Exact match queries
+- Primary key lookups
+- Hash joins
+
+USE B+ TREE FOR:
+- Range queries
+- ORDER BY queries
+- LIKE 'prefix%'
+- Most general purpose
+
+
+================================================================================
+                    10. INDEX IN SQL
+================================================================================
+
+CREATE INDEX:
+-------------
+-- Basic index
+CREATE INDEX idx_name ON employees(last_name);
+
+-- Composite index
+CREATE INDEX idx_name_dept ON employees(last_name, dept_id);
+
+-- Unique index
+CREATE UNIQUE INDEX idx_email ON employees(email);
+
+-- Specify type (if supported)
+CREATE INDEX idx_name ON employees(last_name) USING BTREE;
+CREATE INDEX idx_id ON employees(emp_id) USING HASH;
+
+
+DROP INDEX:
+-----------
+DROP INDEX idx_name ON employees;
+
+
+SHOW INDEXES:
+-------------
+SHOW INDEX FROM employees;
+
+
+================================================================================
+                    11. WHEN TO CREATE INDEX
+================================================================================
+
+CREATE INDEX ON:
+1. Primary key (automatic)
+2. Foreign keys (join columns)
+3. Columns in WHERE clause
+4. Columns in ORDER BY
+5. Columns in GROUP BY
+6. Columns with high selectivity
+
+
+DO NOT INDEX:
+1. Small tables
+2. Columns with many NULLs
+3. Columns that are frequently updated
+4. Columns with low selectivity (few unique values)
+5. Columns rarely used in queries
+
+
+COMPOSITE INDEX TIPS:
+1. Most selective column first
+2. Equality columns before range columns
+3. Order matters for leftmost prefix rule
+
+
+LEFTMOST PREFIX RULE:
+Index on (A, B, C) can be used for:
+- WHERE A = ...
+- WHERE A = ... AND B = ...
+- WHERE A = ... AND B = ... AND C = ...
+
+CANNOT be used for:
+- WHERE B = ...
+- WHERE C = ...
+- WHERE B = ... AND C = ...
+
+
+================================================================================
+                    12. INDEX PERFORMANCE
+================================================================================
+
+QUERY EXECUTION WITH INDEX:
+
+Without Index (Table Scan):
+- Read all pages
+- Time: O(n)
+
+With B+ Tree Index:
+- Traverse tree
+- Time: O(log n)
+
+With Hash Index:
+- Compute hash, access bucket
+- Time: O(1) average
+
+
+COVERING INDEX:
+Index contains all columns needed by query.
+No need to access data table.
+
+CREATE INDEX idx_cover ON orders(customer_id, order_date, total);
+
+SELECT customer_id, total
+FROM orders
+WHERE customer_id = 100;
+-- Index contains all needed columns!
+
+
+INDEX SELECTIVITY:
+Selectivity = Unique values / Total rows
+
+High selectivity (close to 1) → Good for index
+Low selectivity (close to 0) → Poor for index
+
+Example:
+- Gender (M/F): Selectivity ≈ 0.5 → Bad
+- Email: Selectivity ≈ 1.0 → Good
+
+
+================================================================================
+                    13. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is indexing? Why is it used?
+A: Data structure to speed up retrieval. Like book index.
+   Trades storage space and write speed for faster reads.
+
+Q2: Difference between clustered and non-clustered index?
+A: Clustered - data physically sorted on index, one per table.
+   Non-clustered - separate structure with pointers, multiple allowed.
+
+Q3: What is B+ tree? Why used in databases?
+A: Balanced tree with data only in leaves, leaves linked.
+   Good for range queries, consistent O(log n) access.
+
+Q4: Difference between B-tree and B+ tree?
+A: B-tree has data in all nodes. B+ tree has data only in leaves,
+   leaves are linked. B+ tree better for databases.
+
+Q5: When to use hash index vs B+ tree?
+A: Hash for equality (=) queries - O(1).
+   B+ tree for range queries, ORDER BY, general purpose.
+
+Q6: What is covering index?
+A: Index containing all columns needed by query.
+   Query answered entirely from index without table access.
+
+Q7: What is leftmost prefix rule?
+A: Composite index (A, B, C) used only if query includes A,
+   or A+B, or A+B+C. Cannot skip leftmost columns.
+
+
+================================================================================
+                    END OF INDEXING
+================================================================================

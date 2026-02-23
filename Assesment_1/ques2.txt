@@ -1,0 +1,186 @@
+================================================================================
+                    QUESTION 2 - REST API ARCHITECTURE & SYSTEM DESIGN
+================================================================================
+
+QUESTION:
+Social media company needs REST API with:
+- CRUD operations for users (5 simple endpoints)
+- Handle large number of requests per second
+- Horizontal scaling capability
+- Load balancer for traffic distribution
+- Caching for performance
+- Security
+
+OPTIONS:
+A) Monolithic architecture + caching library
+B) Microservices architecture + caching library
+C) Serverless architecture + caching library
+D) Load balancer + caching library
+
+================================================================================
+                    CORRECT ANSWER: D
+================================================================================
+
+ANSWER: D) Use a load balancer to distribute traffic across multiple
+instances of the API and implement caching using a caching library
+
+================================================================================
+                    EXPLANATION
+================================================================================
+
+WHY D IS CORRECT:
+
+The question is PRACTICAL, not theoretical. Key points:
+
+1. SIMPLE API:
+   - Just 5 CRUD endpoints for users
+   - POST /users, GET /users, GET /users/{id}, PUT, DELETE
+   - This is NOT complex enough for microservices
+
+2. DIRECTLY ADDRESSES REQUIREMENTS:
+   - "Handle large number of requests" → Load balancer distributes
+   - "Scale horizontally" → Multiple instances behind load balancer
+   - "Caching for performance" → Caching library
+
+3. HORIZONTAL SCALING IS ACHIEVED BY:
+   - Running MULTIPLE INSTANCES of the same API
+   - Load balancer distributes requests across instances
+   - This IS horizontal scaling - simple and effective
+
+                    Load Balancer
+                    /    |    \
+                   /     |     \
+            API         API        API
+         Instance1   Instance2   Instance3
+            |           |           |
+         [Cache]     [Cache]     [Cache]
+
+
+4. NO OVER-ENGINEERING:
+   - Microservices for 5 endpoints = OVERKILL
+   - Serverless has cold-start issues for high traffic
+   - Simple solution is often the BEST solution
+
+
+================================================================================
+                    WHY I INITIALLY GOT IT WRONG
+================================================================================
+
+MY MISTAKE:
+I thought "architecture pattern" was being asked, so I chose Microservices.
+
+THE ACTUAL ASK:
+The question asks for "best APPROACH" - which means practical solution.
+
+KEY LESSON:
+- Don't over-engineer simple problems
+- Load balancer + multiple instances = horizontal scaling
+- Microservices is for COMPLEX systems with many services
+- A simple user CRUD API doesn't need microservices complexity
+
+
+================================================================================
+                    WHY OTHER OPTIONS ARE WRONG
+================================================================================
+
+A) MONOLITHIC ARCHITECTURE:
+   - Focuses on architecture style, not the scaling mechanism
+   - Doesn't mention load balancer (the KEY component)
+   - Less practical answer
+
+B) MICROSERVICES ARCHITECTURE:
+   - OVERKILL for simple 5-endpoint CRUD API
+   - Adds unnecessary complexity
+   - Microservices = splitting into MULTIPLE services
+   - User CRUD is a SINGLE service concept
+   - Over-engineering
+
+C) SERVERLESS ARCHITECTURE:
+   - Cold start latency issues
+   - Social media = CONSISTENT high traffic
+   - Serverless better for variable/unpredictable loads
+   - Can be expensive at scale
+
+
+================================================================================
+                    KEY INSIGHT
+================================================================================
+
+HORIZONTAL SCALING doesn't require microservices!
+
+You can achieve horizontal scaling by:
+1. Writing a simple, STATELESS API
+2. Deploying MULTIPLE INSTANCES
+3. Using LOAD BALANCER to distribute traffic
+4. Using CACHING for performance
+
+This is simpler, cheaper, and sufficient for many use cases.
+
+
+WHEN TO USE MICROSERVICES:
+- Multiple teams working on different features
+- Different services need different scaling
+- Complex domain with many bounded contexts
+- Need independent deployment of services
+
+WHEN NOT TO USE MICROSERVICES:
+- Simple CRUD APIs
+- Small team
+- Single domain (just users)
+- When horizontal scaling of monolith is sufficient
+
+
+================================================================================
+                    DID OUR CONTENT COVER THIS?
+================================================================================
+
+NOT COVERED:
+
+This question requires understanding of:
+- System Design principles
+- Horizontal scaling patterns
+- Load balancing
+- When to use which architecture
+- Practical vs theoretical approach
+
+LESSON LEARNED:
+System Design questions test PRACTICAL thinking, not just theoretical knowledge.
+
+
+================================================================================
+                    ADDITIONAL KNOWLEDGE
+================================================================================
+
+HORIZONTAL SCALING METHODS:
+
+1. SIMPLE (Option D approach):
+   - Multiple instances of SAME application
+   - Load balancer distributes traffic
+   - Stateless design required
+   - Shared cache (Redis) or database
+
+2. COMPLEX (Microservices):
+   - Split into multiple services
+   - Each service scales independently
+   - More infrastructure needed
+   - Use when system is ACTUALLY complex
+
+
+STATELESS API FOR SCALING:
+
+For load balancer to work effectively:
+- No session stored on server
+- Use JWT tokens for authentication
+- Centralized cache (Redis)
+- Centralized database
+- Any instance can handle any request
+
+
+LOAD BALANCER ALGORITHMS:
+
+- Round Robin: Distribute equally
+- Least Connections: Send to least busy
+- IP Hash: Same client → same server
+- Weighted: Based on server capacity
+
+================================================================================

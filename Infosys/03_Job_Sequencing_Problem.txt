@@ -1,0 +1,61 @@
+Problem 3: Job Sequencing Problem
+Difficulty: Medium
+Topic: Greedy Algorithm
+
+-----------------------------------------------------------------------
+PROBLEM STATEMENT:
+Given a set of `N` jobs where each job `i` has a deadline and profit associated with it. 
+Each job takes 1 unit of time to complete and only one job can be scheduled at a time. 
+We earn the profit if and only if the job is completed by its deadline. 
+Find the number of jobs done and the maximum profit.
+
+Note: Jobs are given as (id, deadline, profit).
+
+Example 1:
+Input: Jobs = [(1, 4, 20), (2, 1, 10), (3, 1, 40), (4, 1, 30)]
+Output: 2 jobs, 60 profit
+Explanation: 
+- Job 3 (Profit 40, Deadline 1) takes slot [0-1].
+- Job 1 (Profit 20, Deadline 4) takes slot [1-2].
+- Total Profit = 40 + 20 = 60.
+
+Example 2:
+Input: Jobs = [(1, 2, 100), (2, 1, 19), (3, 2, 27), (4, 1, 25), (5, 3, 15)]
+Output: 3 jobs, 142 profit
+Explanation: 
+- Job 1 (Profit 100, Deadline 2) -> Slot [1-2]
+- Job 3 (Profit 27, Deadline 2) -> Slot [0-1] (Since slot 1-2 is taken, checking earlier)
+- Job 5 (Profit 15, Deadline 3) -> Slot [2-3]
+- Total = 100 + 27 + 15 = 142.
+
+-----------------------------------------------------------------------
+THINKING PROCESS & APPROACH:
+
+1.  **Greedy Choice**:
+    To maximize profit, we should always try to do the highest paying jobs first.
+    If a high paying job can be done, we should do it.
+
+2.  **Sorting**:
+    Sort all jobs in descending order of `profit`.
+
+3.  **Slot Assignment**:
+    This is the tricky part. If a job has a deadline `d`, it can be performed at any time slot from `1` to `d`.
+    To leave space for other jobs that might have *tighter* deadlines (e.g., deadline 1), we should schedule the current job as **LATE** as possible.
+    
+    Rule: For a job with deadline `d`, try to place it in `d`. If `d` is occupied, try `d-1`, then `d-2`... until 1.
+    If no slot is available, we cannot do this job.
+
+4.  **Algorithm**:
+    -   Sort jobs by profit (descending).
+    -   Find the maximum deadline among all jobs to determine the size of our timeline/schedule array.
+    -   Initialize a `slots` array (boolean) of size `max_deadline + 1` to False.
+    -   Initialize `jobs_done = 0`, `max_profit = 0`.
+    -   Iterate through the sorted jobs. For each job:
+        -   Start checking from `min(job.deadline, max_deadline)` down to 1.
+        -   If we find an empty slot `j`, mark `slots[j] = True`, add profit, increment job count, and `break` (move to next job).
+
+-----------------------------------------------------------------------
+COMPLEXITY:
+-   Time: O(N * max_deadline) or O(N^2) if max_deadline is roughly N.
+    (Can be optimized to O(N log N) using Disjoint Set Union for slot finding, but basic greedy is usually sufficient for N <= 1000).
+-   Space: O(max_deadline) for the slots array.

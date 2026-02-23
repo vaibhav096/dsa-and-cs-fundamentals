@@ -1,0 +1,580 @@
+================================================================================
+                              GRAPHS
+================================================================================
+
+A graph G = (V, E) consists of vertices (nodes) and edges connecting them.
+
+
+================================================================================
+                    1. GRAPH TERMINOLOGY
+================================================================================
+
+Vertex (Node)       : Point in graph
+Edge                : Connection between vertices
+Adjacent            : Two vertices connected by edge
+Degree              : Number of edges connected to vertex
+  - In-degree       : Incoming edges (directed graph)
+  - Out-degree      : Outgoing edges (directed graph)
+Path                : Sequence of vertices connected by edges
+Cycle               : Path that starts and ends at same vertex
+Connected           : Path exists between every pair of vertices
+Component           : Maximal connected subgraph
+
+
+================================================================================
+                    2. TYPES OF GRAPHS
+================================================================================
+
+1. UNDIRECTED GRAPH
+   Edges have no direction. (A-B means A↔B)
+
+2. DIRECTED GRAPH (Digraph)
+   Edges have direction. (A→B doesn't mean B→A)
+
+3. WEIGHTED GRAPH
+   Edges have associated weights/costs.
+
+4. UNWEIGHTED GRAPH
+   All edges have same weight (or weight = 1).
+
+5. CYCLIC GRAPH
+   Contains at least one cycle.
+
+6. ACYCLIC GRAPH
+   No cycles.
+
+7. DAG (Directed Acyclic Graph)
+   Directed graph with no cycles.
+   Used for: scheduling, dependency resolution.
+
+8. TREE
+   Connected acyclic undirected graph.
+   n vertices, n-1 edges.
+
+9. BIPARTITE GRAPH
+   Vertices can be divided into two sets.
+   No edge between vertices in same set.
+
+
+================================================================================
+                    3. GRAPH REPRESENTATION
+================================================================================
+
+1. ADJACENCY MATRIX
+-------------------
+2D array where matrix[i][j] = 1 if edge exists.
+
+    # For n vertices
+    matrix = [[0] * n for _ in range(n)]
+
+    # Add edge (undirected)
+    matrix[u][v] = 1
+    matrix[v][u] = 1
+
+Pros: O(1) edge lookup
+Cons: O(V²) space, inefficient for sparse graphs
+
+
+2. ADJACENCY LIST
+-----------------
+Array of lists. Each index stores neighbors.
+
+    # Using dictionary
+    graph = defaultdict(list)
+    graph[u].append(v)
+    graph[v].append(u)  # For undirected
+
+    # Using list of lists
+    graph = [[] for _ in range(n)]
+    graph[u].append(v)
+
+Pros: O(V + E) space, efficient for sparse graphs
+Cons: O(V) worst case for edge lookup
+
+
+3. EDGE LIST
+------------
+List of all edges as tuples.
+
+    edges = [(u, v), (v, w), ...]
+
+    # For weighted graph
+    edges = [(u, v, weight), ...]
+
+
+================================================================================
+                    4. GRAPH TRAVERSALS
+================================================================================
+
+BFS (Breadth-First Search)
+--------------------------
+Explores level by level. Uses queue.
+
+    def bfs(graph, start):
+        visited = set()
+        queue = deque([start])
+        visited.add(start)
+
+        while queue:
+            node = queue.popleft()
+            print(node)
+
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+
+Time: O(V + E)
+Space: O(V)
+
+Uses:
+- Shortest path in unweighted graph
+- Level-order traversal
+- Finding connected components
+- Bipartite check
+
+
+DFS (Depth-First Search)
+------------------------
+Explores as deep as possible. Uses stack/recursion.
+
+    # Recursive
+    def dfs(graph, node, visited):
+        visited.add(node)
+        print(node)
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                dfs(graph, neighbor, visited)
+
+    # Iterative
+    def dfs_iterative(graph, start):
+        visited = set()
+        stack = [start]
+
+        while stack:
+            node = stack.pop()
+            if node not in visited:
+                visited.add(node)
+                print(node)
+                for neighbor in graph[node]:
+                    if neighbor not in visited:
+                        stack.append(neighbor)
+
+Time: O(V + E)
+Space: O(V)
+
+Uses:
+- Cycle detection
+- Topological sort
+- Finding strongly connected components
+- Maze solving
+
+
+================================================================================
+                    5. SHORTEST PATH ALGORITHMS
+================================================================================
+
+1. BFS (Unweighted Graph)
+-------------------------
+Shortest path from source to all vertices.
+
+    def shortest_path_bfs(graph, start, end):
+        queue = deque([(start, [start])])
+        visited = {start}
+
+        while queue:
+            node, path = queue.popleft()
+            if node == end:
+                return path
+
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append((neighbor, path + [neighbor]))
+
+        return []
+
+Time: O(V + E)
+
+
+2. DIJKSTRA'S ALGORITHM (Non-negative Weights)
+----------------------------------------------
+Single source shortest path.
+
+    import heapq
+
+    def dijkstra(graph, start):
+        # graph[u] = [(v, weight), ...]
+        distances = {node: float('inf') for node in graph}
+        distances[start] = 0
+        pq = [(0, start)]
+
+        while pq:
+            dist, node = heapq.heappop(pq)
+
+            if dist > distances[node]:
+                continue
+
+            for neighbor, weight in graph[node]:
+                new_dist = dist + weight
+                if new_dist < distances[neighbor]:
+                    distances[neighbor] = new_dist
+                    heapq.heappush(pq, (new_dist, neighbor))
+
+        return distances
+
+Time: O((V + E) log V)
+
+
+3. BELLMAN-FORD (Handles Negative Weights)
+------------------------------------------
+    def bellman_ford(vertices, edges, start):
+        # edges = [(u, v, weight), ...]
+        distances = {v: float('inf') for v in vertices}
+        distances[start] = 0
+
+        for _ in range(len(vertices) - 1):
+            for u, v, weight in edges:
+                if distances[u] + weight < distances[v]:
+                    distances[v] = distances[u] + weight
+
+        # Check for negative cycle
+        for u, v, weight in edges:
+            if distances[u] + weight < distances[v]:
+                return None  # Negative cycle exists
+
+        return distances
+
+Time: O(V * E)
+
+
+4. FLOYD-WARSHALL (All Pairs Shortest Path)
+-------------------------------------------
+    def floyd_warshall(graph):
+        n = len(graph)
+        dist = [[float('inf')] * n for _ in range(n)]
+
+        # Initialize
+        for i in range(n):
+            dist[i][i] = 0
+        for u in range(n):
+            for v, w in graph[u]:
+                dist[u][v] = w
+
+        # DP
+        for k in range(n):
+            for i in range(n):
+                for j in range(n):
+                    dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+
+        return dist
+
+Time: O(V³)
+
+
+================================================================================
+                    6. IMPORTANT GRAPH PROBLEMS
+================================================================================
+
+PROBLEM 1: Number of Islands
+----------------------------
+    def num_islands(grid):
+        if not grid:
+            return 0
+
+        rows, cols = len(grid), len(grid[0])
+        count = 0
+
+        def dfs(r, c):
+            if r < 0 or r >= rows or c < 0 or c >= cols or grid[r][c] == '0':
+                return
+            grid[r][c] = '0'
+            dfs(r+1, c)
+            dfs(r-1, c)
+            dfs(r, c+1)
+            dfs(r, c-1)
+
+        for r in range(rows):
+            for c in range(cols):
+                if grid[r][c] == '1':
+                    dfs(r, c)
+                    count += 1
+
+        return count
+
+
+PROBLEM 2: Clone Graph
+----------------------
+    def clone_graph(node):
+        if not node:
+            return None
+
+        clones = {}
+
+        def dfs(node):
+            if node in clones:
+                return clones[node]
+
+            clone = Node(node.val)
+            clones[node] = clone
+
+            for neighbor in node.neighbors:
+                clone.neighbors.append(dfs(neighbor))
+
+            return clone
+
+        return dfs(node)
+
+
+PROBLEM 3: Course Schedule (Cycle Detection)
+--------------------------------------------
+    def can_finish(numCourses, prerequisites):
+        graph = defaultdict(list)
+        for course, prereq in prerequisites:
+            graph[prereq].append(course)
+
+        # 0: unvisited, 1: visiting, 2: visited
+        state = [0] * numCourses
+
+        def has_cycle(course):
+            if state[course] == 1:  # Currently visiting = cycle
+                return True
+            if state[course] == 2:  # Already processed
+                return False
+
+            state[course] = 1
+            for next_course in graph[course]:
+                if has_cycle(next_course):
+                    return True
+            state[course] = 2
+            return False
+
+        for course in range(numCourses):
+            if has_cycle(course):
+                return False
+        return True
+
+
+PROBLEM 4: Topological Sort
+---------------------------
+Linear ordering where u comes before v for edge (u, v).
+
+    # Using DFS
+    def topological_sort(graph, n):
+        visited = set()
+        result = []
+
+        def dfs(node):
+            visited.add(node)
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    dfs(neighbor)
+            result.append(node)
+
+        for i in range(n):
+            if i not in visited:
+                dfs(i)
+
+        return result[::-1]
+
+    # Using Kahn's Algorithm (BFS)
+    def topological_sort_bfs(graph, n):
+        in_degree = [0] * n
+        for u in graph:
+            for v in graph[u]:
+                in_degree[v] += 1
+
+        queue = deque([i for i in range(n) if in_degree[i] == 0])
+        result = []
+
+        while queue:
+            node = queue.popleft()
+            result.append(node)
+            for neighbor in graph[node]:
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] == 0:
+                    queue.append(neighbor)
+
+        return result if len(result) == n else []
+
+
+PROBLEM 5: Word Ladder
+----------------------
+    def ladder_length(beginWord, endWord, wordList):
+        word_set = set(wordList)
+        if endWord not in word_set:
+            return 0
+
+        queue = deque([(beginWord, 1)])
+
+        while queue:
+            word, length = queue.popleft()
+
+            if word == endWord:
+                return length
+
+            for i in range(len(word)):
+                for c in 'abcdefghijklmnopqrstuvwxyz':
+                    new_word = word[:i] + c + word[i+1:]
+                    if new_word in word_set:
+                        word_set.remove(new_word)
+                        queue.append((new_word, length + 1))
+
+        return 0
+
+
+PROBLEM 6: Detect Cycle in Undirected Graph
+-------------------------------------------
+    def has_cycle_undirected(graph, n):
+        visited = set()
+
+        def dfs(node, parent):
+            visited.add(node)
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    if dfs(neighbor, node):
+                        return True
+                elif neighbor != parent:
+                    return True
+            return False
+
+        for i in range(n):
+            if i not in visited:
+                if dfs(i, -1):
+                    return True
+        return False
+
+
+PROBLEM 7: Bipartite Check
+--------------------------
+    def is_bipartite(graph):
+        color = {}
+
+        def bfs(start):
+            queue = deque([start])
+            color[start] = 0
+
+            while queue:
+                node = queue.popleft()
+                for neighbor in graph[node]:
+                    if neighbor not in color:
+                        color[neighbor] = 1 - color[node]
+                        queue.append(neighbor)
+                    elif color[neighbor] == color[node]:
+                        return False
+            return True
+
+        for node in graph:
+            if node not in color:
+                if not bfs(node):
+                    return False
+        return True
+
+
+PROBLEM 8: Find Connected Components
+------------------------------------
+    def connected_components(graph, n):
+        visited = set()
+        components = []
+
+        def dfs(node, component):
+            visited.add(node)
+            component.append(node)
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    dfs(neighbor, component)
+
+        for i in range(n):
+            if i not in visited:
+                component = []
+                dfs(i, component)
+                components.append(component)
+
+        return components
+
+
+PROBLEM 9: Minimum Spanning Tree (Kruskal's)
+--------------------------------------------
+    def kruskal(n, edges):
+        # edges = [(weight, u, v), ...]
+        edges.sort()
+        parent = list(range(n))
+
+        def find(x):
+            if parent[x] != x:
+                parent[x] = find(parent[x])
+            return parent[x]
+
+        def union(x, y):
+            px, py = find(x), find(y)
+            if px != py:
+                parent[px] = py
+                return True
+            return False
+
+        mst_weight = 0
+        mst_edges = []
+
+        for weight, u, v in edges:
+            if union(u, v):
+                mst_weight += weight
+                mst_edges.append((u, v, weight))
+
+        return mst_weight, mst_edges
+
+
+PROBLEM 10: Union-Find (Disjoint Set Union)
+-------------------------------------------
+    class UnionFind:
+        def __init__(self, n):
+            self.parent = list(range(n))
+            self.rank = [0] * n
+
+        def find(self, x):
+            if self.parent[x] != x:
+                self.parent[x] = self.find(self.parent[x])  # Path compression
+            return self.parent[x]
+
+        def union(self, x, y):
+            px, py = self.find(x), self.find(y)
+            if px == py:
+                return False
+            # Union by rank
+            if self.rank[px] < self.rank[py]:
+                px, py = py, px
+            self.parent[py] = px
+            if self.rank[px] == self.rank[py]:
+                self.rank[px] += 1
+            return True
+
+        def connected(self, x, y):
+            return self.find(x) == self.find(y)
+
+
+================================================================================
+                    7. INTERVIEW TIPS
+================================================================================
+
+1. IDENTIFY GRAPH TYPE:
+   - Directed or undirected?
+   - Weighted or unweighted?
+   - Cyclic or acyclic?
+
+2. CHOOSE REPRESENTATION:
+   - Adjacency list for sparse graphs
+   - Matrix for dense graphs or quick lookups
+
+3. CHOOSE TRAVERSAL:
+   - BFS: shortest path, level-based
+   - DFS: cycle detection, topological sort
+
+4. COMMON PATTERNS:
+   - Islands/components: DFS/BFS flood fill
+   - Shortest path: BFS (unweighted), Dijkstra (weighted)
+   - Cycle: DFS with coloring
+   - Topological: DFS or Kahn's BFS
+
+================================================================================
+                         END OF GRAPHS
+================================================================================

@@ -1,0 +1,450 @@
+================================================================================
+                              QUEUES
+================================================================================
+
+Queue is a linear data structure that follows FIFO (First In, First Out).
+Think of a line of people - first person in line is served first.
+
+
+================================================================================
+                    1. QUEUE BASICS
+================================================================================
+
+OPERATIONS:
+-----------
+enqueue(x)  : Add element to rear        O(1)
+dequeue()   : Remove element from front  O(1)
+front()     : Return front element       O(1)
+isEmpty()   : Check if queue is empty    O(1)
+size()      : Return number of elements  O(1)
+
+
+IMPLEMENTATION IN PYTHON:
+-------------------------
+Using collections.deque (recommended):
+    from collections import deque
+    queue = deque()
+    queue.append(x)      # enqueue (add to right)
+    queue.popleft()      # dequeue (remove from left)
+    queue[0]             # front
+    len(queue)           # size
+
+Using list (NOT recommended - O(n) for dequeue):
+    queue = []
+    queue.append(x)      # enqueue O(1)
+    queue.pop(0)         # dequeue O(n) - SLOW!
+
+
+================================================================================
+                    2. TYPES OF QUEUES
+================================================================================
+
+1. SIMPLE QUEUE (FIFO)
+----------------------
+Standard queue with enqueue at rear, dequeue from front.
+
+
+2. CIRCULAR QUEUE
+-----------------
+Fixed-size queue where rear connects back to front.
+Efficient use of array space.
+
+    class CircularQueue:
+        def __init__(self, k):
+            self.queue = [None] * k
+            self.size = k
+            self.front = self.rear = -1
+
+        def enqueue(self, val):
+            if self.is_full():
+                return False
+            if self.is_empty():
+                self.front = 0
+            self.rear = (self.rear + 1) % self.size
+            self.queue[self.rear] = val
+            return True
+
+        def dequeue(self):
+            if self.is_empty():
+                return -1
+            val = self.queue[self.front]
+            if self.front == self.rear:
+                self.front = self.rear = -1
+            else:
+                self.front = (self.front + 1) % self.size
+            return val
+
+
+3. DEQUE (Double-Ended Queue)
+-----------------------------
+Insert/delete from both ends.
+
+    from collections import deque
+    dq = deque()
+    dq.append(x)        # Add to right
+    dq.appendleft(x)    # Add to left
+    dq.pop()            # Remove from right
+    dq.popleft()        # Remove from left
+
+
+4. PRIORITY QUEUE
+-----------------
+Elements dequeued based on priority, not order.
+Implemented using heap.
+
+    import heapq
+    pq = []
+    heapq.heappush(pq, (priority, item))
+    heapq.heappop(pq)   # Returns item with lowest priority
+
+    # For max priority queue, negate values
+    heapq.heappush(pq, (-priority, item))
+
+
+================================================================================
+                    3. WHEN TO USE QUEUE
+================================================================================
+
+Use queue when you need:
+1. First In, First Out access
+2. BFS traversal (graphs, trees)
+3. Level-order traversal
+4. Task scheduling
+5. Buffer for streaming data
+6. Request handling
+
+
+================================================================================
+                    4. IMPORTANT PROBLEMS
+================================================================================
+
+PROBLEM 1: Implement Queue using Stacks
+---------------------------------------
+Time: Amortized O(1) per operation
+
+    class MyQueue:
+        def __init__(self):
+            self.stack_in = []
+            self.stack_out = []
+
+        def push(self, x):
+            self.stack_in.append(x)
+
+        def pop(self):
+            self._move()
+            return self.stack_out.pop()
+
+        def peek(self):
+            self._move()
+            return self.stack_out[-1]
+
+        def empty(self):
+            return not self.stack_in and not self.stack_out
+
+        def _move(self):
+            if not self.stack_out:
+                while self.stack_in:
+                    self.stack_out.append(self.stack_in.pop())
+
+
+PROBLEM 2: Implement Stack using Queues
+---------------------------------------
+    class MyStack:
+        def __init__(self):
+            self.queue = deque()
+
+        def push(self, x):
+            self.queue.append(x)
+            # Rotate to make x the front
+            for _ in range(len(self.queue) - 1):
+                self.queue.append(self.queue.popleft())
+
+        def pop(self):
+            return self.queue.popleft()
+
+        def top(self):
+            return self.queue[0]
+
+        def empty(self):
+            return len(self.queue) == 0
+
+
+PROBLEM 3: Sliding Window Maximum
+---------------------------------
+Find max in each sliding window of size k.
+Time: O(n), Space: O(k)
+
+    def max_sliding_window(nums, k):
+        from collections import deque
+        dq = deque()  # Stores indices
+        result = []
+
+        for i, num in enumerate(nums):
+            # Remove elements outside window
+            while dq and dq[0] < i - k + 1:
+                dq.popleft()
+
+            # Remove smaller elements (they can't be max)
+            while dq and nums[dq[-1]] < num:
+                dq.pop()
+
+            dq.append(i)
+
+            # Add to result when window is complete
+            if i >= k - 1:
+                result.append(nums[dq[0]])
+
+        return result
+
+    # Example: [1,3,-1,-3,5,3,6,7], k=3 → [3,3,5,5,6,7]
+
+
+PROBLEM 4: First Unique Character in String
+-------------------------------------------
+    def first_uniq_char(s):
+        from collections import Counter
+        count = Counter(s)
+        for i, char in enumerate(s):
+            if count[char] == 1:
+                return i
+        return -1
+
+
+PROBLEM 5: Moving Average from Data Stream
+------------------------------------------
+    class MovingAverage:
+        def __init__(self, size):
+            self.queue = deque()
+            self.size = size
+            self.total = 0
+
+        def next(self, val):
+            self.queue.append(val)
+            self.total += val
+
+            if len(self.queue) > self.size:
+                self.total -= self.queue.popleft()
+
+            return self.total / len(self.queue)
+
+
+PROBLEM 6: Design Hit Counter
+-----------------------------
+Count hits in last 5 minutes (300 seconds).
+
+    class HitCounter:
+        def __init__(self):
+            self.hits = deque()
+
+        def hit(self, timestamp):
+            self.hits.append(timestamp)
+
+        def getHits(self, timestamp):
+            while self.hits and self.hits[0] <= timestamp - 300:
+                self.hits.popleft()
+            return len(self.hits)
+
+
+PROBLEM 7: Rotting Oranges (Multi-source BFS)
+---------------------------------------------
+Time: O(m*n), Space: O(m*n)
+
+    def oranges_rotting(grid):
+        from collections import deque
+        rows, cols = len(grid), len(grid[0])
+        queue = deque()
+        fresh = 0
+
+        # Find all rotten oranges and count fresh
+        for r in range(rows):
+            for c in range(cols):
+                if grid[r][c] == 2:
+                    queue.append((r, c, 0))
+                elif grid[r][c] == 1:
+                    fresh += 1
+
+        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+        minutes = 0
+
+        while queue:
+            r, c, minutes = queue.popleft()
+            for dr, dc in directions:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 1:
+                    grid[nr][nc] = 2
+                    fresh -= 1
+                    queue.append((nr, nc, minutes + 1))
+
+        return minutes if fresh == 0 else -1
+
+
+PROBLEM 8: Number of Islands (BFS version)
+------------------------------------------
+    def num_islands(grid):
+        if not grid:
+            return 0
+
+        rows, cols = len(grid), len(grid[0])
+        count = 0
+
+        def bfs(r, c):
+            queue = deque([(r, c)])
+            grid[r][c] = '0'
+
+            while queue:
+                r, c = queue.popleft()
+                for dr, dc in [(0,1), (0,-1), (1,0), (-1,0)]:
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == '1':
+                        grid[nr][nc] = '0'
+                        queue.append((nr, nc))
+
+        for r in range(rows):
+            for c in range(cols):
+                if grid[r][c] == '1':
+                    bfs(r, c)
+                    count += 1
+
+        return count
+
+
+PROBLEM 9: Walls and Gates
+--------------------------
+Fill each empty room with distance to nearest gate.
+
+    def walls_and_gates(rooms):
+        if not rooms:
+            return
+
+        rows, cols = len(rooms), len(rooms[0])
+        queue = deque()
+
+        # Find all gates
+        for r in range(rows):
+            for c in range(cols):
+                if rooms[r][c] == 0:
+                    queue.append((r, c))
+
+        # BFS from all gates
+        while queue:
+            r, c = queue.popleft()
+            for dr, dc in [(0,1), (0,-1), (1,0), (-1,0)]:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols and rooms[nr][nc] == 2147483647:
+                    rooms[nr][nc] = rooms[r][c] + 1
+                    queue.append((nr, nc))
+
+
+PROBLEM 10: Design Circular Deque
+---------------------------------
+    class MyCircularDeque:
+        def __init__(self, k):
+            self.size = k
+            self.queue = [0] * k
+            self.front = 0
+            self.rear = k - 1
+            self.count = 0
+
+        def insertFront(self, value):
+            if self.isFull():
+                return False
+            self.front = (self.front - 1) % self.size
+            self.queue[self.front] = value
+            self.count += 1
+            return True
+
+        def insertLast(self, value):
+            if self.isFull():
+                return False
+            self.rear = (self.rear + 1) % self.size
+            self.queue[self.rear] = value
+            self.count += 1
+            return True
+
+        def deleteFront(self):
+            if self.isEmpty():
+                return False
+            self.front = (self.front + 1) % self.size
+            self.count -= 1
+            return True
+
+        def deleteLast(self):
+            if self.isEmpty():
+                return False
+            self.rear = (self.rear - 1) % self.size
+            self.count -= 1
+            return True
+
+        def getFront(self):
+            return -1 if self.isEmpty() else self.queue[self.front]
+
+        def getRear(self):
+            return -1 if self.isEmpty() else self.queue[self.rear]
+
+        def isEmpty(self):
+            return self.count == 0
+
+        def isFull(self):
+            return self.count == self.size
+
+
+================================================================================
+                    5. BFS TEMPLATE
+================================================================================
+
+BFS uses queue for level-order traversal.
+
+TEMPLATE:
+    from collections import deque
+
+    def bfs(start):
+        queue = deque([start])
+        visited = {start}
+
+        while queue:
+            node = queue.popleft()
+            process(node)
+
+            for neighbor in get_neighbors(node):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+
+LEVEL-BY-LEVEL BFS:
+    def bfs_levels(start):
+        queue = deque([start])
+        visited = {start}
+        level = 0
+
+        while queue:
+            level_size = len(queue)
+            for _ in range(level_size):
+                node = queue.popleft()
+                process(node, level)
+
+                for neighbor in get_neighbors(node):
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        queue.append(neighbor)
+            level += 1
+
+
+================================================================================
+                    6. INTERVIEW TIPS
+================================================================================
+
+1. USE deque, NOT list for queue operations
+
+2. RECOGNIZE BFS patterns:
+   - Shortest path in unweighted graph
+   - Level-order traversal
+   - Multi-source BFS (multiple starting points)
+
+3. COMMON MISTAKES:
+   - Using list.pop(0) instead of deque.popleft()
+   - Not marking visited before adding to queue
+   - Off-by-one in circular queue
+
+================================================================================
+                         END OF QUEUES
+================================================================================

@@ -1,0 +1,376 @@
+================================================================================
+                    DATA LINK LAYER
+================================================================================
+
+Layer 2 of OSI model. Provides node-to-node data transfer.
+
+
+================================================================================
+                    1. DATA LINK LAYER FUNCTIONS
+================================================================================
+
+1. FRAMING:
+   - Divide data into frames
+   - Add header and trailer
+
+2. PHYSICAL ADDRESSING:
+   - Add MAC addresses to frames
+
+3. ERROR CONTROL:
+   - Detect and correct errors
+
+4. FLOW CONTROL:
+   - Prevent receiver overflow
+
+5. ACCESS CONTROL:
+   - Determine which device can transmit
+
+
+SUBLAYERS:
+
+1. LLC (Logical Link Control):
+   - Error control, flow control
+   - Interface to Network layer
+
+2. MAC (Media Access Control):
+   - Physical addressing
+   - Media access control
+
+
+================================================================================
+                    2. FRAMING
+================================================================================
+
+How to mark start and end of frame?
+
+
+1. CHARACTER COUNT:
+   - First byte indicates frame length
+   - Problem: If count corrupted, all subsequent frames lost
+
+
+2. BYTE STUFFING:
+   - Special flag byte marks boundaries
+   - If flag appears in data, stuff escape byte
+
+   FLAG | DATA (with stuffing) | FLAG
+
+   Example:
+   Flag = 0x7E, Escape = 0x7D
+   If 0x7E in data → 0x7D 0x5E
+   If 0x7D in data → 0x7D 0x5D
+
+
+3. BIT STUFFING:
+   - Special bit pattern marks boundaries
+   - Flag: 01111110 (0x7E)
+   - After five 1s, stuff 0
+
+   Data: 0111111110
+   After stuffing: 01111101110
+
+
+================================================================================
+                    3. ERROR DETECTION AND CORRECTION
+================================================================================
+
+TYPES OF ERRORS:
+
+1. Single-bit Error:
+   - One bit changed
+   - Sent: 10101010
+   - Received: 10101011
+
+2. Burst Error:
+   - Multiple consecutive bits affected
+   - Sent: 10101010
+   - Received: 10011010
+
+
+ERROR DETECTION METHODS:
+
+1. PARITY CHECK:
+
+   a) Simple Parity:
+      - Add one parity bit
+      - Even parity: Total 1s = even
+      - Can detect single-bit errors
+
+      Data: 1010001 → 10100011 (even parity)
+
+   b) Two-Dimensional Parity:
+      - Parity for rows and columns
+      - Can detect and correct single-bit error
+
+
+2. CHECKSUM:
+   - Sum all data units
+   - Send complement of sum
+   - Receiver adds all (including checksum)
+   - Result should be all 1s
+
+   Data: 10101001, 00111001
+   Sum:  11100010
+   Checksum: 00011101 (complement)
+
+
+3. CYCLIC REDUNDANCY CHECK (CRC):
+   - Most powerful error detection
+   - Divide data by generator polynomial
+   - Append remainder to data
+
+   Generator: G(x) = x³ + x + 1 → 1011
+
+   Steps:
+   1. Append n zeros to data (n = degree of G)
+   2. Divide by G using XOR
+   3. Remainder = CRC
+   4. Append CRC to data
+
+   Common CRC:
+   - CRC-16: 16-bit CRC
+   - CRC-32: Used in Ethernet
+
+
+ERROR CORRECTION:
+
+HAMMING CODE:
+- Forward error correction
+- Add redundant bits at positions 2^n
+- Can detect and correct single-bit error
+
+Position: 1  2  3  4  5  6  7
+          P1 P2 D1 P4 D2 D3 D4
+
+P1 covers: 1, 3, 5, 7 (binary: xxx1)
+P2 covers: 2, 3, 6, 7 (binary: xx1x)
+P4 covers: 4, 5, 6, 7 (binary: x1xx)
+
+
+================================================================================
+                    4. FLOW CONTROL
+================================================================================
+
+Prevent sender from overwhelming receiver.
+
+
+1. STOP-AND-WAIT:
+   - Send one frame, wait for ACK
+   - Simple but inefficient
+   - Low utilization for long delays
+
+   Sender              Receiver
+   Frame 0  ────────→
+            ←────────  ACK
+   Frame 1  ────────→
+            ←────────  ACK
+
+
+2. SLIDING WINDOW:
+   - Send multiple frames before ACK
+   - Window = number of outstanding frames
+
+   a) Go-Back-N:
+      - Receiver only accepts in-order frames
+      - On error, resend from error frame onwards
+      - Receiver has window size 1
+
+   b) Selective Repeat:
+      - Receiver accepts out-of-order frames
+      - Only resend lost frame
+      - Both sender and receiver have windows
+
+
+WINDOW SIZE:
+- Go-Back-N: Sender window ≤ 2^n - 1
+- Selective Repeat: Sender window ≤ 2^(n-1)
+  (where n = bits for sequence number)
+
+
+================================================================================
+                    5. MEDIA ACCESS CONTROL (MAC)
+================================================================================
+
+How multiple devices share medium?
+
+
+RANDOM ACCESS PROTOCOLS:
+
+1. ALOHA:
+
+   a) Pure ALOHA:
+      - Transmit whenever ready
+      - If collision, wait random time, retry
+      - Efficiency: 18.4%
+
+   b) Slotted ALOHA:
+      - Time divided into slots
+      - Transmit at slot beginning only
+      - Efficiency: 36.8%
+
+
+2. CSMA (Carrier Sense Multiple Access):
+   - Listen before transmitting
+
+   a) 1-Persistent CSMA:
+      - If idle, transmit immediately
+      - If busy, wait until idle, then transmit
+      - High collision probability
+
+   b) Non-Persistent CSMA:
+      - If idle, transmit
+      - If busy, wait random time, try again
+      - Less collision, more delay
+
+   c) P-Persistent CSMA:
+      - If idle, transmit with probability p
+      - Wait for next slot with probability 1-p
+
+
+3. CSMA/CD (Collision Detection):
+   - Used in Ethernet
+   - Listen while transmitting
+   - If collision detected:
+     * Stop transmission
+     * Send jam signal
+     * Wait (binary exponential backoff)
+     * Retry
+
+   Minimum frame size ensures collision detection:
+   Min frame = 2 × Propagation time × Bandwidth
+
+
+4. CSMA/CA (Collision Avoidance):
+   - Used in Wi-Fi (802.11)
+   - Cannot detect collision (wireless)
+   - Use RTS/CTS (optional)
+   - ACK for every frame
+
+   Sender: RTS (Request to Send) →
+   Receiver:              ← CTS (Clear to Send)
+   Sender: Data →
+   Receiver:              ← ACK
+
+
+CONTROLLED ACCESS PROTOCOLS:
+
+1. POLLING:
+   - Central controller polls devices
+   - Device transmits when polled
+
+2. TOKEN PASSING:
+   - Token circulates in ring/bus
+   - Device with token can transmit
+
+
+================================================================================
+                    6. ETHERNET (IEEE 802.3)
+================================================================================
+
+Most common LAN technology.
+
+
+FRAME FORMAT:
+
+| Preamble | SFD | Dest MAC | Src MAC | Type | Data | FCS |
+|   7B     | 1B  |    6B    |   6B    |  2B  |46-1500| 4B |
+
+- Preamble: Synchronization (10101010...)
+- SFD: Start Frame Delimiter (10101011)
+- Dest/Src MAC: 48-bit addresses
+- Type: Protocol (e.g., 0x0800 = IP)
+- Data: Payload (min 46, max 1500 bytes)
+- FCS: Frame Check Sequence (CRC-32)
+
+
+MAC ADDRESS:
+- 48 bits (6 bytes)
+- Written as: AA:BB:CC:DD:EE:FF
+- First 24 bits: OUI (manufacturer)
+- Last 24 bits: Device identifier
+- Broadcast: FF:FF:FF:FF:FF:FF
+
+
+ETHERNET TYPES:
+- 10BASE-T: 10 Mbps, Twisted pair
+- 100BASE-TX: 100 Mbps (Fast Ethernet)
+- 1000BASE-T: 1 Gbps (Gigabit Ethernet)
+- 10GBASE-T: 10 Gbps
+
+
+================================================================================
+                    7. SWITCHING
+================================================================================
+
+SWITCH LEARNING:
+1. Receive frame
+2. Learn source MAC and port
+3. Check destination MAC in table
+4. If found, forward to specific port
+5. If not found, flood to all ports (except source)
+
+
+SWITCH TABLE:
+| MAC Address      | Port | Timer |
+| AA:BB:CC:DD:EE:01|  1   |  300  |
+| AA:BB:CC:DD:EE:02|  2   |  250  |
+
+
+================================================================================
+                    8. ARP (Address Resolution Protocol)
+================================================================================
+
+Maps IP address to MAC address.
+
+
+ARP PROCESS:
+
+1. Device A wants to send to IP 192.168.1.5
+2. A checks ARP cache for MAC
+3. If not found, broadcast ARP Request:
+   "Who has 192.168.1.5?"
+4. Device with that IP replies:
+   "I have 192.168.1.5, my MAC is XX:XX:XX:XX:XX:XX"
+5. A updates ARP cache
+6. A sends frame to that MAC
+
+
+ARP PACKET:
+- Hardware type: 1 (Ethernet)
+- Protocol type: 0x0800 (IP)
+- Operation: 1 (Request) or 2 (Reply)
+- Sender/Target MAC and IP
+
+
+================================================================================
+                    9. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is framing?
+A: Dividing data into frames with headers and trailers.
+   Methods: Character count, byte stuffing, bit stuffing.
+
+Q2: What is CRC?
+A: Cyclic Redundancy Check. Error detection using polynomial division.
+   Remainder appended to data. Very powerful detection.
+
+Q3: Difference between Go-Back-N and Selective Repeat?
+A: Go-Back-N: Receiver accepts only in-order, resend from error.
+   Selective Repeat: Accepts out-of-order, resend only lost.
+
+Q4: What is CSMA/CD?
+A: Carrier Sense Multiple Access with Collision Detection.
+   Listen before and during transmission. Used in Ethernet.
+
+Q5: What is MAC address?
+A: 48-bit physical address. Assigned by manufacturer.
+   Used at Data Link layer for local delivery.
+
+Q6: What is ARP?
+A: Address Resolution Protocol. Maps IP to MAC address.
+   Broadcasts request, unicast reply.
+
+
+================================================================================
+                    END OF DATA LINK LAYER
+================================================================================

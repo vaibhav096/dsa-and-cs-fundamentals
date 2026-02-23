@@ -1,0 +1,724 @@
+================================================================================
+                    REAL-WORLD OOP PROBLEM SOLVING
+================================================================================
+
+Applying Object-Oriented Programming to solve practical interview problems
+and real-world system design challenges.
+
+================================================================================
+                    SECTION 1: OOP PROBLEM-SOLVING APPROACH
+================================================================================
+
+STEP-BY-STEP METHODOLOGY:
+
+1. UNDERSTAND THE REQUIREMENTS
+   - Identify main entities (nouns = potential classes)
+   - Identify actions/behaviors (verbs = potential methods)
+   - Identify relationships between entities
+   - List constraints and business rules
+
+2. IDENTIFY CLASSES
+   - What are the main objects in the system?
+   - What data does each object hold?
+   - What can each object do?
+
+3. DEFINE RELATIONSHIPS
+   - IS-A (Inheritance): Dog IS-A Animal
+   - HAS-A (Composition): Car HAS-A Engine
+   - USES-A (Association): Driver USES-A Car
+
+4. APPLY SOLID PRINCIPLES
+   - Single Responsibility
+   - Open/Closed
+   - Liskov Substitution
+   - Interface Segregation
+   - Dependency Inversion
+
+5. CHOOSE APPROPRIATE PATTERNS
+   - Factory for object creation
+   - Strategy for interchangeable algorithms
+   - Observer for event handling
+   - State for state-dependent behavior
+
+
+================================================================================
+                    SECTION 2: PARKING LOT SYSTEM
+================================================================================
+
+PROBLEM:
+Design a parking lot system that can:
+- Handle multiple vehicle types (motorcycle, car, bus)
+- Different parking spot sizes
+- Track occupancy and find available spots
+- Calculate parking fees based on duration
+
+ANALYSIS:
+
+Entities:
+- ParkingLot (main system)
+- ParkingFloor (multiple floors)
+- ParkingSpot (individual spots)
+- Vehicle (cars, motorcycles, buses)
+- Ticket (tracks entry/exit)
+- Payment (handles fees)
+
+Relationships:
+- ParkingLot HAS-A multiple ParkingFloors
+- ParkingFloor HAS-A multiple ParkingSpots
+- ParkingSpot CAN-HOLD Vehicle
+- Ticket TRACKS Vehicle and ParkingSpot
+
+Design Decisions:
+- Abstract Vehicle class (different types inherit)
+- Enum for SpotSize (SMALL, MEDIUM, LARGE)
+- Strategy pattern for pricing
+- Factory for creating vehicles
+
+
+CLASS DESIGN:
+
+```
++-------------------+
+|    ParkingLot     |
++-------------------+
+| - floors: List    |
+| - entry_panels    |
+| - exit_panels     |
++-------------------+
+| + park_vehicle()  |
+| + unpark_vehicle()|
+| + get_available() |
++-------------------+
+        |
+        | 1:N
+        v
++-------------------+
+|   ParkingFloor    |
++-------------------+
+| - floor_number    |
+| - spots: List     |
++-------------------+
+| + find_spot()     |
+| + is_full()       |
++-------------------+
+        |
+        | 1:N
+        v
++-------------------+       +-------------------+
+|   ParkingSpot     |       |     Vehicle       | (Abstract)
++-------------------+       +-------------------+
+| - spot_id         |       | - license_plate   |
+| - size: SpotSize  |       | - vehicle_type    |
+| - vehicle: Vehicle|       +-------------------+
+| - is_available    |       | + get_size()      |
++-------------------+       +-------------------+
+| + can_fit()       |               ^
+| + assign_vehicle()|               |
+| + remove_vehicle()|     +---------+---------+
++-------------------+     |         |         |
+                          v         v         v
+                       Car    Motorcycle    Bus
+```
+
+
+================================================================================
+                    SECTION 3: LIBRARY MANAGEMENT SYSTEM
+================================================================================
+
+PROBLEM:
+Design a library system that can:
+- Manage books, members, and librarians
+- Handle book borrowing and returns
+- Track due dates and fines
+- Search books by various criteria
+- Reserve books
+
+ANALYSIS:
+
+Entities:
+- Library (main system)
+- Book, BookItem (physical copy)
+- Member, Librarian (users)
+- Loan (borrowing record)
+- Reservation
+- Fine
+
+Key Insights:
+- Book vs BookItem: Book is metadata, BookItem is physical copy
+- A library can have multiple copies of same book
+- Members have borrowing limits
+- Fines calculated based on overdue days
+
+
+CLASS HIERARCHY:
+
+```
+User (Abstract)
+├── Member
+│   - can borrow books
+│   - has borrowing limit
+│   - can reserve books
+│   - can have fines
+│
+└── Librarian
+    - can add/remove books
+    - can register members
+    - can collect fines
+
+
+Book
+├── isbn, title, author, subject
+├── has many BookItems
+│
+└── BookItem
+    - barcode (unique)
+    - status: AVAILABLE, BORROWED, RESERVED, LOST
+    - rack location
+    - belongs to one Book
+
+
+Loan
+├── book_item
+├── member
+├── issue_date
+├── due_date
+├── return_date
+└── fine (if any)
+```
+
+
+DESIGN PATTERNS USED:
+- Factory: Create different user types
+- Strategy: Different fine calculation methods
+- Observer: Notify when reserved book available
+- Singleton: Library catalog instance
+
+
+================================================================================
+                    SECTION 4: ELEVATOR SYSTEM
+================================================================================
+
+PROBLEM:
+Design an elevator system for a building that can:
+- Handle multiple elevators
+- Efficiently dispatch elevators to requests
+- Handle both up and down requests
+- Manage internal and external requests
+
+ANALYSIS:
+
+Entities:
+- ElevatorSystem (controller)
+- Elevator (individual elevator)
+- Request (floor request)
+- Button (floor button, elevator button)
+- Door, Display
+
+State Management:
+- Elevator states: IDLE, MOVING_UP, MOVING_DOWN
+- Door states: OPEN, CLOSED
+- Request types: EXTERNAL (from floor), INTERNAL (from elevator)
+
+
+KEY DESIGN DECISIONS:
+
+1. REQUEST HANDLING:
+   - External: Someone on floor X wants to go up/down
+   - Internal: Someone in elevator wants to go to floor Y
+   - Need to batch requests efficiently
+
+2. DISPATCHING ALGORITHM:
+   - Nearest elevator that's moving in same direction
+   - Or nearest idle elevator
+   - Consider load balancing
+
+3. STATE PATTERN:
+   - Elevator behavior depends on current state
+   - IDLE: Accept any request
+   - MOVING_UP: Accept same-direction requests above
+   - MOVING_DOWN: Accept same-direction requests below
+
+
+```
++-------------------+
+| ElevatorSystem    |
++-------------------+
+| - elevators: List |
+| - floors: int     |
++-------------------+
+| + request_up()    |
+| + request_down()  |
+| + dispatch()      |
++-------------------+
+        |
+        | manages
+        v
++-------------------+
+|    Elevator       |
++-------------------+
+| - id              |
+| - current_floor   |
+| - state: State    |
+| - requests: Set   |
+| - direction       |
++-------------------+
+| + move()          |
+| + add_request()   |
+| + open_door()     |
+| + close_door()    |
++-------------------+
+        |
+        | has
+        v
++-------------------+
+|   ElevatorState   | (Abstract - State Pattern)
++-------------------+
+| + handle_request()|
+| + move()          |
++-------------------+
+    ^       ^       ^
+    |       |       |
+  Idle  MovingUp  MovingDown
+```
+
+
+================================================================================
+                    SECTION 5: ONLINE SHOPPING CART
+================================================================================
+
+PROBLEM:
+Design an e-commerce shopping cart that can:
+- Add/remove products
+- Apply different discounts
+- Calculate totals with taxes
+- Handle different payment methods
+- Support different shipping options
+
+ENTITIES:
+
+```
+Product
+├── id, name, price, category
+├── inventory_count
+└── description
+
+CartItem
+├── product
+├── quantity
+└── get_subtotal()
+
+ShoppingCart
+├── items: List[CartItem]
+├── user
+├── discount_strategy
+├── add_item()
+├── remove_item()
+├── get_total()
+└── checkout()
+
+Order
+├── cart
+├── shipping_address
+├── payment_method
+├── status
+└── process()
+```
+
+
+PATTERNS APPLIED:
+
+1. STRATEGY PATTERN - Discounts:
+   ```
+   DiscountStrategy (Interface)
+   ├── NoDiscount
+   ├── PercentageDiscount (10%, 20%)
+   ├── FlatDiscount ($5 off)
+   ├── BuyOneGetOne
+   └── SeasonalDiscount
+   ```
+
+2. STRATEGY PATTERN - Payment:
+   ```
+   PaymentMethod (Interface)
+   ├── CreditCard
+   ├── DebitCard
+   ├── PayPal
+   ├── BankTransfer
+   └── CashOnDelivery
+   ```
+
+3. STRATEGY PATTERN - Shipping:
+   ```
+   ShippingStrategy (Interface)
+   ├── StandardShipping
+   ├── ExpressShipping
+   ├── FreeShipping (orders > $50)
+   └── PickupInStore
+   ```
+
+4. OBSERVER PATTERN:
+   - Notify when item back in stock
+   - Notify when price drops
+   - Notify when order status changes
+
+
+================================================================================
+                    SECTION 6: HOTEL BOOKING SYSTEM
+================================================================================
+
+PROBLEM:
+Design a hotel reservation system that can:
+- Manage different room types
+- Handle bookings and cancellations
+- Different pricing for different seasons
+- Support amenities and services
+
+ENTITIES AND RELATIONSHIPS:
+
+```
+Hotel
+├── name, address
+├── rooms: List[Room]
+├── amenities: List[Amenity]
+└── search_rooms(criteria)
+
+Room (Abstract)
+├── room_number
+├── floor
+├── status: AVAILABLE, BOOKED, MAINTENANCE
+├── base_price
+└── get_price(date)
+    │
+    ├── StandardRoom
+    ├── DeluxeRoom
+    ├── Suite
+    └── PenthouseSuite
+
+Booking
+├── guest: Guest
+├── room: Room
+├── check_in_date
+├── check_out_date
+├── status: CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED
+├── total_amount
+├── create()
+└── cancel()
+
+Guest
+├── name, email, phone
+├── bookings: List[Booking]
+└── loyalty_points
+
+Pricing (Strategy Pattern)
+├── calculate_price(room, dates)
+│
+├── RegularPricing
+├── WeekendPricing (+20%)
+├── HolidayPricing (+50%)
+└── LoyaltyPricing (-10%)
+```
+
+
+================================================================================
+                    SECTION 7: RESTAURANT ORDER SYSTEM
+================================================================================
+
+PROBLEM:
+Design a restaurant ordering system:
+- Menu with categories
+- Table management
+- Order tracking
+- Bill generation
+- Support dine-in and takeaway
+
+CLASS DESIGN:
+
+```
+Restaurant
+├── tables: List[Table]
+├── menu: Menu
+├── orders: List[Order]
+└── kitchen: Kitchen
+
+Menu
+├── categories: List[Category]
+└── search_item(name)
+
+Category
+├── name (Appetizers, Main Course, Desserts, Drinks)
+└── items: List[MenuItem]
+
+MenuItem
+├── name, price, description
+├── is_available
+└── preparation_time
+
+Table
+├── table_number
+├── capacity
+├── status: AVAILABLE, OCCUPIED, RESERVED
+└── current_order: Order
+
+Order
+├── order_id
+├── items: List[OrderItem]
+├── table (optional for takeaway)
+├── status: PLACED, PREPARING, READY, SERVED, PAID
+├── order_type: DINE_IN, TAKEAWAY
+├── add_item()
+├── remove_item()
+├── get_total()
+└── generate_bill()
+
+Bill
+├── order
+├── subtotal
+├── tax
+├── discount
+├── tip
+├── total
+└── payment_method
+```
+
+
+STATE PATTERN FOR ORDER:
+
+```
+OrderState (Abstract)
+├── handle()
+│
+├── PlacedState
+│   └── → Kitchen receives order
+│
+├── PreparingState
+│   └── → Chef is cooking
+│
+├── ReadyState
+│   └── → Food is ready
+│
+├── ServedState
+│   └── → Customer received food
+│
+└── PaidState
+    └── → Bill settled
+```
+
+
+================================================================================
+                    SECTION 8: ATM MACHINE
+================================================================================
+
+PROBLEM:
+Design an ATM system that can:
+- Authenticate users with card + PIN
+- Support withdraw, deposit, balance inquiry
+- Handle different account types
+- Manage cash dispenser
+
+ENTITIES:
+
+```
+ATM
+├── atm_id, location
+├── cash_dispenser: CashDispenser
+├── card_reader: CardReader
+├── screen: Screen
+├── keypad: Keypad
+└── authenticate_user()
+
+CashDispenser
+├── available_cash
+├── dispense(amount)
+└── refill(amount)
+
+Card
+├── card_number
+├── expiry_date
+├── bank: Bank
+└── validate()
+
+Account (Abstract)
+├── account_number
+├── balance
+├── holder: Customer
+│
+├── SavingsAccount
+├── CheckingAccount
+└── CurrentAccount
+
+Transaction (Abstract)
+├── transaction_id
+├── account
+├── amount
+├── timestamp
+├── execute()
+│
+├── Withdrawal
+├── Deposit
+├── BalanceInquiry
+└── Transfer
+```
+
+
+STATE PATTERN FOR ATM:
+
+```
+ATMState (Abstract)
+├── IdleState
+│   └── Waiting for card
+│
+├── CardInsertedState
+│   └── Waiting for PIN
+│
+├── AuthenticatedState
+│   └── Show transaction menu
+│
+├── TransactionState
+│   └── Processing transaction
+│
+└── CashDispensingState
+    └── Dispensing cash
+```
+
+
+================================================================================
+                    SECTION 9: CHESS GAME
+================================================================================
+
+PROBLEM:
+Design a chess game:
+- 8x8 board with pieces
+- Different piece movements
+- Check and checkmate detection
+- Move validation
+
+CLASS DESIGN:
+
+```
+Game
+├── board: Board
+├── players: (Player, Player)
+├── current_turn: Player
+├── status: ACTIVE, CHECK, CHECKMATE, STALEMATE
+├── move_history: List[Move]
+├── make_move()
+└── is_game_over()
+
+Board
+├── squares: 8x8 array of Square
+├── get_piece(position)
+├── move_piece(from, to)
+└── is_valid_move()
+
+Square
+├── row, col
+├── color: WHITE, BLACK
+└── piece: Piece (optional)
+
+Player
+├── name
+├── color: WHITE, BLACK
+└── captured_pieces: List[Piece]
+
+Piece (Abstract)
+├── color: WHITE, BLACK
+├── position: Square
+├── is_captured
+├── get_valid_moves()  # Abstract - each piece implements
+│
+├── King
+│   └── moves 1 square any direction, castling
+│
+├── Queen
+│   └── moves any direction, any distance
+│
+├── Rook
+│   └── moves horizontal/vertical
+│
+├── Bishop
+│   └── moves diagonal
+│
+├── Knight
+│   └── moves L-shape (can jump)
+│
+└── Pawn
+    └── moves forward, captures diagonal, en passant
+
+Move
+├── piece
+├── from_square
+├── to_square
+├── captured_piece (optional)
+├── is_castling
+└── is_promotion
+```
+
+
+================================================================================
+                    SECTION 10: INTERVIEW TIPS
+================================================================================
+
+1. CLARIFY REQUIREMENTS:
+   - Ask about scale (users, transactions)
+   - Ask about core features vs nice-to-have
+   - Ask about constraints
+
+2. START WITH ENTITIES:
+   - Identify 3-5 main classes first
+   - Don't over-design initially
+   - Add complexity gradually
+
+3. THINK ABOUT RELATIONSHIPS:
+   - One-to-one, one-to-many, many-to-many
+   - Composition vs aggregation
+   - Inheritance vs composition
+
+4. USE DESIGN PATTERNS:
+   - Don't force patterns
+   - Use when they naturally fit
+   - Explain WHY you chose a pattern
+
+5. CONSIDER SOLID PRINCIPLES:
+   - Keep classes focused
+   - Make system extensible
+   - Program to interfaces
+
+6. DISCUSS TRADE-OFFS:
+   - Simplicity vs flexibility
+   - Memory vs speed
+   - Consistency vs availability
+
+
+COMMON INTERVIEW QUESTIONS:
+
+1. "Design a parking lot system"
+2. "Design an elevator system"
+3. "Design a library management system"
+4. "Design a hotel booking system"
+5. "Design an ATM machine"
+6. "Design a restaurant ordering system"
+7. "Design an online shopping cart"
+8. "Design a chess/tic-tac-toe game"
+9. "Design a file system"
+10. "Design a social media news feed"
+
+
+================================================================================
+                    QUICK REFERENCE: CLASS IDENTIFICATION
+================================================================================
+
+From Problem Statement → Classes:
+
+"parking lot with vehicles"     → ParkingLot, Vehicle, ParkingSpot
+"library with books"            → Library, Book, Member, Loan
+"elevator in building"          → Elevator, Floor, Request
+"shopping with products"        → Cart, Product, Order, Payment
+"hotel with rooms"              → Hotel, Room, Booking, Guest
+"restaurant with orders"        → Restaurant, Menu, Order, Table
+"ATM with accounts"             → ATM, Account, Card, Transaction
+"chess with pieces"             → Board, Piece, Player, Move
+
+
+================================================================================
+                    END OF REAL-WORLD OOP PROBLEMS
+================================================================================

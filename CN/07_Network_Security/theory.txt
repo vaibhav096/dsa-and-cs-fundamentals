@@ -1,0 +1,335 @@
+================================================================================
+                    NETWORK SECURITY
+================================================================================
+
+Protecting network infrastructure and data from threats.
+
+
+================================================================================
+                    1. SECURITY CONCEPTS
+================================================================================
+
+CIA TRIAD:
+
+1. CONFIDENTIALITY:
+   - Data accessible only to authorized users
+   - Achieved by: Encryption
+
+2. INTEGRITY:
+   - Data not modified without authorization
+   - Achieved by: Hashing, digital signatures
+
+3. AVAILABILITY:
+   - System accessible when needed
+   - Achieved by: Redundancy, DDoS protection
+
+
+ADDITIONAL:
+- Authentication: Verify identity
+- Non-repudiation: Cannot deny action
+- Authorization: Permission to access
+
+
+================================================================================
+                    2. CRYPTOGRAPHY
+================================================================================
+
+SYMMETRIC ENCRYPTION:
+- Same key for encryption and decryption
+- Fast, but key distribution problem
+- Examples: AES, DES, 3DES
+
+Plain → Encrypt(Key) → Cipher → Decrypt(Key) → Plain
+
+
+ASYMMETRIC ENCRYPTION:
+- Public key for encryption
+- Private key for decryption
+- Slower, but solves key distribution
+- Examples: RSA, ECC
+
+Encrypt with Public Key → Decrypt with Private Key
+
+
+HYBRID APPROACH:
+- Asymmetric to exchange symmetric key
+- Symmetric for actual data (faster)
+- Used in: TLS/SSL
+
+
+HASHING:
+- One-way function
+- Fixed-length output
+- Examples: MD5, SHA-1, SHA-256
+
+Data → Hash Function → Hash Value
+
+Uses: Password storage, integrity verification
+
+
+DIGITAL SIGNATURE:
+1. Sender hashes message
+2. Encrypts hash with private key
+3. Receiver decrypts with public key
+4. Compares hash
+
+Proves: Authenticity, integrity, non-repudiation
+
+
+================================================================================
+                    3. TLS/SSL
+================================================================================
+
+Transport Layer Security / Secure Sockets Layer
+
+
+TLS HANDSHAKE:
+
+Client                              Server
+   |                                   |
+   |──── ClientHello ────────────────→|
+   |     (TLS version, cipher suites) |
+   |                                   |
+   |←──── ServerHello ────────────────|
+   |      (Selected cipher, cert)     |
+   |                                   |
+   |←──── Certificate ────────────────|
+   |                                   |
+   |←──── ServerHelloDone ────────────|
+   |                                   |
+   |──── ClientKeyExchange ──────────→|
+   |     (Pre-master secret)          |
+   |                                   |
+   |──── ChangeCipherSpec ───────────→|
+   |──── Finished ───────────────────→|
+   |                                   |
+   |←──── ChangeCipherSpec ───────────|
+   |←──── Finished ───────────────────|
+   |                                   |
+   |     Encrypted Communication      |
+
+
+CERTIFICATES:
+- Issued by Certificate Authority (CA)
+- Contains: Public key, domain, issuer, validity
+- Chain of trust: Root CA → Intermediate → End
+
+
+================================================================================
+                    4. FIREWALLS
+================================================================================
+
+Filter network traffic based on rules.
+
+
+TYPES:
+
+1. PACKET FILTERING:
+   - Layer 3/4
+   - Based on: IP, port, protocol
+   - Stateless
+   - Fast but limited
+
+2. STATEFUL INSPECTION:
+   - Tracks connection state
+   - More intelligent decisions
+   - Memory for connections
+
+3. APPLICATION GATEWAY (Proxy):
+   - Layer 7
+   - Deep packet inspection
+   - Can examine content
+   - Higher overhead
+
+4. NEXT-GEN FIREWALL (NGFW):
+   - Application awareness
+   - Intrusion prevention
+   - Advanced threat protection
+
+
+RULES:
+- Default: Allow all (whitelist exceptions)
+- Default: Deny all (blacklist exceptions)
+
+
+================================================================================
+                    5. COMMON ATTACKS
+================================================================================
+
+1. MAN-IN-THE-MIDDLE (MITM):
+   - Attacker intercepts communication
+   - Can read/modify messages
+   - Prevention: HTTPS, certificate verification
+
+
+2. DOS/DDOS:
+   - Denial of Service
+   - Overwhelm system with requests
+   - DDoS: Distributed (from many sources)
+
+   Types:
+   - Volumetric (bandwidth)
+   - Protocol (SYN flood)
+   - Application (HTTP flood)
+
+
+3. ARP SPOOFING:
+   - Fake ARP replies
+   - Associate attacker's MAC with victim's IP
+   - Enables MITM
+
+
+4. DNS SPOOFING:
+   - Corrupt DNS cache
+   - Redirect to malicious site
+
+
+5. PHISHING:
+   - Fake websites/emails
+   - Trick users to reveal credentials
+
+
+6. SQL INJECTION:
+   - Malicious SQL in input
+   - Access/modify database
+
+
+7. XSS (Cross-Site Scripting):
+   - Inject malicious scripts
+   - Execute in victim's browser
+
+
+8. IP SPOOFING:
+   - Fake source IP address
+   - Hide identity, bypass filters
+
+
+================================================================================
+                    6. VPN (Virtual Private Network)
+================================================================================
+
+Secure tunnel over public network.
+
+
+TYPES:
+
+1. REMOTE ACCESS VPN:
+   - User connects to corporate network
+   - From home/travel
+
+2. SITE-TO-SITE VPN:
+   - Connect two networks
+   - Branch offices
+
+
+PROTOCOLS:
+
+1. IPSec:
+   - Layer 3
+   - Modes: Transport (encrypt payload)
+            Tunnel (encrypt entire packet)
+   - Components: AH (auth), ESP (encrypt)
+
+2. SSL/TLS VPN:
+   - Layer 4-7
+   - Browser-based
+   - Easier to deploy
+
+3. OpenVPN:
+   - Open source
+   - Uses SSL/TLS
+   - Cross-platform
+
+4. WireGuard:
+   - Modern, fast
+   - Simple design
+
+
+================================================================================
+                    7. INTRUSION DETECTION/PREVENTION
+================================================================================
+
+IDS (Intrusion Detection System):
+- Monitors traffic
+- Alerts on suspicious activity
+- Passive
+
+IPS (Intrusion Prevention System):
+- Detects AND blocks
+- Active/inline
+
+
+DETECTION METHODS:
+
+1. Signature-based:
+   - Match known attack patterns
+   - Fast, but can't detect new attacks
+
+2. Anomaly-based:
+   - Detect deviation from normal
+   - Can find new attacks
+   - More false positives
+
+
+================================================================================
+                    8. NETWORK SECURITY BEST PRACTICES
+================================================================================
+
+1. Defense in Depth:
+   - Multiple layers of security
+
+2. Principle of Least Privilege:
+   - Minimum necessary access
+
+3. Regular Updates:
+   - Patch vulnerabilities
+
+4. Strong Authentication:
+   - MFA (Multi-Factor Authentication)
+
+5. Encryption:
+   - Data at rest and in transit
+
+6. Network Segmentation:
+   - Isolate critical systems
+
+7. Monitoring and Logging:
+   - Detect and investigate incidents
+
+8. Security Awareness:
+   - Train users
+
+
+================================================================================
+                    9. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is the CIA triad?
+A: Confidentiality (only authorized access),
+   Integrity (no unauthorized changes),
+   Availability (accessible when needed).
+
+Q2: Difference between symmetric and asymmetric encryption?
+A: Symmetric: Same key for both, fast.
+   Asymmetric: Public/private key pair, solves key distribution.
+
+Q3: What is TLS/SSL?
+A: Protocols for encrypted communication.
+   Uses certificates, handshake establishes secure connection.
+
+Q4: What is a firewall?
+A: Filters network traffic based on rules.
+   Types: Packet filter, stateful, application gateway.
+
+Q5: What is a DDoS attack?
+A: Distributed Denial of Service. Many sources overwhelm target.
+   Types: Volumetric, protocol, application.
+
+Q6: What is a VPN?
+A: Virtual Private Network. Encrypted tunnel over public network.
+   For remote access or site-to-site connectivity.
+
+
+================================================================================
+                    END OF NETWORK SECURITY
+================================================================================

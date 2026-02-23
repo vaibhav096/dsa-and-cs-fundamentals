@@ -1,0 +1,385 @@
+================================================================================
+                    TIME AND SPACE COMPLEXITY
+================================================================================
+
+Understanding complexity is ESSENTIAL for interviews. Every solution
+you propose will be evaluated on its time and space complexity.
+
+
+================================================================================
+                    1. WHY COMPLEXITY MATTERS
+================================================================================
+
+Two algorithms can solve the same problem but:
+- Algorithm A: Takes 1 second for 1000 elements
+- Algorithm B: Takes 1 minute for 1000 elements
+
+For 1,000,000 elements:
+- Algorithm A: ~17 minutes
+- Algorithm B: ~11 days
+
+Complexity analysis helps predict performance as input grows.
+
+
+================================================================================
+                    2. BIG O NOTATION
+================================================================================
+
+Big O describes the UPPER BOUND (worst case) of algorithm performance.
+
+Common Time Complexities (best to worst):
+
+Notation        Name            Example
+--------        ----            -------
+O(1)            Constant        Array access, hash lookup
+O(log n)        Logarithmic     Binary search
+O(n)            Linear          Linear search, single loop
+O(n log n)      Linearithmic    Merge sort, quick sort (avg)
+O(n²)           Quadratic       Nested loops, bubble sort
+O(n³)           Cubic           Three nested loops
+O(2ⁿ)           Exponential     Recursive fibonacci, subsets
+O(n!)           Factorial       Permutations
+
+
+GROWTH COMPARISON (n = 1000):
+-----------------------------
+O(1)        = 1
+O(log n)    = ~10
+O(n)        = 1,000
+O(n log n)  = ~10,000
+O(n²)       = 1,000,000
+O(2ⁿ)       = 10^301 (IMPOSSIBLE!)
+
+
+================================================================================
+                    3. HOW TO CALCULATE TIME COMPLEXITY
+================================================================================
+
+RULE 1: Drop constants
+    O(2n) → O(n)
+    O(100) → O(1)
+    O(n/2) → O(n)
+
+RULE 2: Drop non-dominant terms
+    O(n² + n) → O(n²)
+    O(n + log n) → O(n)
+    O(n³ + n² + n) → O(n³)
+
+RULE 3: Different inputs = different variables
+    def func(arr1, arr2):
+        for x in arr1:      # O(a)
+            print(x)
+        for y in arr2:      # O(b)
+            print(y)
+    # Total: O(a + b), NOT O(n)
+
+
+ANALYZING CODE:
+
+1. Sequential statements: ADD
+   statement1    # O(1)
+   statement2    # O(1)
+   # Total: O(1) + O(1) = O(1)
+
+2. Loops: MULTIPLY
+   for i in range(n):       # O(n)
+       statement            # O(1)
+   # Total: O(n) × O(1) = O(n)
+
+3. Nested loops: MULTIPLY
+   for i in range(n):       # O(n)
+       for j in range(n):   # O(n)
+           statement        # O(1)
+   # Total: O(n) × O(n) × O(1) = O(n²)
+
+4. Consecutive loops: ADD
+   for i in range(n):       # O(n)
+       statement
+   for j in range(m):       # O(m)
+       statement
+   # Total: O(n) + O(m) = O(n + m)
+
+5. If-else: MAX of branches
+   if condition:
+       # O(n) operation
+   else:
+       # O(1) operation
+   # Total: O(n) (worst case)
+
+
+================================================================================
+                    4. COMMON PATTERNS
+================================================================================
+
+PATTERN 1: Simple Loop → O(n)
+    for i in range(n):
+        # O(1) operation
+
+PATTERN 2: Nested Loop (same range) → O(n²)
+    for i in range(n):
+        for j in range(n):
+            # O(1) operation
+
+PATTERN 3: Nested Loop (j depends on i) → O(n²)
+    for i in range(n):
+        for j in range(i):
+            # O(1) operation
+    # 0+1+2+...+(n-1) = n(n-1)/2 = O(n²)
+
+PATTERN 4: Nested Loop (j starts from i) → O(n²)
+    for i in range(n):
+        for j in range(i, n):
+            # O(1) operation
+    # Same as above: O(n²)
+
+PATTERN 5: Loop with multiplication → O(log n)
+    i = 1
+    while i < n:
+        # O(1) operation
+        i *= 2
+    # i: 1, 2, 4, 8, 16... (log n iterations)
+
+PATTERN 6: Loop with division → O(log n)
+    i = n
+    while i > 1:
+        # O(1) operation
+        i //= 2
+
+PATTERN 7: Two nested loops with multiplication → O(n log n)
+    for i in range(n):          # O(n)
+        j = 1
+        while j < n:            # O(log n)
+            # O(1) operation
+            j *= 2
+
+PATTERN 8: Loop going till sqrt(n) → O(√n)
+    for i in range(int(n**0.5)):
+        # O(1) operation
+
+
+================================================================================
+                    5. RECURSIVE COMPLEXITY
+================================================================================
+
+For recursion, use RECURRENCE RELATIONS.
+
+PATTERN 1: Single recursive call, constant work
+    def func(n):
+        if n <= 0: return
+        # O(1) work
+        func(n-1)
+
+    T(n) = T(n-1) + O(1)
+    Result: O(n)
+
+PATTERN 2: Single recursive call, linear work
+    def func(n):
+        if n <= 0: return
+        for i in range(n):  # O(n) work
+            print(i)
+        func(n-1)
+
+    T(n) = T(n-1) + O(n)
+    Result: O(n²)  [n + (n-1) + (n-2) + ... + 1]
+
+PATTERN 3: Two recursive calls (like Fibonacci)
+    def fib(n):
+        if n <= 1: return n
+        return fib(n-1) + fib(n-2)
+
+    T(n) = T(n-1) + T(n-2) + O(1)
+    Result: O(2ⁿ)
+
+PATTERN 4: Two recursive calls with half input (like merge sort)
+    def func(arr):
+        if len(arr) <= 1: return
+        mid = len(arr) // 2
+        func(arr[:mid])
+        func(arr[mid:])
+        # O(n) merge work
+
+    T(n) = 2T(n/2) + O(n)
+    Result: O(n log n)
+
+PATTERN 5: Single call with half input (like binary search)
+    def binary_search(arr, target, lo, hi):
+        if lo > hi: return -1
+        mid = (lo + hi) // 2
+        if arr[mid] == target: return mid
+        elif arr[mid] > target:
+            return binary_search(arr, target, lo, mid-1)
+        else:
+            return binary_search(arr, target, mid+1, hi)
+
+    T(n) = T(n/2) + O(1)
+    Result: O(log n)
+
+
+MASTER THEOREM (for T(n) = aT(n/b) + O(n^d)):
+---------------------------------------------
+If a = b^d: O(n^d log n)
+If a < b^d: O(n^d)
+If a > b^d: O(n^(log_b(a)))
+
+
+================================================================================
+                    6. SPACE COMPLEXITY
+================================================================================
+
+Space complexity = memory used by algorithm
+
+Components:
+1. Input space (usually not counted)
+2. Auxiliary space (extra space used)
+
+COMMON SPACE COMPLEXITIES:
+
+O(1) - Constant Space:
+    def sum_array(arr):
+        total = 0           # Just one variable
+        for num in arr:
+            total += num
+        return total
+
+O(n) - Linear Space:
+    def copy_array(arr):
+        result = []         # New array of size n
+        for num in arr:
+            result.append(num)
+        return result
+
+O(n) - Recursive Stack:
+    def factorial(n):
+        if n <= 1: return 1
+        return n * factorial(n-1)
+    # Call stack: n frames
+
+O(log n) - Recursive with halving:
+    def binary_search_recursive(arr, target, lo, hi):
+        # Call stack depth: log n
+
+
+================================================================================
+                    7. BEST, AVERAGE, WORST CASE
+================================================================================
+
+Example: Linear Search
+
+Best Case: O(1)
+    Element found at first position
+
+Average Case: O(n/2) = O(n)
+    Element found in middle on average
+
+Worst Case: O(n)
+    Element at end or not present
+
+Example: Quick Sort
+
+Best Case: O(n log n)
+    Pivot always divides array in half
+
+Average Case: O(n log n)
+    Random pivots
+
+Worst Case: O(n²)
+    Already sorted array, bad pivot selection
+
+
+================================================================================
+                    8. AMORTIZED ANALYSIS
+================================================================================
+
+Average time per operation over worst-case sequence of operations.
+
+Example: Dynamic Array (Python list)
+
+append() is usually O(1), but sometimes O(n) when resizing.
+
+Over n operations:
+- Most appends: O(1)
+- Occasional resize: O(n)
+- Total: O(n) for n operations
+- Amortized: O(1) per operation
+
+
+================================================================================
+                    9. COMPLEXITY CHEAT SHEET
+================================================================================
+
+DATA STRUCTURE OPERATIONS:
+--------------------------
+Array:
+    Access: O(1)
+    Search: O(n)
+    Insert at end: O(1) amortized
+    Insert at position: O(n)
+    Delete: O(n)
+
+Linked List:
+    Access: O(n)
+    Search: O(n)
+    Insert at head: O(1)
+    Insert at position: O(n)
+    Delete: O(n) search + O(1) delete
+
+Stack/Queue:
+    Push/Enqueue: O(1)
+    Pop/Dequeue: O(1)
+    Peek: O(1)
+
+Hash Table:
+    Insert: O(1) average, O(n) worst
+    Search: O(1) average, O(n) worst
+    Delete: O(1) average, O(n) worst
+
+Binary Search Tree (balanced):
+    Insert: O(log n)
+    Search: O(log n)
+    Delete: O(log n)
+
+Heap:
+    Insert: O(log n)
+    Extract min/max: O(log n)
+    Get min/max: O(1)
+
+
+SORTING ALGORITHMS:
+-------------------
+Algorithm       Best        Average     Worst       Space
+---------       ----        -------     -----       -----
+Bubble Sort     O(n)        O(n²)       O(n²)       O(1)
+Selection Sort  O(n²)       O(n²)       O(n²)       O(1)
+Insertion Sort  O(n)        O(n²)       O(n²)       O(1)
+Merge Sort      O(n log n)  O(n log n)  O(n log n)  O(n)
+Quick Sort      O(n log n)  O(n log n)  O(n²)       O(log n)
+Heap Sort       O(n log n)  O(n log n)  O(n log n)  O(1)
+Counting Sort   O(n+k)      O(n+k)      O(n+k)      O(k)
+Radix Sort      O(nk)       O(nk)       O(nk)       O(n+k)
+
+
+================================================================================
+                    10. INTERVIEW TIPS
+================================================================================
+
+1. ALWAYS state complexity after explaining solution
+   "This solution is O(n) time and O(1) space"
+
+2. If asked to optimize, think about:
+   - Can I use a hash map? (O(n) lookup → O(1))
+   - Can I sort first? (enables binary search)
+   - Can I use two pointers? (avoid nested loops)
+   - Can I use dynamic programming? (avoid recomputation)
+
+3. Common optimizations:
+   - O(n²) → O(n log n): Sort + two pointers
+   - O(n²) → O(n): Hash map
+   - O(2ⁿ) → O(n²) or O(n): Dynamic programming
+
+4. Space-time tradeoff:
+   - Use more space to reduce time (memoization)
+   - Use more time to reduce space (recompute vs store)
+
+================================================================================
+                    END OF COMPLEXITY
+================================================================================

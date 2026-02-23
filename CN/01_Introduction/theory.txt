@@ -1,0 +1,454 @@
+================================================================================
+                    COMPUTER NETWORKS - INTRODUCTION
+================================================================================
+
+A computer network is a collection of interconnected devices that can
+communicate and share resources.
+
+
+================================================================================
+                    1. BASIC CONCEPTS
+================================================================================
+
+NETWORK:
+Two or more computers connected to share resources and information.
+
+WHY NETWORKS?
+- Resource sharing (printers, files)
+- Communication (email, messaging)
+- Information access
+- Cost efficiency
+- Reliability (backup systems)
+
+
+NETWORK COMPONENTS:
+
+1. End Devices (Hosts):
+   - Computers, phones, servers
+   - Source or destination of data
+
+2. Intermediate Devices:
+   - Routers: Connect different networks
+   - Switches: Connect devices in same network
+   - Hubs: Basic connectivity (obsolete)
+   - Access Points: Wireless connectivity
+
+3. Network Media:
+   - Wired: Copper, Fiber optic
+   - Wireless: Radio waves, Infrared
+
+
+================================================================================
+                    2. TYPES OF NETWORKS
+================================================================================
+
+BY GEOGRAPHICAL AREA:
+
+1. PAN (Personal Area Network):
+   - Range: ~10 meters
+   - Example: Bluetooth devices
+
+2. LAN (Local Area Network):
+   - Range: Building or campus
+   - High speed (100 Mbps - 10 Gbps)
+   - Example: Office network
+
+3. MAN (Metropolitan Area Network):
+   - Range: City
+   - Example: Cable TV network
+
+4. WAN (Wide Area Network):
+   - Range: Countries, continents
+   - Example: Internet
+
+
+BY ARCHITECTURE:
+
+1. Client-Server:
+   - Dedicated server provides services
+   - Clients request services
+   - Centralized management
+   - Example: Web servers
+
+   Client ──→ Server
+   Client ──→ Server
+   Client ──→ Server
+
+2. Peer-to-Peer (P2P):
+   - All nodes are equal
+   - Each can be client or server
+   - Decentralized
+   - Example: BitTorrent
+
+   Node ←──→ Node
+    ↕         ↕
+   Node ←──→ Node
+
+
+================================================================================
+                    3. NETWORK TOPOLOGIES
+================================================================================
+
+Physical arrangement of network devices.
+
+
+1. BUS TOPOLOGY:
+   All devices connected to single cable.
+
+   ┌──────────────────────────────────┐
+   │                                  │
+   ├──PC──┬──PC──┬──PC──┬──PC──┤
+   │      │      │      │      │
+   │    ─────────────────────────    │
+   │         (Single Bus)            │
+   └──────────────────────────────────┘
+
+   Advantages: Simple, cheap
+   Disadvantages: Single point of failure, collision
+
+
+2. STAR TOPOLOGY:
+   All devices connected to central hub/switch.
+
+            PC
+            │
+   PC ──── HUB ──── PC
+            │
+            PC
+
+   Advantages: Easy to manage, one failure doesn't affect others
+   Disadvantages: Central device failure = network failure
+
+
+3. RING TOPOLOGY:
+   Devices connected in circular fashion.
+
+       PC ──── PC
+      /          \
+    PC            PC
+      \          /
+       PC ──── PC
+
+   Advantages: Equal access, no collisions
+   Disadvantages: One failure breaks ring
+
+
+4. MESH TOPOLOGY:
+   Every device connected to every other device.
+
+       PC ──── PC
+      /│\      /│\
+     / │ \    / │ \
+    PC─┼──\──/──┼─PC
+       │   \/   │
+       │   /\   │
+    PC─┼──/──\──┼─PC
+
+   Full Mesh: All connected to all
+   Partial Mesh: Some connections
+
+   Advantages: Highly reliable, multiple paths
+   Disadvantages: Expensive, complex
+
+
+5. TREE (HIERARCHICAL) TOPOLOGY:
+   Combination of bus and star.
+
+              Root
+             / | \
+           /   |   \
+         Hub  Hub  Hub
+        / \   / \   / \
+       PC PC PC PC PC PC
+
+   Advantages: Scalable, hierarchical management
+   Disadvantages: Root failure affects all
+
+
+6. HYBRID TOPOLOGY:
+   Combination of two or more topologies.
+
+
+================================================================================
+                    4. OSI MODEL
+================================================================================
+
+Open Systems Interconnection - 7-layer reference model.
+
++---------------------------+
+| 7. Application Layer      |  ← User interface (HTTP, FTP, SMTP)
++---------------------------+
+| 6. Presentation Layer     |  ← Data format, encryption (SSL, JPEG)
++---------------------------+
+| 5. Session Layer          |  ← Session management (NetBIOS)
++---------------------------+
+| 4. Transport Layer        |  ← End-to-end delivery (TCP, UDP)
++---------------------------+
+| 3. Network Layer          |  ← Routing, logical addressing (IP)
++---------------------------+
+| 2. Data Link Layer        |  ← Framing, MAC addressing (Ethernet)
++---------------------------+
+| 1. Physical Layer         |  ← Bits over medium (Cables, signals)
++---------------------------+
+
+
+MNEMONIC:
+"Please Do Not Throw Sausage Pizza Away"
+"All People Seem To Need Data Processing"
+
+
+LAYER FUNCTIONS:
+
+Layer 7 - APPLICATION:
+- User interface to network
+- HTTP, FTP, SMTP, DNS, DHCP
+
+Layer 6 - PRESENTATION:
+- Data translation, encryption, compression
+- SSL/TLS, JPEG, MPEG
+
+Layer 5 - SESSION:
+- Establish, manage, terminate sessions
+- Authentication, checkpointing
+
+Layer 4 - TRANSPORT:
+- End-to-end communication
+- Segmentation, flow control, error correction
+- TCP (reliable), UDP (fast)
+
+Layer 3 - NETWORK:
+- Logical addressing (IP)
+- Routing between networks
+- IP, ICMP, ARP
+
+Layer 2 - DATA LINK:
+- Physical addressing (MAC)
+- Framing, error detection
+- Ethernet, Wi-Fi, PPP
+
+Layer 1 - PHYSICAL:
+- Bit transmission
+- Cables, connectors, signals
+- Defines voltage, pin layout
+
+
+DATA ENCAPSULATION:
+
+Application  → Data
+Transport    → Segment (TCP) / Datagram (UDP)
+Network      → Packet
+Data Link    → Frame
+Physical     → Bits
+
+
+================================================================================
+                    5. TCP/IP MODEL
+================================================================================
+
+Practical 4-layer model used on Internet.
+
++---------------------------+
+| 4. Application Layer      |  ← HTTP, FTP, SMTP, DNS
++---------------------------+
+| 3. Transport Layer        |  ← TCP, UDP
++---------------------------+
+| 2. Internet Layer         |  ← IP, ICMP, ARP
++---------------------------+
+| 1. Network Access Layer   |  ← Ethernet, Wi-Fi
++---------------------------+
+
+
+OSI vs TCP/IP MAPPING:
+
+OSI                    TCP/IP
+───────────────────────────────
+Application  │
+Presentation ├─→ Application
+Session      │
+───────────────────────────────
+Transport    ─→ Transport
+───────────────────────────────
+Network      ─→ Internet
+───────────────────────────────
+Data Link    │
+Physical     ├─→ Network Access
+───────────────────────────────
+
+
+================================================================================
+                    6. SWITCHING TECHNIQUES
+================================================================================
+
+How data is transferred through network.
+
+
+1. CIRCUIT SWITCHING:
+   - Dedicated path established before communication
+   - Path reserved for entire duration
+   - Used in: Traditional phone networks
+
+   Advantages: Guaranteed bandwidth, no delay
+   Disadvantages: Inefficient if idle, setup time
+
+
+2. PACKET SWITCHING:
+   - Data divided into packets
+   - Each packet routed independently
+   - Used in: Internet
+
+   Types:
+   a) Datagram:
+      - Each packet routed independently
+      - Different paths possible
+      - IP uses this
+
+   b) Virtual Circuit:
+      - Path established first
+      - All packets follow same path
+      - ATM uses this
+
+   Advantages: Efficient, fault tolerant
+   Disadvantages: Variable delay, packet loss possible
+
+
+3. MESSAGE SWITCHING:
+   - Entire message sent to intermediate node
+   - Store and forward
+   - No dedicated path
+
+   Advantage: No setup time
+   Disadvantage: Large storage needed
+
+
+================================================================================
+                    7. NETWORK DEVICES
+================================================================================
+
+1. HUB (Layer 1):
+   - Broadcasts to all ports
+   - No intelligence
+   - Half-duplex
+   - Obsolete
+
+2. SWITCH (Layer 2):
+   - Learns MAC addresses
+   - Forwards to specific port
+   - Full-duplex
+   - Used in LANs
+
+3. ROUTER (Layer 3):
+   - Routes between networks
+   - Uses IP addresses
+   - Makes routing decisions
+   - Used to connect LANs to WAN
+
+4. GATEWAY (Layer 7):
+   - Protocol conversion
+   - Connects different architectures
+
+5. BRIDGE (Layer 2):
+   - Connects two LAN segments
+   - Filters based on MAC
+
+6. MODEM:
+   - Modulator-Demodulator
+   - Converts digital to analog (and vice versa)
+
+7. REPEATER (Layer 1):
+   - Amplifies signal
+   - Extends network distance
+
+
+================================================================================
+                    8. TRANSMISSION MODES
+================================================================================
+
+1. SIMPLEX:
+   - One direction only
+   - Example: Keyboard → Computer
+
+   A ──────────→ B
+
+2. HALF-DUPLEX:
+   - Both directions, but one at a time
+   - Example: Walkie-talkie
+
+   A ←─────────→ B (not simultaneously)
+
+3. FULL-DUPLEX:
+   - Both directions simultaneously
+   - Example: Phone call
+
+   A ←══════════→ B (simultaneously)
+
+
+================================================================================
+                    9. TRANSMISSION MEDIA
+================================================================================
+
+GUIDED (Wired):
+
+1. Twisted Pair Cable:
+   - Two insulated wires twisted
+   - UTP (Unshielded), STP (Shielded)
+   - Used in: Ethernet (Cat5, Cat6)
+   - Speed: 100 Mbps - 10 Gbps
+
+2. Coaxial Cable:
+   - Central conductor, insulation, shield
+   - Used in: Cable TV, older Ethernet
+   - Better noise immunity
+
+3. Fiber Optic:
+   - Light pulses through glass/plastic
+   - Single-mode (long distance)
+   - Multi-mode (short distance)
+   - Fastest, immune to EMI
+
+
+UNGUIDED (Wireless):
+
+1. Radio Waves:
+   - Used in: Wi-Fi, Bluetooth, cellular
+
+2. Microwaves:
+   - Used in: Satellite, point-to-point
+
+3. Infrared:
+   - Used in: TV remotes, short range
+
+
+================================================================================
+                    10. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is a computer network?
+A: Collection of interconnected devices that can communicate
+   and share resources.
+
+Q2: Difference between LAN, MAN, and WAN?
+A: LAN: Building/campus, high speed.
+   MAN: City-wide.
+   WAN: Countries/continents (Internet).
+
+Q3: What is the OSI model?
+A: 7-layer reference model for network communication.
+   Layers: Physical, Data Link, Network, Transport, Session,
+   Presentation, Application.
+
+Q4: Difference between OSI and TCP/IP model?
+A: OSI: 7 layers, theoretical reference.
+   TCP/IP: 4 layers, practical implementation.
+
+Q5: What is the difference between switch and router?
+A: Switch: Layer 2, MAC addresses, within LAN.
+   Router: Layer 3, IP addresses, between networks.
+
+Q6: Difference between circuit and packet switching?
+A: Circuit: Dedicated path, guaranteed bandwidth.
+   Packet: Data in packets, independent routing, efficient.
+
+
+================================================================================
+                    END OF INTRODUCTION
+================================================================================

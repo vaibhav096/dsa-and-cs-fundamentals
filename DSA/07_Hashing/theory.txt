@@ -1,0 +1,335 @@
+================================================================================
+                              HASHING
+================================================================================
+
+Hashing maps data to fixed-size values using a hash function.
+Enables O(1) average time for insert, delete, and search.
+
+
+================================================================================
+                    1. HASH TABLE BASICS
+================================================================================
+
+COMPONENTS:
+- Hash Function: Converts key to index
+- Hash Table: Array that stores values
+- Collision Resolution: Handles when two keys map to same index
+
+OPERATIONS:
+    Insert  : O(1) average, O(n) worst
+    Search  : O(1) average, O(n) worst
+    Delete  : O(1) average, O(n) worst
+
+
+================================================================================
+                    2. HASH FUNCTIONS
+================================================================================
+
+Good hash function properties:
+- Fast to compute
+- Uniformly distributes keys
+- Minimizes collisions
+
+COMMON HASH FUNCTIONS:
+
+1. Division Method:
+   h(k) = k mod m
+   Choose m as prime, not close to power of 2
+
+2. Multiplication Method:
+   h(k) = floor(m * (k * A mod 1))
+   A is constant (0 < A < 1), often A = (√5 - 1) / 2
+
+3. Python's hash():
+   hash("string")  # Built-in hash function
+   hash(42)
+
+
+================================================================================
+                    3. COLLISION RESOLUTION
+================================================================================
+
+1. CHAINING (Open Hashing)
+--------------------------
+Each slot contains a linked list of elements.
+
+    class HashTable:
+        def __init__(self, size=10):
+            self.size = size
+            self.table = [[] for _ in range(size)]
+
+        def _hash(self, key):
+            return hash(key) % self.size
+
+        def insert(self, key, value):
+            idx = self._hash(key)
+            for i, (k, v) in enumerate(self.table[idx]):
+                if k == key:
+                    self.table[idx][i] = (key, value)
+                    return
+            self.table[idx].append((key, value))
+
+        def get(self, key):
+            idx = self._hash(key)
+            for k, v in self.table[idx]:
+                if k == key:
+                    return v
+            return None
+
+        def delete(self, key):
+            idx = self._hash(key)
+            for i, (k, v) in enumerate(self.table[idx]):
+                if k == key:
+                    del self.table[idx][i]
+                    return True
+            return False
+
+
+2. OPEN ADDRESSING (Closed Hashing)
+-----------------------------------
+All elements stored in table itself. On collision, find next available slot.
+
+Linear Probing:
+    h(k, i) = (h(k) + i) mod m
+
+Quadratic Probing:
+    h(k, i) = (h(k) + c1*i + c2*i²) mod m
+
+Double Hashing:
+    h(k, i) = (h1(k) + i * h2(k)) mod m
+
+
+================================================================================
+                    4. PYTHON DICTIONARIES AND SETS
+================================================================================
+
+DICTIONARY (dict):
+------------------
+Key-value pairs. Keys must be hashable (immutable).
+
+    # Creation
+    d = {}
+    d = dict()
+    d = {'a': 1, 'b': 2}
+
+    # Operations
+    d['key'] = value        # Insert/Update O(1)
+    value = d['key']        # Access O(1)
+    value = d.get('key', default)  # Safe access
+    del d['key']            # Delete O(1)
+    'key' in d              # Check existence O(1)
+
+    # Methods
+    d.keys()                # All keys
+    d.values()              # All values
+    d.items()               # All (key, value) pairs
+    d.pop('key')            # Remove and return value
+    d.setdefault('key', 0)  # Get or set default
+
+
+SET:
+----
+Unordered collection of unique elements.
+
+    # Creation
+    s = set()
+    s = {1, 2, 3}
+    s = set([1, 2, 2, 3])   # {1, 2, 3}
+
+    # Operations
+    s.add(x)                # Add element O(1)
+    s.remove(x)             # Remove (error if not found) O(1)
+    s.discard(x)            # Remove (no error) O(1)
+    x in s                  # Check membership O(1)
+
+    # Set operations
+    s1 | s2                 # Union
+    s1 & s2                 # Intersection
+    s1 - s2                 # Difference
+    s1 ^ s2                 # Symmetric difference
+
+
+COUNTER (collections.Counter):
+------------------------------
+Count occurrences of elements.
+
+    from collections import Counter
+
+    c = Counter([1, 1, 2, 3, 3, 3])  # {3: 3, 1: 2, 2: 1}
+    c = Counter("hello")             # {'l': 2, 'h': 1, ...}
+
+    c.most_common(2)        # 2 most common elements
+    c['a'] += 1             # Increment count
+    c.elements()            # Iterator over elements
+
+
+DEFAULTDICT:
+------------
+Dictionary with default value for missing keys.
+
+    from collections import defaultdict
+
+    d = defaultdict(int)    # Default 0 for missing keys
+    d = defaultdict(list)   # Default [] for missing keys
+    d = defaultdict(set)    # Default set() for missing keys
+
+
+================================================================================
+                    5. COMMON HASHING PROBLEMS
+================================================================================
+
+PROBLEM 1: Two Sum
+------------------
+    def two_sum(nums, target):
+        seen = {}
+        for i, num in enumerate(nums):
+            complement = target - num
+            if complement in seen:
+                return [seen[complement], i]
+            seen[num] = i
+        return []
+
+
+PROBLEM 2: Group Anagrams
+-------------------------
+    def group_anagrams(strs):
+        groups = defaultdict(list)
+        for s in strs:
+            key = tuple(sorted(s))
+            groups[key].append(s)
+        return list(groups.values())
+
+
+PROBLEM 3: First Unique Character
+---------------------------------
+    def first_uniq_char(s):
+        count = Counter(s)
+        for i, char in enumerate(s):
+            if count[char] == 1:
+                return i
+        return -1
+
+
+PROBLEM 4: Contains Duplicate
+-----------------------------
+    def contains_duplicate(nums):
+        return len(nums) != len(set(nums))
+
+
+PROBLEM 5: Intersection of Two Arrays
+-------------------------------------
+    def intersection(nums1, nums2):
+        return list(set(nums1) & set(nums2))
+
+
+PROBLEM 6: Valid Anagram
+------------------------
+    def is_anagram(s, t):
+        return Counter(s) == Counter(t)
+
+
+PROBLEM 7: Longest Substring Without Repeating Characters
+---------------------------------------------------------
+    def length_of_longest_substring(s):
+        char_index = {}
+        max_length = 0
+        start = 0
+
+        for i, char in enumerate(s):
+            if char in char_index and char_index[char] >= start:
+                start = char_index[char] + 1
+            char_index[char] = i
+            max_length = max(max_length, i - start + 1)
+
+        return max_length
+
+
+PROBLEM 8: Subarray Sum Equals K
+--------------------------------
+    def subarray_sum(nums, k):
+        count = 0
+        prefix_sum = 0
+        sum_count = {0: 1}
+
+        for num in nums:
+            prefix_sum += num
+            if prefix_sum - k in sum_count:
+                count += sum_count[prefix_sum - k]
+            sum_count[prefix_sum] = sum_count.get(prefix_sum, 0) + 1
+
+        return count
+
+
+PROBLEM 9: Top K Frequent Elements
+----------------------------------
+    def top_k_frequent(nums, k):
+        count = Counter(nums)
+        return [x for x, _ in count.most_common(k)]
+
+
+PROBLEM 10: Longest Consecutive Sequence
+----------------------------------------
+    def longest_consecutive(nums):
+        num_set = set(nums)
+        max_length = 0
+
+        for num in num_set:
+            if num - 1 not in num_set:  # Start of sequence
+                current = num
+                length = 1
+                while current + 1 in num_set:
+                    current += 1
+                    length += 1
+                max_length = max(max_length, length)
+
+        return max_length
+
+
+PROBLEM 11: 4Sum II
+-------------------
+    def four_sum_count(A, B, C, D):
+        ab_sum = Counter(a + b for a in A for b in B)
+        return sum(ab_sum[-(c + d)] for c in C for d in D)
+
+
+PROBLEM 12: Find All Duplicates in Array
+----------------------------------------
+    def find_duplicates(nums):
+        # Using hash set
+        seen = set()
+        result = []
+        for num in nums:
+            if num in seen:
+                result.append(num)
+            seen.add(num)
+        return result
+
+
+================================================================================
+                    6. INTERVIEW TIPS
+================================================================================
+
+1. HASH MAP vs HASH SET:
+   - Map: key-value pairs (counting, indexing)
+   - Set: unique elements (membership, deduplication)
+
+2. COMMON USE CASES:
+   - Counting frequency
+   - Finding duplicates
+   - Two sum pattern (complement lookup)
+   - Grouping elements
+   - Caching/memoization
+
+3. TRADE-OFFS:
+   - Time: O(1) average for operations
+   - Space: O(n) for storage
+   - Often trade space for time
+
+4. WATCH OUT FOR:
+   - Hash collisions in worst case
+   - Unhashable types (lists, dicts can't be keys)
+   - Ordering (dict maintains insertion order in Python 3.7+)
+
+================================================================================
+                         END OF HASHING
+================================================================================

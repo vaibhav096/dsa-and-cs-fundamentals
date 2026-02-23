@@ -1,0 +1,523 @@
+================================================================================
+                    TRANSACTIONS AND ACID PROPERTIES
+================================================================================
+
+A transaction is a logical unit of work that contains one or more database
+operations. Either ALL operations succeed, or NONE do.
+
+
+================================================================================
+                    1. TRANSACTION CONCEPT
+================================================================================
+
+EXAMPLE - Bank Transfer:
+Transfer $100 from Account A to Account B
+
+BEGIN TRANSACTION
+    1. Read balance of A
+    2. Deduct $100 from A
+    3. Write new balance of A
+    4. Read balance of B
+    5. Add $100 to B
+    6. Write new balance of B
+COMMIT
+
+If system fails after step 3, money is lost without transaction protection!
+
+
+TRANSACTION STATES:
+
+    +--------+
+    | Active |  ← Transaction started, executing
+    +----+---+
+         |
+    +----v-------+
+    | Partially  |  ← All operations done, before commit
+    | Committed  |
+    +----+-------+
+         |
+    +----v------+      +--------+
+    | Committed | OR   | Failed |  ← Some operation failed
+    +-----------+      +----+---+
+                            |
+                       +----v----+
+                       | Aborted |  ← Rolled back
+                       +---------+
+
+
+================================================================================
+                    2. ACID PROPERTIES
+================================================================================
+
+Four properties that guarantee reliable transactions:
+
+
+A - ATOMICITY
+--------------
+"All or Nothing"
+
+- Transaction is indivisible unit
+- Either ALL operations complete successfully
+- Or NONE of them take effect
+- No partial execution
+
+Example:
+Transfer $100: Both debit AND credit must happen, or neither.
+
+Implementation:
+- Transaction logs
+- Rollback on failure
+
+
+C - CONSISTENCY
+---------------
+"Integrity Preserved"
+
+- Database moves from one consistent state to another
+- All integrity constraints maintained
+- No corruption of data
+
+Example:
+Total money before = Total money after transfer
+Account balance cannot be negative
+
+Implementation:
+- Integrity constraints
+- Triggers
+- Application logic
+
+
+I - ISOLATION
+-------------
+"Concurrent Independence"
+
+- Concurrent transactions don't interfere
+- Each transaction appears to execute alone
+- Intermediate states not visible to others
+
+Example:
+Two concurrent transfers don't corrupt each other's calculations
+
+Implementation:
+- Locks
+- Timestamp ordering
+- Multiversion concurrency control
+
+
+D - DURABILITY
+--------------
+"Permanence"
+
+- Once committed, changes are permanent
+- Survives system failures
+- Data persists
+
+Example:
+After COMMIT, transfer is permanent even if system crashes
+
+Implementation:
+- Write-ahead logging (WAL)
+- Checkpointing
+- Redundant storage
+
+
+================================================================================
+                    3. TRANSACTION OPERATIONS
+================================================================================
+
+READ(X):
+- Read value of data item X from database to transaction
+
+WRITE(X):
+- Write value of X from transaction to database
+
+COMMIT:
+- Transaction completed successfully
+- Changes made permanent
+
+ROLLBACK (ABORT):
+- Transaction failed
+- Undo all changes
+
+
+SCHEDULE:
+- Sequence of operations from multiple transactions
+- Order in which operations execute
+
+
+================================================================================
+                    4. SCHEDULES AND SERIALIZABILITY
+================================================================================
+
+SERIAL SCHEDULE:
+- Transactions execute one at a time
+- No interleaving
+- Always correct, but slow
+
+Example:
+T1: R(A), W(A), R(B), W(B)
+T2: R(A), W(A)
+
+Serial: T1 → T2  OR  T2 → T1
+
+
+CONCURRENT SCHEDULE:
+- Operations interleaved
+- Better performance
+- May cause problems
+
+
+SERIALIZABLE SCHEDULE:
+- Concurrent schedule equivalent to some serial schedule
+- Produces same result as serial execution
+- This is what we want!
+
+
+TYPES OF SERIALIZABILITY:
+
+1. Conflict Serializability:
+   - Based on conflicting operations
+   - Swappable vs non-swappable operations
+
+2. View Serializability:
+   - Based on which transactions read what values
+   - More complex to check
+
+
+================================================================================
+                    5. CONFLICT SERIALIZABILITY
+================================================================================
+
+CONFLICTING OPERATIONS:
+Two operations conflict if:
+1. They belong to different transactions
+2. They access the same data item
+3. At least one is a WRITE
+
+Conflict Types:
+- Read-Write (RW): T1:R(X), T2:W(X)
+- Write-Read (WR): T1:W(X), T2:R(X)
+- Write-Write (WW): T1:W(X), T2:W(X)
+
+Non-conflicting:
+- Read-Read (RR): T1:R(X), T2:R(X) ✓ Can swap
+
+
+CONFLICT EQUIVALENT:
+Two schedules are conflict equivalent if one can be transformed
+to the other by swapping non-conflicting adjacent operations.
+
+
+CONFLICT SERIALIZABLE:
+A schedule is conflict serializable if it's conflict equivalent
+to some serial schedule.
+
+
+PRECEDENCE GRAPH (SERIALIZATION GRAPH):
+Method to check conflict serializability.
+
+Steps:
+1. Create node for each transaction
+2. Add edge Ti → Tj if:
+   - Ti executes W(X) before Tj executes R(X), or
+   - Ti executes R(X) before Tj executes W(X), or
+   - Ti executes W(X) before Tj executes W(X)
+3. If graph has NO CYCLE → Conflict Serializable
+   If graph has CYCLE → NOT Conflict Serializable
+
+
+EXAMPLE:
+
+Schedule S: T1:R(A), T2:R(A), T1:W(A), T2:W(A)
+
+Conflicts:
+- T1:R(A), T2:W(A) → T1 → T2
+- T2:R(A), T1:W(A) → T2 → T1
+
+Precedence Graph:
+    T1 ←→ T2 (CYCLE!)
+
+Result: NOT conflict serializable
+
+
+EXAMPLE 2:
+
+Schedule S: T1:R(A), T1:W(A), T2:R(A), T2:W(A)
+
+Conflicts:
+- T1:W(A), T2:R(A) → T1 → T2
+- T1:W(A), T2:W(A) → T1 → T2
+
+Precedence Graph:
+    T1 → T2 (No cycle)
+
+Result: Conflict serializable (equivalent to T1 → T2)
+
+
+================================================================================
+                    6. VIEW SERIALIZABILITY
+================================================================================
+
+VIEW EQUIVALENT:
+Two schedules are view equivalent if:
+1. Same initial reads: If Ti reads initial value of X in S1,
+   Ti reads initial value of X in S2
+2. Same dependent reads: If Ti reads value written by Tj in S1,
+   Ti reads value written by Tj in S2
+3. Same final writes: If Ti does final write on X in S1,
+   Ti does final write on X in S2
+
+
+VIEW SERIALIZABLE:
+Schedule is view serializable if view equivalent to some serial schedule.
+
+Note:
+- Every conflict serializable schedule is view serializable
+- But NOT every view serializable schedule is conflict serializable
+- View serializability is harder to check (NP-complete)
+
+
+================================================================================
+                    7. RECOVERABLE AND CASCADELESS SCHEDULES
+================================================================================
+
+RECOVERABLE SCHEDULE:
+If Ti reads data written by Tj, then Tj must commit before Ti commits.
+
+Why? If Tj aborts after Ti commits, we can't undo Ti's commit.
+
+Example (NOT recoverable):
+T1: W(A), T2: R(A), T2: Commit, T1: Abort
+Problem: T2 committed based on T1's uncommitted data!
+
+
+CASCADING ROLLBACK:
+When one transaction abort causes other transactions to abort.
+
+Example:
+T1: W(A)
+T2: R(A), W(B)
+T3: R(B)
+T1: Abort
+
+If T1 aborts → T2 must abort → T3 must abort (cascade!)
+
+
+CASCADELESS SCHEDULE:
+Transactions only read committed data.
+If Ti reads X, the transaction that wrote X must have committed.
+
+Cascadeless → Recoverable (but not vice versa)
+
+
+STRICT SCHEDULE:
+No transaction reads OR writes data until writing transaction commits.
+Most restrictive, easiest recovery.
+
+Strict → Cascadeless → Recoverable
+
+
+================================================================================
+                    8. ISOLATION LEVELS
+================================================================================
+
+Trade-off between consistency and concurrency.
+
+Problems at lower isolation:
+
+1. DIRTY READ:
+   Reading uncommitted data from another transaction.
+   If that transaction aborts, you read invalid data.
+
+2. NON-REPEATABLE READ:
+   Reading same data twice gives different values.
+   Another transaction modified and committed between reads.
+
+3. PHANTOM READ:
+   Query returns different set of rows on re-execution.
+   Another transaction inserted/deleted rows.
+
+
+ISOLATION LEVELS (SQL Standard):
+
++------------------+------------+------------------+--------------+
+| Level            | Dirty Read | Non-Repeatable   | Phantom Read |
++------------------+------------+------------------+--------------+
+| READ UNCOMMITTED | Possible   | Possible         | Possible     |
+| READ COMMITTED   | Prevented  | Possible         | Possible     |
+| REPEATABLE READ  | Prevented  | Prevented        | Possible     |
+| SERIALIZABLE     | Prevented  | Prevented        | Prevented    |
++------------------+------------+------------------+--------------+
+
+
+SQL Syntax:
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+
+================================================================================
+                    9. TRANSACTION FAILURE AND RECOVERY
+================================================================================
+
+TYPES OF FAILURES:
+
+1. Transaction Failure:
+   - Logical error (division by zero, invalid input)
+   - System error (deadlock)
+
+2. System Crash:
+   - Power failure
+   - Hardware/software failure
+   - Memory contents lost, disk intact
+
+3. Disk Failure:
+   - Storage device crash
+   - Data on disk lost
+
+
+RECOVERY TECHNIQUES:
+
+1. LOG-BASED RECOVERY:
+   - Maintain log of all operations
+   - Write-Ahead Logging (WAL): Log before data modification
+
+   Log Record:
+   <Ti, START>           - Transaction started
+   <Ti, X, old, new>     - Ti changed X from old to new
+   <Ti, COMMIT>          - Transaction committed
+   <Ti, ABORT>           - Transaction aborted
+
+2. UNDO:
+   - Rollback uncommitted transactions
+   - Restore old values from log
+
+3. REDO:
+   - Re-execute committed transactions
+   - Apply new values from log
+
+
+RECOVERY PROCESS (After Crash):
+
+Phase 1 - Analysis:
+- Scan log to find active transactions at crash
+- Determine what to undo/redo
+
+Phase 2 - Redo:
+- Redo all committed transactions
+- Apply changes from log
+
+Phase 3 - Undo:
+- Undo all uncommitted transactions
+- Restore old values
+
+
+CHECKPOINT:
+Periodic snapshot of database state.
+- Reduces recovery time
+- No need to scan entire log
+
+
+================================================================================
+                    10. TRANSACTION STATES DIAGRAM
+================================================================================
+
+           +----------+
+           |  Active  |
+           +----+-----+
+                |
+        +-------v--------+
+        | Partially      |
+        | Committed      |
+        +-------+--------+
+                |
+       +--------+--------+
+       |                 |
++------v------+   +------v------+
+| Committed   |   |   Failed    |
++-------------+   +------+------+
+                         |
+                  +------v------+
+                  |   Aborted   |
+                  +-------------+
+
+
+================================================================================
+                    11. SQL TRANSACTION COMMANDS
+================================================================================
+
+-- Start transaction
+START TRANSACTION;
+-- or
+BEGIN;
+
+-- Commit (save changes)
+COMMIT;
+
+-- Rollback (undo changes)
+ROLLBACK;
+
+-- Savepoint
+SAVEPOINT sp1;
+ROLLBACK TO sp1;
+
+-- Release savepoint
+RELEASE SAVEPOINT sp1;
+
+-- Set isolation level
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+
+EXAMPLE:
+
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+SAVEPOINT after_debit;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+
+-- If something wrong, rollback to savepoint
+ROLLBACK TO after_debit;
+
+-- Or commit everything
+COMMIT;
+
+
+================================================================================
+                    12. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What are ACID properties?
+A: Atomicity (all or nothing), Consistency (integrity maintained),
+   Isolation (concurrent independence), Durability (permanence).
+
+Q2: What is a schedule? What is serializability?
+A: Schedule is sequence of operations from multiple transactions.
+   Serializable schedule produces same result as some serial schedule.
+
+Q3: How to check conflict serializability?
+A: Draw precedence graph. If no cycle, it's conflict serializable.
+   Cycle means not serializable.
+
+Q4: Difference between conflict and view serializability?
+A: Conflict - based on conflicting operations, can be checked by graph.
+   View - based on read/write values, more general but NP-complete.
+
+Q5: What is dirty read?
+A: Reading uncommitted data. If that transaction aborts, the read
+   value was never valid.
+
+Q6: What are isolation levels?
+A: READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE.
+   Higher levels prevent more anomalies but reduce concurrency.
+
+Q7: What is cascading rollback?
+A: When one abort causes chain of aborts in other transactions.
+   Prevented by cascadeless schedules (read only committed data).
+
+Q8: What is write-ahead logging?
+A: Writing log record before modifying database.
+   Ensures recovery is possible after crash.
+
+
+================================================================================
+                    END OF TRANSACTIONS
+================================================================================

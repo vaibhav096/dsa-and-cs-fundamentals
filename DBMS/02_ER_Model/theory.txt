@@ -1,0 +1,497 @@
+================================================================================
+                    ENTITY-RELATIONSHIP (ER) MODEL
+================================================================================
+
+ER Model is a high-level conceptual data model used to design databases.
+It represents the logical structure of a database graphically.
+
+
+================================================================================
+                    1. BASIC COMPONENTS
+================================================================================
+
+1. ENTITY:
+   - A real-world object or concept
+   - Represented as Rectangle
+   - Has attributes describing it
+   - Example: Student, Employee, Book
+
+2. ATTRIBUTE:
+   - Property or characteristic of entity
+   - Represented as Oval/Ellipse
+   - Connected to entity by line
+   - Example: Name, Age, ID
+
+3. RELATIONSHIP:
+   - Association between entities
+   - Represented as Diamond
+   - Connected to entities by lines
+   - Example: "works_in", "enrolls", "teaches"
+
+
+NOTATION:
+
+    +----------+          /\
+    |  Entity  |         /  \
+    +----------+        / Rel \
+         |              \    /
+        / \              \  /
+       /   \              \/
+      (Attr)               |
+
+
+================================================================================
+                    2. TYPES OF ATTRIBUTES
+================================================================================
+
+1. SIMPLE ATTRIBUTE:
+   - Cannot be divided further
+   - Example: Age, Gender, ID
+
+2. COMPOSITE ATTRIBUTE:
+   - Can be divided into smaller parts
+   - Example: Full Name -> First, Middle, Last
+   - Example: Address -> Street, City, State, ZIP
+
+           (Full Name)
+          /    |     \
+     (First)(Middle)(Last)
+
+
+3. SINGLE-VALUED ATTRIBUTE:
+   - Holds only one value
+   - Example: Date of Birth, ID
+
+4. MULTI-VALUED ATTRIBUTE:
+   - Can hold multiple values
+   - Represented with Double Oval
+   - Example: Phone Numbers, Email addresses
+
+      ((Phone Numbers))
+
+
+5. DERIVED ATTRIBUTE:
+   - Calculated from other attributes
+   - Represented with Dashed Oval
+   - Example: Age (from DOB), Total Price
+
+       - - - - -
+      (   Age   )
+       - - - - -
+
+
+6. STORED ATTRIBUTE:
+   - Actually stored in database
+   - Example: Date of Birth (from which Age is derived)
+
+7. KEY ATTRIBUTE:
+   - Uniquely identifies entity
+   - Underlined in ER diagram
+   - Example: Student_ID, Employee_ID
+
+      (Student_ID)  <- underlined
+
+
+8. NULL ATTRIBUTE:
+   - Attribute that can have no value
+   - Example: Middle Name (optional)
+
+
+================================================================================
+                    3. TYPES OF ENTITIES
+================================================================================
+
+1. STRONG ENTITY:
+   - Has its own primary key
+   - Can exist independently
+   - Represented as Single Rectangle
+   - Example: Student, Employee
+
+   +----------+
+   | Student  |
+   +----------+
+
+
+2. WEAK ENTITY:
+   - Does not have its own primary key
+   - Depends on strong entity (owner)
+   - Represented as Double Rectangle
+   - Uses partial key + owner's key
+   - Example: Dependent (of Employee), Room (of Building)
+
+   +==========+
+   # Dependent#
+   +==========+
+
+
+PARTIAL KEY (Discriminator):
+   - Attribute that partially identifies weak entity
+   - Combined with owner's key for full identification
+   - Represented with Dashed Underline
+
+
+================================================================================
+                    4. TYPES OF RELATIONSHIPS
+================================================================================
+
+BASED ON DEGREE (Number of entities):
+
+1. UNARY (Recursive):
+   - One entity related to itself
+   - Example: Employee manages Employee
+
+   +----------+       /\
+   | Employee |------/  \
+   +----------+     /mgr \
+       |           \    /
+       +----------->\  /
+                    \/
+
+2. BINARY:
+   - Two entities involved
+   - Most common type
+   - Example: Student enrolls in Course
+
+   +----------+     /\     +--------+
+   | Student  |----/  \----| Course |
+   +----------+   /enr \   +--------+
+                  \    /
+                   \  /
+                    \/
+
+3. TERNARY:
+   - Three entities involved
+   - Example: Supplier supplies Part to Project
+
+   +----------+
+   | Supplier |
+   +----------+
+        |
+       /\
+      /  \
+     /sup \
+     \    /
+      \  /
+       \/
+      / \
+     /   \
++------+ +--------+
+| Part | | Project|
++------+ +--------+
+
+
+================================================================================
+                    5. CARDINALITY (MAPPING CONSTRAINTS)
+================================================================================
+
+Specifies number of entities in a relationship.
+
+1. ONE-TO-ONE (1:1):
+   - Each entity in A relates to at most one in B
+   - Each entity in B relates to at most one in A
+   - Example: Person - Passport
+
+   +--------+  1    /\   1  +----------+
+   | Person |------/  \-----| Passport |
+   +--------+     /has \    +----------+
+                  \    /
+                   \  /
+                    \/
+
+
+2. ONE-TO-MANY (1:N):
+   - Each entity in A relates to many in B
+   - Each entity in B relates to at most one in A
+   - Example: Department - Employee
+
+   +------------+  1    /\   N  +----------+
+   | Department |------/  \-----| Employee |
+   +------------+     /has \    +----------+
+                      \    /
+                       \  /
+                        \/
+
+
+3. MANY-TO-ONE (N:1):
+   - Many entities in A relate to one in B
+   - Reverse of 1:N
+   - Example: Students - Department
+
+   +----------+  N    /\   1  +------------+
+   | Student  |------/  \-----| Department |
+   +----------+     /bel \    +------------+
+                    \    /
+                     \  /
+                      \/
+
+
+4. MANY-TO-MANY (M:N):
+   - Many entities in A relate to many in B
+   - Example: Student - Course
+
+   +----------+  M    /\   N  +--------+
+   | Student  |------/  \-----| Course |
+   +----------+     /enr \    +--------+
+                    \    /
+                     \  /
+                      \/
+
+
+================================================================================
+                    6. PARTICIPATION CONSTRAINTS
+================================================================================
+
+1. TOTAL PARTICIPATION:
+   - Every entity must participate in relationship
+   - Represented by Double Line
+   - Example: Every employee must work in a department
+
+   +----------+       /\       +------------+
+   | Employee |======/  \------| Department |
+   +----------+     /works\    +------------+
+                    \    /
+                     \  /
+                      \/
+
+   (Double line from Employee means TOTAL participation)
+
+
+2. PARTIAL PARTICIPATION:
+   - Some entities may not participate
+   - Represented by Single Line
+   - Example: Not every department has a manager
+
+   (Single line from Department in above example means PARTIAL)
+
+
+================================================================================
+                    7. IDENTIFYING RELATIONSHIP
+================================================================================
+
+- Relationship between strong and weak entity
+- Weak entity depends on strong entity
+- Represented by Double Diamond
+
+   +----------+       //\\       +==========+
+   | Employee |------//  \\------# Dependent#
+   +----------+     // has\\     +==========+
+                    \\    //
+                     \\  //
+                      \\//
+
+
+================================================================================
+                    8. EXTENDED ER (EER) MODEL
+================================================================================
+
+Advanced concepts for complex modeling.
+
+1. SPECIALIZATION:
+   - Top-down approach
+   - Dividing entity into sub-entities
+   - Higher level to lower level
+   - Example: Person -> Student, Employee
+
+            +--------+
+            | Person |
+            +----+---+
+                 |
+            +----+----+
+           ISA(Circle)
+            /       \
+           /         \
+   +----------+  +----------+
+   | Student  |  | Employee |
+   +----------+  +----------+
+
+
+2. GENERALIZATION:
+   - Bottom-up approach
+   - Combining entities into higher entity
+   - Lower level to higher level
+   - Inverse of specialization
+
+
+3. AGGREGATION:
+   - Treating relationship as entity
+   - Higher-level abstraction
+   - When relationship needs to participate in another relationship
+
+   +----------+     /\     +--------+
+   | Student  |----/  \----| Course |
+   +----------+   /enr \   +--------+
+                  \    /
+                   \  /
+       +------------\/------------+
+       |                          |
+       |       (Aggregation)      |
+       |                          |
+       +-----------+--------------+
+                   |
+                  /\
+                 /  \
+                /uses\
+                \    /
+                 \  /
+                  \/
+                  |
+            +-----------+
+            | Professor |
+            +-----------+
+
+
+4. INHERITANCE TYPES:
+
+   a) Overlapping: Entity can belong to multiple subclasses
+      Example: Person can be both Student and Employee
+
+   b) Disjoint: Entity belongs to only one subclass
+      Example: Vehicle is either Car or Truck
+
+   c) Total: Every entity must belong to a subclass
+   d) Partial: Not every entity needs to belong to subclass
+
+
+================================================================================
+                    9. ER TO RELATIONAL MAPPING
+================================================================================
+
+Converting ER diagram to relational tables:
+
+1. STRONG ENTITY:
+   - Create table with all attributes
+   - Primary key becomes table's primary key
+
+   Entity: Student(ID, Name, Age)
+   Table:  STUDENT(ID PK, Name, Age)
+
+
+2. WEAK ENTITY:
+   - Create table with partial key + owner's primary key
+   - Composite primary key
+
+   Entity: Dependent(Name, Age) of Employee(EmpID)
+   Table:  DEPENDENT(EmpID FK, Name, Age)
+           PK = (EmpID, Name)
+
+
+3. ONE-TO-ONE RELATIONSHIP:
+   - Add foreign key to either table
+   - Preferably to table with total participation
+
+   Person - Passport (1:1)
+   Either: PERSON(ID, Name, PassportNo FK)
+   Or:     PASSPORT(No, Issue, PersonID FK)
+
+
+4. ONE-TO-MANY RELATIONSHIP:
+   - Add foreign key to "many" side table
+
+   Department -< Employee (1:N)
+   EMPLOYEE(ID, Name, DeptID FK)
+
+
+5. MANY-TO-MANY RELATIONSHIP:
+   - Create new junction/bridge table
+   - Contains foreign keys from both entities
+
+   Student >-< Course (M:N)
+   ENROLLMENT(StudentID FK, CourseID FK, Grade)
+   PK = (StudentID, CourseID)
+
+
+6. MULTI-VALUED ATTRIBUTE:
+   - Create separate table
+   - Foreign key to original entity
+
+   Employee has multiple Phone Numbers
+   EMPLOYEE(ID, Name)
+   PHONE(EmpID FK, PhoneNumber)
+   PK = (EmpID, PhoneNumber)
+
+
+7. COMPOSITE ATTRIBUTE:
+   - Flatten into simple attributes
+   - Or create separate table
+
+   Address(Street, City, State, ZIP)
+   EMPLOYEE(ID, Name, Street, City, State, ZIP)
+
+
+================================================================================
+                    10. ER DIAGRAM BEST PRACTICES
+================================================================================
+
+1. Choose meaningful entity and attribute names
+2. Identify all entities before relationships
+3. Determine cardinality carefully
+4. Mark participation constraints
+5. Avoid redundant relationships
+6. Use weak entities appropriately
+7. Consider future extensibility
+8. Review with domain experts
+
+
+================================================================================
+                    11. SAMPLE ER DIAGRAM PROBLEMS
+================================================================================
+
+PROBLEM 1: University Database
+Entities: Student, Course, Professor, Department
+Relationships:
+- Student enrolls in Course (M:N)
+- Professor teaches Course (1:N)
+- Professor works in Department (N:1)
+- Student belongs to Department (N:1)
+- Department has one Head Professor (1:1)
+
+
+PROBLEM 2: Library Database
+Entities: Book, Member, Author, Publisher
+Relationships:
+- Member borrows Book (M:N with date attribute)
+- Author writes Book (M:N)
+- Publisher publishes Book (1:N)
+Weak Entity: Book Copy (of Book)
+
+
+PROBLEM 3: Hospital Database
+Entities: Patient, Doctor, Nurse, Department, Room
+Relationships:
+- Patient admitted to Room (N:1)
+- Doctor treats Patient (M:N)
+- Nurse assigned to Department (N:1)
+- Doctor works in Department (N:1)
+
+
+================================================================================
+                    12. INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is ER Model?
+A: High-level conceptual model to design database visually using entities,
+   attributes, and relationships.
+
+Q2: Difference between strong and weak entity?
+A: Strong entity has its own primary key and exists independently.
+   Weak entity depends on owner entity and uses partial key.
+
+Q3: What are the different cardinality types?
+A: 1:1 (One-to-One), 1:N (One-to-Many), M:N (Many-to-Many)
+
+Q4: What is total vs partial participation?
+A: Total - every entity must participate (double line)
+   Partial - some entities may not participate (single line)
+
+Q5: How to convert M:N relationship to tables?
+A: Create a junction table with foreign keys from both entities
+   as composite primary key.
+
+Q6: What is specialization and generalization?
+A: Specialization - dividing entity into sub-entities (top-down)
+   Generalization - combining sub-entities (bottom-up)
+
+
+================================================================================
+                    END OF ER MODEL
+================================================================================
