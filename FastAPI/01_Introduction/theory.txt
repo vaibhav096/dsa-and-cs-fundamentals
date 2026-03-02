@@ -1,0 +1,297 @@
+================================================================================
+                         FASTAPI - INTRODUCTION
+================================================================================
+
+================================================================================
+                    SECTION 1: WHAT IS FASTAPI?
+================================================================================
+
+FastAPI is a modern, fast (high-performance) web framework for building APIs
+with Python 3.7+ based on standard Python type hints.
+
+KEY FEATURES:
+- Fast: One of the fastest Python frameworks (comparable to NodeJS, Go)
+- Easy: Designed to be easy to use and learn
+- Automatic docs: Auto-generates Swagger UI and ReDoc
+- Type hints: Uses Python type hints for validation
+- Based on: Starlette (web) + Pydantic (data validation)
+
+PERFORMANCE COMPARISON:
+┌─────────────────┬──────────────┬─────────────────────────┐
+│ Framework       │ Language     │ Speed                   │
+├─────────────────┼──────────────┼─────────────────────────┤
+│ FastAPI         │ Python       │ ★★★★★ (async support)   │
+│ Django REST     │ Python       │ ★★★                     │
+│ Flask           │ Python       │ ★★★                     │
+│ Express         │ JavaScript   │ ★★★★★                   │
+│ Spring Boot     │ Java         │ ★★★★                    │
+└─────────────────┴──────────────┴─────────────────────────┘
+
+
+================================================================================
+                    SECTION 2: INSTALLATION & SETUP
+================================================================================
+
+# Install FastAPI and Uvicorn (ASGI server)
+pip install fastapi
+pip install "uvicorn[standard]"
+
+# Or install all at once
+pip install fastapi uvicorn python-multipart python-jose passlib
+
+# Run the app
+uvicorn main:app --reload
+#        ↑    ↑    ↑
+#     file  var  auto-restart on changes
+
+
+================================================================================
+                    SECTION 3: HELLO WORLD - FIRST APP
+================================================================================
+
+# main.py
+from fastapi import FastAPI
+
+app = FastAPI()           # Create FastAPI instance
+
+@app.get("/")             # Route decorator - GET method
+def read_root():
+    return {"message": "Hello World"}   # Returns JSON automatically
+
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: str = None):
+    return {"item_id": item_id, "q": q}
+
+
+RUN:
+  uvicorn main:app --reload
+
+AUTOMATIC DOCS (FREE!):
+  http://127.0.0.1:8000/docs      → Swagger UI (interactive)
+  http://127.0.0.1:8000/redoc     → ReDoc
+
+
+================================================================================
+                    SECTION 4: HOW FASTAPI WORKS INTERNALLY
+================================================================================
+
+REQUEST FLOW:
+
+Client Request
+      ↓
+  Uvicorn (ASGI Server)
+      ↓
+  FastAPI App
+      ↓
+  Route Matching (which function to call?)
+      ↓
+  Parameter Extraction (path, query, body)
+      ↓
+  Pydantic Validation (type checking)
+      ↓
+  Your Function (business logic)
+      ↓
+  Response Serialization (dict → JSON)
+      ↓
+Client Response
+
+
+KEY COMPONENTS:
+1. Uvicorn   → ASGI server, handles HTTP connections
+2. Starlette → Web framework underneath FastAPI
+3. Pydantic  → Data validation using type hints
+4. FastAPI   → Ties everything together + auto docs
+
+
+================================================================================
+                    SECTION 5: SYNC vs ASYNC
+================================================================================
+
+FastAPI supports BOTH sync and async functions:
+
+# SYNC - Normal function (works fine for most cases)
+@app.get("/sync")
+def sync_route():
+    return {"type": "sync"}
+
+# ASYNC - For I/O bound operations (DB, API calls, file ops)
+@app.get("/async")
+async def async_route():
+    await some_database_call()
+    return {"type": "async"}
+
+WHEN TO USE ASYNC:
+- Database queries       → async
+- External API calls     → async
+- File reading/writing   → async
+- Pure CPU computation   → sync (async doesn't help)
+
+RULE OF THUMB:
+  If you use await → use async def
+  If not           → use def (FastAPI handles it in threadpool)
+
+
+================================================================================
+                    SECTION 6: HTTP METHODS
+================================================================================
+
+REST API HTTP Methods:
+
+@app.get("/items")         # READ all
+@app.get("/items/{id}")    # READ one
+@app.post("/items")        # CREATE
+@app.put("/items/{id}")    # UPDATE (full replace)
+@app.patch("/items/{id}")  # UPDATE (partial)
+@app.delete("/items/{id}") # DELETE
+
+MAPPING TO CRUD:
+┌────────────┬──────────┬──────────────┐
+│ HTTP Method│ CRUD     │ Example      │
+├────────────┼──────────┼──────────────┤
+│ GET        │ Read     │ Get users    │
+│ POST       │ Create   │ Add user     │
+│ PUT        │ Update   │ Replace user │
+│ PATCH      │ Update   │ Update field │
+│ DELETE     │ Delete   │ Delete user  │
+└────────────┴──────────┴──────────────┘
+
+
+================================================================================
+                    SECTION 7: STATUS CODES
+================================================================================
+
+Common HTTP Status Codes:
+
+2xx - SUCCESS:
+  200 OK              → Default for GET, PUT, PATCH
+  201 Created         → Default for POST (resource created)
+  204 No Content      → DELETE (nothing to return)
+
+4xx - CLIENT ERRORS:
+  400 Bad Request     → Invalid input
+  401 Unauthorized    → Not logged in
+  403 Forbidden       → Logged in but no permission
+  404 Not Found       → Resource doesn't exist
+  422 Unprocessable   → Validation error (FastAPI default)
+
+5xx - SERVER ERRORS:
+  500 Internal Error  → Bug in your code
+  503 Service Unavail → Server overloaded
+
+In FastAPI:
+@app.post("/items", status_code=201)
+def create_item():
+    return {"created": True}
+
+
+================================================================================
+                    SECTION 8: PROJECT STRUCTURE (BEST PRACTICE)
+================================================================================
+
+my_project/
+├── main.py              ← Entry point
+├── requirements.txt     ← Dependencies
+│
+├── app/
+│   ├── __init__.py
+│   ├── main.py          ← FastAPI app creation
+│   │
+│   ├── routers/         ← Route handlers
+│   │   ├── users.py
+│   │   ├── items.py
+│   │   └── auth.py
+│   │
+│   ├── models/          ← Database models
+│   │   └── user.py
+│   │
+│   ├── schemas/         ← Pydantic models (request/response)
+│   │   └── user.py
+│   │
+│   ├── crud/            ← Database operations
+│   │   └── user.py
+│   │
+│   ├── core/            ← Config, security
+│   │   ├── config.py
+│   │   └── security.py
+│   │
+│   └── database.py      ← DB connection
+
+
+================================================================================
+                    SECTION 9: WHY FASTAPI OVER FLASK/DJANGO?
+================================================================================
+
+FASTAPI vs FLASK:
+┌───────────────────┬────────────────┬─────────────────┐
+│ Feature           │ FastAPI        │ Flask           │
+├───────────────────┼────────────────┼─────────────────┤
+│ Speed             │ Much faster    │ Slower          │
+│ Async support     │ Built-in       │ Need extensions │
+│ Auto validation   │ Yes (Pydantic) │ Manual          │
+│ Auto docs         │ Yes            │ Need extensions │
+│ Type hints        │ Core feature   │ Optional        │
+│ Learning curve    │ Easy           │ Easier          │
+└───────────────────┴────────────────┴─────────────────┘
+
+FASTAPI vs DJANGO REST:
+┌───────────────────┬────────────────┬─────────────────┐
+│ Feature           │ FastAPI        │ Django REST     │
+├───────────────────┼────────────────┼─────────────────┤
+│ Speed             │ Faster         │ Slower          │
+│ Built-in ORM      │ No             │ Yes (Django ORM)│
+│ Admin panel       │ No             │ Yes             │
+│ Full-stack        │ API only       │ Full framework  │
+│ Microservices     │ Perfect        │ Overkill        │
+│ Monolith          │ Possible       │ Better fit      │
+└───────────────────┴────────────────┴─────────────────┘
+
+USE FASTAPI WHEN:
+- Building REST APIs / microservices
+- Need high performance
+- Want automatic documentation
+- Working with async operations
+
+USE DJANGO WHEN:
+- Need admin panel
+- Full-stack web app
+- Complex ORM needs
+- Large team with Django expertise
+
+
+================================================================================
+                    SECTION 10: INTERVIEW QUESTIONS - INTRODUCTION
+================================================================================
+
+Q1: What is FastAPI and what makes it fast?
+A: FastAPI is a modern Python web framework. It's fast because:
+   - Built on Starlette (async support via ASGI)
+   - Uvicorn server (high-performance ASGI server)
+   - Async/await support for non-blocking I/O
+   - Pydantic for fast data validation
+
+Q2: What is ASGI vs WSGI?
+A: WSGI (Web Server Gateway Interface) - Synchronous, older (Flask, Django)
+   ASGI (Async Server Gateway Interface) - Asynchronous, newer (FastAPI)
+   ASGI can handle async requests, WebSockets, long-lived connections
+
+Q3: What is Uvicorn?
+A: Uvicorn is a lightweight ASGI server. It handles:
+   - HTTP/1.1 and HTTP/2 connections
+   - WebSocket connections
+   - Runs FastAPI applications
+
+Q4: Does FastAPI do validation automatically?
+A: Yes! FastAPI uses Pydantic for:
+   - Request body validation
+   - Path/query parameter validation
+   - Response serialization
+   Returns 422 Unprocessable Entity if validation fails
+
+Q5: What are the two auto-generated documentation UIs?
+A: - Swagger UI at /docs (interactive, can test APIs)
+   - ReDoc at /redoc (cleaner, read-only)
+
+
+================================================================================
+                    END OF INTRODUCTION
+================================================================================

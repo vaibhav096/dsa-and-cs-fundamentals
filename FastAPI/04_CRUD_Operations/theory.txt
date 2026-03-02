@@ -1,0 +1,375 @@
+================================================================================
+                         CRUD OPERATIONS IN FASTAPI
+================================================================================
+
+================================================================================
+                    SECTION 1: WHAT IS CRUD?
+================================================================================
+
+CRUD = Create, Read, Update, Delete
+
+Maps to:
+┌──────────┬────────────┬────────────────────────────────────────┐
+│ CRUD     │ HTTP       │ Example                                │
+├──────────┼────────────┼────────────────────────────────────────┤
+│ Create   │ POST       │ POST /users → Create new user          │
+│ Read     │ GET        │ GET /users or GET /users/{id}          │
+│ Update   │ PUT/PATCH  │ PUT /users/{id} → Full update          │
+│          │            │ PATCH /users/{id} → Partial update     │
+│ Delete   │ DELETE     │ DELETE /users/{id}                     │
+└──────────┴────────────┴────────────────────────────────────────┘
+
+
+================================================================================
+                    SECTION 2: COMPLETE CRUD - IN-MEMORY EXAMPLE
+================================================================================
+
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+
+app = FastAPI(title="User CRUD API")
+
+# ─── Pydantic Schemas ───────────────────────────────────────
+
+class UserCreate(BaseModel):
+    name: str = Field(min_length=2)
+    email: str
+    age: int = Field(ge=0, le=150)
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    age: Optional[int] = Field(default=None, ge=0, le=150)
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    age: int
+    created_at: datetime
+
+# ─── In-memory "database" ───────────────────────────────────
+
+users_db: dict = {}
+id_counter: int = 0
+
+# ─── Helper ─────────────────────────────────────────────────
+
+def get_user_or_404(user_id: int):
+    if user_id not in users_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User {user_id} not found"
+        )
+    return users_db[user_id]
+
+# ─── CREATE ─────────────────────────────────────────────────
+
+@app.post("/users",
+          response_model=UserResponse,
+          status_code=status.HTTP_201_CREATED)
+def create_user(user: UserCreate):
+    global id_counter
+    id_counter += 1
+
+    # Check duplicate email
+    for existing in users_db.values():
+        if existing["email"] == user.email:
+            raise HTTPException(
+                status_code=400,
+                detail="Email already registered"
+            )
+
+    new_user = {
+        "id": id_counter,
+        **user.model_dump(),
+        "created_at": datetime.now()
+    }
+    users_db[id_counter] = new_user
+    return new_user
+
+# ─── READ ALL ───────────────────────────────────────────────
+
+@app.get("/users", response_model=list[UserResponse])
+def get_all_users(
+    skip: int = 0,
+    limit: int = 10,
+    name_filter: Optional[str] = None
+):
+    users = list(users_db.values())
+
+    if name_filter:
+        users = [u for u in users
+                 if name_filter.lower() in u["name"].lower()]
+
+    return users[skip: skip + limit]
+
+# ─── READ ONE ───────────────────────────────────────────────
+
+@app.get("/users/{user_id}", response_model=UserResponse)
+def get_user(user_id: int):
+    return get_user_or_404(user_id)
+
+# ─── UPDATE (PUT - Full Replace) ────────────────────────────
+
+@app.put("/users/{user_id}", response_model=UserResponse)
+def update_user(user_id: int, user: UserCreate):
+    existing = get_user_or_404(user_id)
+    updated = {
+        **existing,             # Keep id and created_at
+        **user.model_dump()     # Replace all other fields
+    }
+    users_db[user_id] = updated
+    return updated
+
+# ─── UPDATE (PATCH - Partial) ───────────────────────────────
+
+@app.patch("/users/{user_id}", response_model=UserResponse)
+def partial_update_user(user_id: int, user: UserUpdate):
+    existing = get_user_or_404(user_id)
+
+    # Only update fields that were provided (not None)
+    update_data = user.model_dump(exclude_unset=True)
+    existing.update(update_data)
+
+    users_db[user_id] = existing
+    return existing
+
+# ─── DELETE ─────────────────────────────────────────────────
+
+@app.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: int):
+    get_user_or_404(user_id)
+    del users_db[user_id]
+    # No return needed for 204
+
+
+================================================================================
+                    SECTION 3: ERROR HANDLING
+================================================================================
+
+HTTPException - Standard way to raise HTTP errors:
+
+from fastapi import HTTPException
+
+raise HTTPException(
+    status_code=404,
+    detail="User not found"
+)
+
+# Response:
+# {
+#     "detail": "User not found"
+# }
+
+
+CUSTOM EXCEPTION HANDLER:
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+class CustomException(Exception):
+    def __init__(self, message: str, code: int):
+        self.message = message
+        self.code = code
+
+@app.exception_handler(CustomException)
+async def custom_exception_handler(request: Request, exc: CustomException):
+    return JSONResponse(
+        status_code=exc.code,
+        content={"error": exc.message, "path": str(request.url)}
+    )
+
+# Usage:
+@app.get("/items/{id}")
+def get_item(id: int):
+    if id < 0:
+        raise CustomException("ID cannot be negative", 400)
+
+
+VALIDATION ERROR HANDLER (Override 422):
+from fastapi.exceptions import RequestValidationError
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"message": "Validation failed", "errors": exc.errors()}
+    )
+
+
+================================================================================
+                    SECTION 4: PUT vs PATCH
+================================================================================
+
+PUT - Full Replace:
+# Before: {"name": "Alice", "email": "alice@gmail.com", "age": 25}
+# PUT body: {"name": "Alice Updated", "email": "new@gmail.com", "age": 26}
+# After: {"name": "Alice Updated", "email": "new@gmail.com", "age": 26}
+# All fields must be provided!
+
+PATCH - Partial Update:
+# Before: {"name": "Alice", "email": "alice@gmail.com", "age": 25}
+# PATCH body: {"name": "Alice Updated"}
+# After: {"name": "Alice Updated", "email": "alice@gmail.com", "age": 25}
+# Only provided fields are changed!
+
+KEY: model_dump(exclude_unset=True)
+# Returns only fields that were explicitly set in request
+# Fields with None default that weren't sent → excluded
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+
+user = UserUpdate(name="Alice")  # email not provided
+user.model_dump()                   # {"name": "Alice", "email": None}
+user.model_dump(exclude_unset=True) # {"name": "Alice"} ← Only what was set!
+
+
+================================================================================
+                    SECTION 5: RESPONSE STATUS CODES
+================================================================================
+
+from fastapi import status
+
+@app.post("/users", status_code=status.HTTP_201_CREATED)
+@app.get("/users", status_code=status.HTTP_200_OK)       # default
+@app.put("/users/{id}", status_code=status.HTTP_200_OK)  # default
+@app.patch("/users/{id}", status_code=status.HTTP_200_OK)
+@app.delete("/users/{id}", status_code=status.HTTP_204_NO_CONTENT)
+
+# Using status module is better than raw numbers
+# - More readable
+# - IDE autocomplete
+# - Less chance of typos
+
+
+================================================================================
+                    SECTION 6: RESPONSE OBJECT CUSTOMIZATION
+================================================================================
+
+from fastapi.responses import JSONResponse, Response
+
+# Custom response with headers
+@app.post("/users")
+def create_user(user: UserCreate):
+    new_user = {...}
+    return JSONResponse(
+        status_code=201,
+        content=new_user,
+        headers={"X-User-Id": str(new_user["id"])}
+    )
+
+# Empty response (204 No Content)
+@app.delete("/users/{id}")
+def delete_user(id: int):
+    del users_db[id]
+    return Response(status_code=204)
+
+
+================================================================================
+                    SECTION 7: PAGINATION PATTERN
+================================================================================
+
+Standard pagination:
+
+@app.get("/items")
+def get_items(
+    page: int = 1,
+    page_size: int = 10
+):
+    skip = (page - 1) * page_size
+    items = all_items[skip: skip + page_size]
+    total = len(all_items)
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "pages": (total + page_size - 1) // page_size
+    }
+
+
+Cursor-based pagination (better for large datasets):
+@app.get("/items")
+def get_items(cursor: Optional[int] = None, limit: int = 10):
+    if cursor:
+        items = [i for i in all_items if i["id"] > cursor]
+    else:
+        items = all_items
+
+    result = items[:limit]
+    next_cursor = result[-1]["id"] if len(result) == limit else None
+
+    return {"items": result, "next_cursor": next_cursor}
+
+
+================================================================================
+                    SECTION 8: ROUTERS (ORGANIZE ROUTES)
+================================================================================
+
+Split routes into separate files:
+
+# routers/users.py
+from fastapi import APIRouter
+
+router = APIRouter(
+    prefix="/users",       # All routes start with /users
+    tags=["users"],        # Groups in Swagger docs
+)
+
+@router.get("/")
+def get_users():
+    return []
+
+@router.post("/")
+def create_user():
+    return {}
+
+# main.py
+from fastapi import FastAPI
+from routers import users, items, auth
+
+app = FastAPI()
+app.include_router(users.router)
+app.include_router(items.router)
+app.include_router(auth.router, prefix="/auth")
+
+
+================================================================================
+                    SECTION 9: INTERVIEW QUESTIONS
+================================================================================
+
+Q1: Difference between PUT and PATCH?
+A: PUT replaces entire resource (all fields required)
+   PATCH partially updates (only provided fields change)
+   Use model_dump(exclude_unset=True) for PATCH in FastAPI
+
+Q2: How to return 404 in FastAPI?
+A: raise HTTPException(status_code=404, detail="Not found")
+
+Q3: What status code for successful creation?
+A: 201 Created. Set via status_code=201 on the decorator.
+
+Q4: What status code for DELETE?
+A: 204 No Content (nothing to return after deletion)
+
+Q5: How to add routes from different files?
+A: Use APIRouter in each file, include_router() in main app.
+   Supports prefix and tags for organization.
+
+Q6: How does FastAPI handle validation errors by default?
+A: Returns 422 Unprocessable Entity with detailed error messages
+   showing which field failed and why.
+
+Q7: What is exclude_unset=True in model_dump()?
+A: Returns only fields explicitly set in request, ignoring
+   fields that were left as defaults. Critical for PATCH endpoints.
+
+
+================================================================================
+                    END OF CRUD OPERATIONS
+================================================================================

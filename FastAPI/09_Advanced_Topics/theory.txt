@@ -1,0 +1,364 @@
+================================================================================
+                    ADVANCED FASTAPI TOPICS
+================================================================================
+
+================================================================================
+                    SECTION 1: ASYNC / AWAIT IN FASTAPI
+================================================================================
+
+FastAPI fully supports async programming.
+
+SYNC vs ASYNC:
+# Sync - blocks until done
+def get_data():
+    result = slow_db_query()    # Blocks thread
+    return result
+
+# Async - releases control while waiting
+async def get_data():
+    result = await slow_db_query()  # Yields control, resumes when done
+    return result
+
+WHEN TO USE ASYNC:
+- DB calls (SQLAlchemy async)   → async def + await
+- HTTP requests (httpx, aiohttp) → async def + await
+- File I/O                      → async def + await
+- CPU-intensive tasks           → sync def (FastAPI uses threadpool)
+- Third-party sync libraries    → sync def
+
+EVENT LOOP:
+- Single thread handles thousands of requests
+- While waiting for I/O → handles other requests
+- No OS thread switching overhead
+
+
+ASYNC EXAMPLE:
+import httpx
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/weather/{city}")
+async def get_weather(city: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"https://api.weather.com/{city}")
+        return response.json()
+
+
+================================================================================
+                    SECTION 2: FILE UPLOAD
+================================================================================
+
+from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import FileResponse
+import shutil
+import os
+
+app = FastAPI()
+
+# ─── Single file upload ─────────────────────────────────────
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    return {
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "size": file.size
+    }
+
+# ─── Save file to disk ──────────────────────────────────────
+@app.post("/upload/save")
+async def upload_and_save(file: UploadFile = File(...)):
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+
+    file_path = f"{upload_dir}/{file.filename}"
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return {"saved_to": file_path}
+
+# ─── Multiple files ─────────────────────────────────────────
+@app.post("/upload/multiple")
+async def upload_multiple(files: list[UploadFile] = File(...)):
+    return [{"filename": f.filename} for f in files]
+
+# ─── File download ──────────────────────────────────────────
+@app.get("/download/{filename}")
+def download_file(filename: str):
+    file_path = f"uploads/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(404, "File not found")
+    return FileResponse(file_path, filename=filename)
+
+
+================================================================================
+                    SECTION 3: WEBSOCKETS
+================================================================================
+
+WebSockets = Persistent bidirectional connection (unlike HTTP).
+
+USE CASES:
+- Real-time chat
+- Live notifications
+- Stock price updates
+- Collaborative editing
+- Gaming
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+app = FastAPI()
+
+# ─── Simple WebSocket ───────────────────────────────────────
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()     # Accept connection
+    try:
+        while True:
+            data = await websocket.receive_text()      # Receive
+            await websocket.send_text(f"Echo: {data}") # Send back
+    except WebSocketDisconnect:
+        print("Client disconnected")
+
+# ─── Chat Room (Multiple clients) ───────────────────────────
+class ConnectionManager:
+    def __init__(self):
+        self.active: list[WebSocket] = []
+
+    async def connect(self, ws: WebSocket):
+        await ws.accept()
+        self.active.append(ws)
+
+    def disconnect(self, ws: WebSocket):
+        self.active.remove(ws)
+
+    async def broadcast(self, message: str):
+        for connection in self.active:
+            await connection.send_text(message)
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/chat/{username}")
+async def chat(websocket: WebSocket, username: str):
+    await manager.connect(websocket)
+    await manager.broadcast(f"{username} joined the chat!")
+    try:
+        while True:
+            msg = await websocket.receive_text()
+            await manager.broadcast(f"{username}: {msg}")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        await manager.broadcast(f"{username} left the chat")
+
+
+================================================================================
+                    SECTION 4: CACHING
+================================================================================
+
+# Simple in-memory cache with TTL
+import time
+from functools import wraps
+
+cache = {}
+
+def cache_response(ttl_seconds: int = 60):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            key = str(args) + str(kwargs)
+            if key in cache:
+                data, timestamp = cache[key]
+                if time.time() - timestamp < ttl_seconds:
+                    return data   # Return cached!
+            result = await func(*args, **kwargs)
+            cache[key] = (result, time.time())
+            return result
+        return wrapper
+    return decorator
+
+@app.get("/expensive-data")
+@cache_response(ttl_seconds=300)   # Cache 5 minutes
+async def get_expensive_data():
+    await asyncio.sleep(2)  # Simulate slow operation
+    return {"data": "computed value"}
+
+
+# Redis Cache (Production):
+import redis
+from fastapi import FastAPI
+import json
+
+redis_client = redis.Redis(host="localhost", port=6379, db=0)
+
+@app.get("/products/{id}")
+async def get_product(id: int, db = Depends(get_db)):
+    cache_key = f"product:{id}"
+
+    # Try cache first
+    cached = redis_client.get(cache_key)
+    if cached:
+        return json.loads(cached)
+
+    # Cache miss → get from DB
+    product = crud.get_product(db, id)
+    if not product:
+        raise HTTPException(404, "Not found")
+
+    # Store in cache (expire in 1 hour)
+    redis_client.setex(cache_key, 3600, json.dumps(product))
+    return product
+
+
+================================================================================
+                    SECTION 5: TESTING FASTAPI
+================================================================================
+
+pip install pytest httpx
+
+# test_main.py
+
+from fastapi.testclient import TestClient
+from main import app
+
+client = TestClient(app)
+
+# ─── Test GET ───────────────────────────────────────────────
+def test_read_root():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"message": "Hello World"}
+
+# ─── Test POST ──────────────────────────────────────────────
+def test_create_user():
+    response = client.post("/users", json={
+        "username": "alice",
+        "email": "alice@test.com",
+        "password": "secret123"
+    })
+    assert response.status_code == 201
+    data = response.json()
+    assert data["username"] == "alice"
+    assert "id" in data
+    assert "password" not in data  # Password not returned!
+
+# ─── Test 404 ───────────────────────────────────────────────
+def test_user_not_found():
+    response = client.get("/users/9999")
+    assert response.status_code == 404
+
+# ─── Test with Authentication ───────────────────────────────
+def test_protected_route():
+    # First login
+    login = client.post("/token", data={
+        "username": "alice",
+        "password": "secret123"
+    })
+    token = login.json()["access_token"]
+
+    # Use token
+    response = client.get(
+        "/profile",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+
+
+================================================================================
+                    SECTION 6: ENVIRONMENT VARIABLES & SETTINGS
+================================================================================
+
+pip install python-dotenv
+
+# .env file
+DATABASE_URL=postgresql://user:pass@localhost/mydb
+SECRET_KEY=supersecretkey123
+DEBUG=True
+MAX_CONNECTIONS=10
+
+# config.py
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    database_url: str
+    secret_key: str
+    debug: bool = False
+    max_connections: int = 10
+
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
+
+# Use in app:
+from config import settings
+
+@app.get("/info")
+def info():
+    return {"debug": settings.debug}
+
+
+================================================================================
+                    SECTION 7: DEPLOYMENT
+================================================================================
+
+# requirements.txt
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+sqlalchemy==2.0.23
+alembic==1.12.1
+
+# Run in production:
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+
+# With gunicorn (process manager):
+gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker
+
+# Docker:
+FROM python:3.11
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+
+================================================================================
+                    SECTION 8: INTERVIEW QUESTIONS
+================================================================================
+
+Q1: When should you use async in FastAPI?
+A: Use async when doing I/O-bound operations (DB queries, API calls).
+   Don't use async for CPU-bound tasks (use Celery/background workers).
+   If using sync library, use sync def (FastAPI runs in threadpool).
+
+Q2: What are WebSockets and when to use them?
+A: Persistent bidirectional connection. Use for real-time features:
+   chat, notifications, live updates, gaming.
+   HTTP: Request-response. WebSocket: Persistent connection.
+
+Q3: How do you test FastAPI applications?
+A: Use TestClient from fastapi.testclient with pytest.
+   TestClient wraps your app, lets you make requests without server.
+   Test status codes, response body, headers, authentication.
+
+Q4: How to handle environment variables in FastAPI?
+A: Use pydantic-settings with BaseSettings class.
+   Reads from .env file automatically.
+   Type-safe configuration with validation.
+
+Q5: How to scale FastAPI in production?
+A: Multiple Uvicorn workers: --workers 4
+   Use Gunicorn as process manager
+   Load balancer (Nginx) in front
+   Container orchestration (Kubernetes)
+   Async for I/O to maximize single worker efficiency
+
+Q6: What is the difference between BackgroundTasks and Celery?
+A: BackgroundTasks: Simple, in-process, runs after response.
+   Good for quick tasks (sending email).
+   Celery: Separate worker processes, distributed, retry logic.
+   Good for heavy tasks (video processing, bulk emails).
+
+
+================================================================================
+                    END OF ADVANCED TOPICS
+================================================================================

@@ -1,0 +1,295 @@
+================================================================================
+                    MIDDLEWARE & CORS IN FASTAPI
+================================================================================
+
+================================================================================
+                    SECTION 1: WHAT IS MIDDLEWARE?
+================================================================================
+
+Middleware = Code that runs BEFORE and AFTER every request.
+
+REQUEST FLOW WITH MIDDLEWARE:
+
+Client Request
+     ↓
+Middleware 1 (before)
+     ↓
+Middleware 2 (before)
+     ↓
+Route Handler (your function)
+     ↓
+Middleware 2 (after)
+     ↓
+Middleware 1 (after)
+     ↓
+Client Response
+
+USE CASES:
+- Logging (log every request)
+- Timing (measure response time)
+- Authentication (check token on all routes)
+- Rate limiting
+- CORS handling
+- Request ID (add unique ID to each request)
+- Compression (gzip responses)
+
+
+================================================================================
+                    SECTION 2: CREATING MIDDLEWARE
+================================================================================
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.base import BaseHTTPMiddleware
+import time
+
+app = FastAPI()
+
+# ─── Method 1: @app.middleware decorator ────────────────────
+
+@app.middleware("http")
+async def timing_middleware(request: Request, call_next):
+    start = time.time()
+
+    response = await call_next(request)  # Call the route handler
+
+    duration = time.time() - start
+    response.headers["X-Process-Time"] = str(duration)
+
+    return response
+
+# ─── Method 2: BaseHTTPMiddleware class ─────────────────────
+
+class LoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        print(f"→ {request.method} {request.url}")
+
+        response = await call_next(request)
+
+        print(f"← {response.status_code}")
+        return response
+
+app.add_middleware(LoggingMiddleware)
+
+
+================================================================================
+                    SECTION 3: PRACTICAL MIDDLEWARE EXAMPLES
+================================================================================
+
+# ─── Request ID Middleware ──────────────────────────────────
+import uuid
+
+@app.middleware("http")
+async def add_request_id(request: Request, call_next):
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id     # Attach to request
+
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id   # Add to response
+
+    return response
+
+
+# ─── Rate Limiting Middleware ───────────────────────────────
+from collections import defaultdict
+import time
+
+request_counts = defaultdict(list)
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    client_ip = request.client.host
+    now = time.time()
+
+    # Remove requests older than 1 minute
+    request_counts[client_ip] = [t for t in request_counts[client_ip]
+                                   if now - t < 60]
+
+    if len(request_counts[client_ip]) >= 100:  # 100 req/minute
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=429,
+                          content={"detail": "Too many requests"})
+
+    request_counts[client_ip].append(now)
+    return await call_next(request)
+
+
+# ─── Auth Middleware (alternative to dependency) ────────────
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    # Skip auth for public routes
+    public_paths = ["/", "/docs", "/token", "/register"]
+
+    if request.url.path not in public_paths:
+        token = request.headers.get("Authorization")
+        if not token or not token.startswith("Bearer "):
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=401,
+                              content={"detail": "Not authenticated"})
+
+    return await call_next(request)
+
+
+================================================================================
+                    SECTION 4: CORS (CROSS-ORIGIN RESOURCE SHARING)
+================================================================================
+
+WHAT IS CORS?
+Browser security policy that blocks requests from different origins.
+
+Origin = Protocol + Domain + Port
+  http://localhost:3000  (React frontend)
+  http://localhost:8000  (FastAPI backend)
+  → Different origins! Browser blocks by default.
+
+WHY CORS EXISTS:
+Prevent malicious sites from making requests to your API
+using a logged-in user's session (CSRF protection).
+
+CORS HEADERS:
+Server adds headers to say "I allow requests from X":
+  Access-Control-Allow-Origin: http://localhost:3000
+  Access-Control-Allow-Methods: GET, POST, PUT, DELETE
+  Access-Control-Allow-Headers: Content-Type, Authorization
+
+
+================================================================================
+                    SECTION 5: SETTING UP CORS IN FASTAPI
+================================================================================
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# ─── Development (allow all) ────────────────────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],            # Allow ALL origins
+    allow_credentials=True,
+    allow_methods=["*"],            # Allow ALL methods
+    allow_headers=["*"],            # Allow ALL headers
+)
+
+# ─── Production (specific origins) ──────────────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",        # React dev
+        "https://myapp.com",            # Production frontend
+        "https://www.myapp.com",        # With www
+    ],
+    allow_credentials=True,            # Allow cookies
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+
+
+================================================================================
+                    SECTION 6: BUILT-IN FASTAPI MIDDLEWARES
+================================================================================
+
+# HTTPSRedirectMiddleware - Force HTTPS
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+app.add_middleware(HTTPSRedirectMiddleware)
+
+# TrustedHostMiddleware - Only allow specific hosts
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["myapp.com", "*.myapp.com"])
+
+# GZipMiddleware - Compress responses
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)  # Compress if > 1KB
+
+
+================================================================================
+                    SECTION 7: MIDDLEWARE ORDER
+================================================================================
+
+ORDER MATTERS! Middleware executes like a stack.
+Added LAST → runs FIRST for requests.
+
+app.add_middleware(LoggingMiddleware)   # Added 1st
+app.add_middleware(AuthMiddleware)      # Added 2nd
+app.add_middleware(CORSMiddleware)      # Added 3rd
+
+Request flow:  CORS → Auth → Logging → Route
+Response flow: Logging → Auth → CORS
+
+RECOMMENDATION ORDER:
+1. CORSMiddleware (first, handles preflight)
+2. TrustedHostMiddleware
+3. HTTPSRedirectMiddleware
+4. Your custom middlewares
+
+
+================================================================================
+                    SECTION 8: BACKGROUND TASKS
+================================================================================
+
+Run tasks AFTER returning response (non-blocking):
+
+from fastapi import BackgroundTasks
+
+def send_email(email: str, message: str):
+    # This runs AFTER response is sent
+    print(f"Sending email to {email}: {message}")
+    time.sleep(5)  # Simulate slow email
+
+@app.post("/users")
+def create_user(user: UserCreate, background_tasks: BackgroundTasks):
+    new_user = save_user(user)
+
+    # Add to background (doesn't block response)
+    background_tasks.add_task(send_email, user.email, "Welcome!")
+
+    return {"message": "User created, welcome email sending!"}
+
+# Response sent immediately → email sends in background
+
+
+USE CASES:
+- Send welcome emails
+- Process uploaded files
+- Generate reports
+- Update analytics
+- Cache warming
+
+
+================================================================================
+                    SECTION 9: INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is middleware in FastAPI?
+A: Code that runs before and after every request. Used for logging,
+   timing, auth, rate limiting, CORS. Wraps the entire request/response.
+
+Q2: What is CORS and why is it needed?
+A: Browser security policy blocking cross-origin requests.
+   Frontend (localhost:3000) can't call backend (localhost:8000) by default.
+   CORS middleware adds headers telling browser to allow it.
+
+Q3: Difference between middleware and dependency?
+A: Middleware: Applied to ALL requests, wraps request/response.
+   Dependency: Applied to specific routes, injects values.
+   Use middleware for global concerns (logging, CORS).
+   Use dependencies for route-specific logic (auth, DB).
+
+Q4: What is allow_origins=["*"] and is it safe?
+A: Allows ALL origins to access your API.
+   Fine for public APIs but NOT for authenticated endpoints.
+   If using cookies/credentials, can't use "*" - must specify origins.
+
+Q5: What are Background Tasks in FastAPI?
+A: Tasks run after response is sent to client.
+   Non-blocking - client doesn't wait for task.
+   Use for emails, file processing, notifications.
+
+Q6: What is allow_credentials=True in CORS?
+A: Allows cookies and HTTP auth credentials to be included
+   in cross-origin requests. Required for session-based auth.
+   When True, allow_origins cannot be "*".
+
+
+================================================================================
+                    END OF MIDDLEWARE & CORS
+================================================================================

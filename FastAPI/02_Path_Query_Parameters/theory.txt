@@ -1,0 +1,317 @@
+================================================================================
+                    PATH PARAMETERS & QUERY PARAMETERS
+================================================================================
+
+================================================================================
+                    SECTION 1: PATH PARAMETERS
+================================================================================
+
+Path parameters are PART OF THE URL itself.
+
+# Basic path parameter
+@app.get("/users/{user_id}")
+def get_user(user_id: int):       # int = auto validation!
+    return {"user_id": user_id}
+
+# URL: /users/42   → user_id = 42
+# URL: /users/abc  → 422 Error (not an int!)
+
+
+MULTIPLE PATH PARAMETERS:
+@app.get("/users/{user_id}/posts/{post_id}")
+def get_user_post(user_id: int, post_id: int):
+    return {"user_id": user_id, "post_id": post_id}
+
+
+ORDER MATTERS! Fixed paths before dynamic:
+# CORRECT ORDER:
+@app.get("/users/me")        # This MUST come first
+def get_current_user():
+    return {"user": "current"}
+
+@app.get("/users/{user_id}") # Dynamic comes after
+def get_user(user_id: str):
+    return {"user_id": user_id}
+
+# If reversed, /users/me would match {user_id} = "me" instead!
+
+
+================================================================================
+                    SECTION 2: PATH PARAMETER TYPES
+================================================================================
+
+FastAPI auto-validates and converts based on type hint:
+
+@app.get("/items/{item_id}")
+def get_item(item_id: int):    # Only integers allowed
+    ...
+
+@app.get("/files/{file_path:path}")  # :path catches slashes too
+def get_file(file_path: str):
+    # URL: /files/home/user/data.txt
+    # file_path = "home/user/data.txt"
+    ...
+
+TYPE VALIDATION:
+- int     → Must be integer, auto-converted
+- float   → Must be float
+- bool    → true/false/1/0/on/off/yes/no
+- str     → Any string (default)
+- UUID    → Must be valid UUID format
+
+
+================================================================================
+                    SECTION 3: ENUM PATH PARAMETERS
+================================================================================
+
+Use Enum to restrict allowed values:
+
+from enum import Enum
+
+class ModelName(str, Enum):
+    alexnet = "alexnet"
+    resnet  = "resnet"
+    lenet   = "lenet"
+
+@app.get("/models/{model_name}")
+def get_model(model_name: ModelName):
+    if model_name == ModelName.alexnet:
+        return {"model": model_name, "message": "Deep Learning FTW!"}
+    return {"model": model_name}
+
+# URL: /models/alexnet  → Works
+# URL: /models/unknown  → 422 Error (not in enum)
+
+
+================================================================================
+                    SECTION 4: QUERY PARAMETERS
+================================================================================
+
+Query parameters come AFTER ? in the URL.
+
+@app.get("/items")
+def get_items(skip: int = 0, limit: int = 10):
+    # URL: /items           → skip=0, limit=10 (defaults)
+    # URL: /items?skip=5    → skip=5, limit=10
+    # URL: /items?skip=5&limit=20 → skip=5, limit=20
+    return {"skip": skip, "limit": limit}
+
+
+REQUIRED vs OPTIONAL query parameters:
+@app.get("/search")
+def search(
+    q: str,              # REQUIRED (no default)
+    page: int = 1,       # OPTIONAL (has default)
+    size: int = 10       # OPTIONAL (has default)
+):
+    return {"q": q, "page": page, "size": size}
+
+# URL: /search        → 422 Error (q is required!)
+# URL: /search?q=cat  → q="cat", page=1, size=10
+
+
+================================================================================
+                    SECTION 5: OPTIONAL QUERY PARAMETERS
+================================================================================
+
+from typing import Optional
+
+@app.get("/items")
+def get_items(q: Optional[str] = None):
+    # URL: /items        → q = None
+    # URL: /items?q=cat  → q = "cat"
+    if q:
+        return {"items": ["cat food"], "query": q}
+    return {"items": ["all items"]}
+
+# Python 3.10+ shorthand:
+def get_items(q: str | None = None):
+    ...
+
+
+================================================================================
+                    SECTION 6: COMBINING PATH + QUERY PARAMETERS
+================================================================================
+
+FastAPI auto-detects which is which:
+- If parameter name matches path variable → path parameter
+- If not → query parameter
+
+@app.get("/users/{user_id}/items")
+def get_user_items(
+    user_id: int,          # PATH parameter (in URL)
+    skip: int = 0,         # QUERY parameter (?skip=)
+    limit: int = 10,       # QUERY parameter (?limit=)
+    active: bool = True    # QUERY parameter (?active=)
+):
+    return {
+        "user_id": user_id,
+        "skip": skip,
+        "limit": limit,
+        "active": active
+    }
+
+# URL: /users/42/items?skip=10&active=false
+# → user_id=42, skip=10, limit=10, active=False
+
+
+================================================================================
+                    SECTION 7: QUERY PARAMETER VALIDATION (Query)
+================================================================================
+
+Use Query() for extra validation:
+
+from fastapi import Query
+
+@app.get("/items")
+def get_items(
+    q: str = Query(
+        default=None,
+        min_length=3,      # Minimum 3 characters
+        max_length=50,     # Maximum 50 characters
+        pattern="^[a-z]+$" # Must match regex
+    ),
+    page: int = Query(
+        default=1,
+        ge=1,              # greater than or equal to 1
+        le=100             # less than or equal to 100
+    )
+):
+    return {"q": q, "page": page}
+
+
+VALIDATION SHORTCUTS:
+ge  = greater than or equal (>=)
+gt  = greater than (>)
+le  = less than or equal (<=)
+lt  = less than (<)
+
+
+REQUIRED with validation:
+@app.get("/items")
+def get_items(q: str = Query(min_length=3)):
+    # q is REQUIRED (no default) AND must be 3+ chars
+    return {"q": q}
+
+
+================================================================================
+                    SECTION 8: PATH PARAMETER VALIDATION (Path)
+================================================================================
+
+from fastapi import Path
+
+@app.get("/items/{item_id}")
+def get_item(
+    item_id: int = Path(
+        title="Item ID",
+        description="The ID of the item to retrieve",
+        ge=1,              # Must be >= 1 (no negative IDs)
+        le=1000            # Must be <= 1000
+    )
+):
+    return {"item_id": item_id}
+
+
+================================================================================
+                    SECTION 9: MULTIPLE QUERY VALUES (LIST)
+================================================================================
+
+Accept multiple values for same parameter:
+
+from typing import List
+
+@app.get("/items")
+def get_items(tags: List[str] = Query(default=[])):
+    # URL: /items?tags=python&tags=fastapi&tags=api
+    # tags = ["python", "fastapi", "api"]
+    return {"tags": tags}
+
+
+================================================================================
+                    SECTION 10: FULL EXAMPLE
+================================================================================
+
+from fastapi import FastAPI, Path, Query
+from typing import Optional
+from enum import Enum
+
+app = FastAPI()
+
+class Category(str, Enum):
+    tech = "tech"
+    sports = "sports"
+    news = "news"
+
+# Fake database
+fake_db = {
+    1: {"name": "Laptop", "price": 999, "category": "tech"},
+    2: {"name": "Phone", "price": 699, "category": "tech"},
+    3: {"name": "Ball", "price": 29, "category": "sports"},
+}
+
+@app.get("/products/{product_id}")
+def get_product(
+    product_id: int = Path(ge=1, description="Product ID"),
+    include_details: bool = False
+):
+    if product_id not in fake_db:
+        return {"error": "Not found"}
+    product = fake_db[product_id]
+    if not include_details:
+        return {"name": product["name"]}
+    return product
+
+@app.get("/products")
+def list_products(
+    category: Optional[Category] = None,
+    min_price: float = Query(default=0, ge=0),
+    max_price: float = Query(default=10000, ge=0),
+    skip: int = 0,
+    limit: int = Query(default=10, le=100)
+):
+    products = list(fake_db.values())
+
+    if category:
+        products = [p for p in products if p["category"] == category]
+
+    products = [p for p in products
+                if min_price <= p["price"] <= max_price]
+
+    return products[skip: skip + limit]
+
+# Test URLs:
+# GET /products/1                        → Get product 1
+# GET /products/1?include_details=true   → Full details
+# GET /products?category=tech            → Filter by category
+# GET /products?min_price=500&max_price=1000 → Filter by price
+
+
+================================================================================
+                    SECTION 11: INTERVIEW QUESTIONS
+================================================================================
+
+Q1: Difference between path and query parameters?
+A: Path parameters: Part of URL path (/users/{id}), always required
+   Query parameters: After ? in URL (?key=value), can be optional
+
+Q2: How does FastAPI validate path parameters?
+A: Via Python type hints. If type hint is int, FastAPI converts and
+   validates. If conversion fails, returns 422 automatically.
+
+Q3: How to make a query parameter required?
+A: Don't provide a default value:
+   def endpoint(q: str):  # Required
+   def endpoint(q: str = "default"):  # Optional
+
+Q4: What is Query() used for?
+A: Extra validation: min_length, max_length, ge, le, gt, lt, regex pattern
+
+Q5: How to accept multiple values for same query param?
+A: Use List[str] with Query():
+   def endpoint(tags: List[str] = Query(default=[]))
+   URL: ?tags=python&tags=fastapi
+
+
+================================================================================
+                    END OF PATH & QUERY PARAMETERS
+================================================================================

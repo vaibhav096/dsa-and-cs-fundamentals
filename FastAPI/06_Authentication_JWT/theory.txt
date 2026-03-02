@@ -1,0 +1,353 @@
+================================================================================
+                    AUTHENTICATION & JWT IN FASTAPI
+================================================================================
+
+================================================================================
+                    SECTION 1: AUTHENTICATION vs AUTHORIZATION
+================================================================================
+
+AUTHENTICATION: Who are you?
+  - Login with username/password
+  - Verify identity
+  - "Are you really Alice?"
+
+AUTHORIZATION: What can you do?
+  - Check permissions after authentication
+  - "Alice, can you delete this resource?"
+  - Role-based (admin, user, guest)
+
+
+================================================================================
+                    SECTION 2: JWT (JSON WEB TOKENS)
+================================================================================
+
+JWT = Compact, self-contained token for securely transmitting info.
+
+STRUCTURE: header.payload.signature
+  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9   ← Header (base64)
+  .eyJ1c2VyX2lkIjoxLCJleHAiOjE2OTk5OTl9 ← Payload (base64)
+  .SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV    ← Signature (HMAC)
+
+HEADER:
+{
+    "alg": "HS256",    # Algorithm
+    "typ": "JWT"
+}
+
+PAYLOAD (Claims):
+{
+    "user_id": 1,
+    "email": "alice@gmail.com",
+    "role": "admin",
+    "exp": 1699999999   # Expiry timestamp
+}
+
+SIGNATURE:
+HMAC_SHA256(
+    base64(header) + "." + base64(payload),
+    SECRET_KEY       # Only server knows this!
+)
+
+HOW IT WORKS:
+1. User logs in with username/password
+2. Server verifies, creates JWT with user info
+3. Server sends JWT to client
+4. Client stores JWT (localStorage or cookie)
+5. Client sends JWT in every request (Authorization header)
+6. Server verifies JWT signature → extracts user info
+7. No DB lookup needed for every request!
+
+STATELESS: Server doesn't store session. All info in token.
+
+
+================================================================================
+                    SECTION 3: INSTALL DEPENDENCIES
+================================================================================
+
+pip install python-jose[cryptography]   # JWT library
+pip install passlib[bcrypt]             # Password hashing
+
+
+================================================================================
+                    SECTION 4: COMPLETE JWT AUTH IMPLEMENTATION
+================================================================================
+
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from pydantic import BaseModel
+from datetime import datetime, timedelta
+from typing import Optional
+
+app = FastAPI()
+
+# ─── Config ─────────────────────────────────────────────────
+SECRET_KEY = "your-secret-key-keep-it-secret"  # In env vars!
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# ─── Password Hashing ───────────────────────────────────────
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
+
+# ─── OAuth2 Scheme ──────────────────────────────────────────
+# This tells FastAPI: token comes from /token endpoint
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# ─── JWT Functions ──────────────────────────────────────────
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: int = payload.get("user_id")
+        if user_id is None:
+            return None
+        return payload
+    except JWTError:
+        return None
+
+# ─── Fake User DB ───────────────────────────────────────────
+fake_users_db = {
+    "alice": {
+        "id": 1,
+        "username": "alice",
+        "email": "alice@example.com",
+        "hashed_password": hash_password("secret123"),
+        "role": "user"
+    },
+    "admin": {
+        "id": 2,
+        "username": "admin",
+        "email": "admin@example.com",
+        "hashed_password": hash_password("admin123"),
+        "role": "admin"
+    }
+}
+
+# ─── Schemas ────────────────────────────────────────────────
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+
+# ─── Login Endpoint ─────────────────────────────────────────
+@app.post("/token", response_model=Token)
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    # form_data has: username, password
+    user = fake_users_db.get(form_data.username)
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Incorrect username")
+
+    if not verify_password(form_data.password, user["hashed_password"]):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+
+    # Create token
+    access_token = create_access_token(
+        data={"user_id": user["id"], "username": user["username"], "role": user["role"]},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# ─── Auth Dependency ────────────────────────────────────────
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    payload = verify_token(token)
+    if payload is None:
+        raise credentials_exception
+
+    username = payload.get("username")
+    user = fake_users_db.get(username)
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+def get_admin_user(user: dict = Depends(get_current_user)):
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+# ─── Protected Endpoints ────────────────────────────────────
+@app.get("/profile", response_model=UserResponse)
+def get_profile(user: dict = Depends(get_current_user)):
+    return user
+
+@app.get("/admin/users")
+def get_all_users(admin: dict = Depends(get_admin_user)):
+    return list(fake_users_db.values())
+
+
+================================================================================
+                    SECTION 5: PASSWORD HASHING
+================================================================================
+
+NEVER store plain passwords! Always hash.
+
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"])
+
+# Hash password (one-way)
+hashed = pwd_context.hash("mypassword123")
+# "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36..."
+
+# Verify (compare plain with hash)
+is_valid = pwd_context.verify("mypassword123", hashed)  # True
+is_valid = pwd_context.verify("wrongpassword", hashed)  # False
+
+WHY BCRYPT?
+- Slow by design (makes brute force hard)
+- Has salt built in (prevents rainbow table attacks)
+- Work factor adjustable (can increase over time)
+
+
+================================================================================
+                    SECTION 6: REFRESH TOKENS
+================================================================================
+
+Access Token: Short-lived (15-30 min), used for API calls
+Refresh Token: Long-lived (7-30 days), used to get new access token
+
+FLOW:
+1. Login → Get access_token + refresh_token
+2. Use access_token for API calls
+3. Access token expires → Send refresh_token to /refresh
+4. Get new access_token (without logging in again)
+5. Refresh token expires → Must login again
+
+@app.post("/refresh")
+def refresh_token(refresh_token: str):
+    payload = verify_token(refresh_token)
+    if not payload:
+        raise HTTPException(401, "Invalid refresh token")
+
+    new_access_token = create_access_token(
+        data={"user_id": payload["user_id"]},
+        expires_delta=timedelta(minutes=30)
+    )
+    return {"access_token": new_access_token}
+
+
+================================================================================
+                    SECTION 7: ROLE-BASED ACCESS CONTROL (RBAC)
+================================================================================
+
+from enum import Enum
+
+class Role(str, Enum):
+    USER = "user"
+    MODERATOR = "moderator"
+    ADMIN = "admin"
+
+def require_role(*roles: Role):
+    def dependency(user = Depends(get_current_user)):
+        if user["role"] not in [r.value for r in roles]:
+            raise HTTPException(403, "Insufficient permissions")
+        return user
+    return dependency
+
+# Usage:
+@app.delete("/posts/{id}")
+def delete_post(
+    id: int,
+    user = Depends(require_role(Role.ADMIN, Role.MODERATOR))
+):
+    # Only admin or moderator can delete
+    ...
+
+@app.get("/admin/dashboard")
+def admin_dashboard(user = Depends(require_role(Role.ADMIN))):
+    # Only admin
+    ...
+
+
+================================================================================
+                    SECTION 8: STORING TOKENS (CLIENT SIDE)
+================================================================================
+
+OPTIONS:
+1. localStorage
+   - Easy to use
+   - Vulnerable to XSS attacks
+   - Common for SPAs
+
+2. HttpOnly Cookie
+   - Server sets cookie
+   - JS cannot access (XSS safe)
+   - Vulnerable to CSRF (use CSRF token)
+   - Better security
+
+3. sessionStorage
+   - Cleared when tab closes
+   - XSS vulnerable
+
+BEST PRACTICE: HttpOnly Cookie for web apps
+
+
+================================================================================
+                    SECTION 9: INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is JWT and how does it work?
+A: JWT = JSON Web Token. Three parts: header, payload, signature.
+   Server creates token with user info + secret key.
+   Client sends token in every request.
+   Server verifies signature → no DB lookup needed.
+
+Q2: What is the difference between authentication and authorization?
+A: Authentication: Verifying identity (who you are)
+   Authorization: Verifying permissions (what you can do)
+
+Q3: Why should passwords be hashed and not encrypted?
+A: Encryption is reversible. If key is compromised, passwords exposed.
+   Hashing is one-way. Even if hash is stolen, can't get original.
+   Bcrypt adds salt (prevents rainbow tables) and is slow (prevents brute force).
+
+Q4: What is OAuth2PasswordBearer?
+A: FastAPI utility that extracts Bearer token from Authorization header.
+   Tells Swagger UI to add "Authorize" button.
+   Provides token to dependency automatically.
+
+Q5: Access token vs Refresh token?
+A: Access token: Short-lived (30 min), used for API calls.
+   Refresh token: Long-lived (days), used to get new access token.
+   Separation reduces risk if access token is stolen.
+
+Q6: What happens when JWT expires?
+A: jwt.decode raises JWTError. Catch it and return 401.
+   Client should use refresh token to get new access token.
+
+Q7: How to invalidate a JWT (logout)?
+A: JWT is stateless - can't be invalidated server-side normally.
+   Solutions:
+   - Short expiry (token becomes invalid soon anyway)
+   - Token blacklist in Redis/DB (adds state)
+   - Rotate signing key (invalidates all tokens)
+
+
+================================================================================
+                    END OF AUTHENTICATION & JWT
+================================================================================

@@ -1,0 +1,380 @@
+================================================================================
+                    REQUEST BODY & PYDANTIC MODELS
+================================================================================
+
+================================================================================
+                    SECTION 1: WHAT IS PYDANTIC?
+================================================================================
+
+Pydantic is a data validation library using Python type hints.
+FastAPI uses Pydantic for:
+- Validating request bodies
+- Serializing response data
+- Auto-generating API documentation
+
+INSTALL: pip install pydantic  (comes with FastAPI)
+
+
+================================================================================
+                    SECTION 2: BASIC PYDANTIC MODEL
+================================================================================
+
+from pydantic import BaseModel
+
+class Item(BaseModel):
+    name: str
+    price: float
+    is_available: bool = True    # Optional with default
+    description: str = None      # Optional, default None
+
+# FastAPI uses this as REQUEST BODY schema
+@app.post("/items")
+def create_item(item: Item):
+    return item
+
+# Request JSON:
+# {
+#     "name": "Laptop",
+#     "price": 999.99,
+#     "is_available": true
+# }
+
+# Auto validation:
+# - "name" missing?         → 422 Error
+# - "price": "abc"?         → 422 Error (not a float)
+# - "is_available" missing? → OK, defaults to True
+
+
+================================================================================
+                    SECTION 3: PYDANTIC FIELD VALIDATION
+================================================================================
+
+from pydantic import BaseModel, Field
+
+class Product(BaseModel):
+    name: str = Field(
+        min_length=2,
+        max_length=100,
+        description="Product name"
+    )
+    price: float = Field(
+        gt=0,             # Must be > 0
+        le=100000,        # Must be <= 100000
+        description="Price in USD"
+    )
+    quantity: int = Field(
+        default=0,
+        ge=0              # Must be >= 0
+    )
+    tags: list[str] = Field(default=[])
+
+# This generates full validation AND documentation!
+
+
+FIELD VALIDATORS (custom logic):
+from pydantic import BaseModel, field_validator
+
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    password: str
+
+    @field_validator('email')
+    def email_must_have_at(cls, v):
+        if '@' not in v:
+            raise ValueError('Invalid email')
+        return v.lower()   # Normalize to lowercase
+
+    @field_validator('password')
+    def password_strength(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be 8+ characters')
+        return v
+
+
+================================================================================
+                    SECTION 4: NESTED MODELS
+================================================================================
+
+class Address(BaseModel):
+    street: str
+    city: str
+    country: str = "India"
+
+class User(BaseModel):
+    name: str
+    age: int
+    address: Address    # Nested model!
+
+@app.post("/users")
+def create_user(user: User):
+    return user
+
+# Request JSON:
+# {
+#     "name": "Alice",
+#     "age": 25,
+#     "address": {
+#         "street": "123 Main St",
+#         "city": "Mumbai"
+#     }
+# }
+
+
+LIST OF NESTED MODELS:
+class Order(BaseModel):
+    items: list[Item]   # List of Item models
+    total: float
+
+@app.post("/orders")
+def create_order(order: Order):
+    return order
+
+
+================================================================================
+                    SECTION 5: REQUEST BODY + PATH + QUERY TOGETHER
+================================================================================
+
+@app.put("/items/{item_id}")
+def update_item(
+    item_id: int,            # PATH parameter
+    item: Item,              # REQUEST BODY (Pydantic model)
+    notify: bool = False     # QUERY parameter
+):
+    return {
+        "item_id": item_id,
+        "item": item,
+        "notify": notify
+    }
+
+FastAPI detects automatically:
+- If param matches path var → path parameter
+- If param is Pydantic model → request body
+- Otherwise → query parameter
+
+
+================================================================================
+                    SECTION 6: MULTIPLE BODY PARAMETERS
+================================================================================
+
+from fastapi import Body
+
+class Item(BaseModel):
+    name: str
+    price: float
+
+class User(BaseModel):
+    username: str
+
+@app.post("/order")
+def create_order(
+    item: Item,
+    user: User,
+    importance: int = Body(default=1)  # Extra body field
+):
+    return {"item": item, "user": user, "importance": importance}
+
+# Request JSON:
+# {
+#     "item": {"name": "Laptop", "price": 999},
+#     "user": {"username": "alice"},
+#     "importance": 5
+# }
+
+
+================================================================================
+                    SECTION 7: RESPONSE MODELS
+================================================================================
+
+Control what data is returned (hide sensitive fields!):
+
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    password: str         # Sensitive!
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    # password is NOT here → won't be returned!
+
+@app.post("/users", response_model=UserResponse)
+def create_user(user: UserCreate):
+    # Even if we return password, it's filtered out
+    return {"id": 1, "username": user.username, "email": user.email}
+
+
+RESPONSE MODEL EXCLUDE:
+class Item(BaseModel):
+    name: str
+    price: float
+    internal_id: str    # Internal field
+
+@app.get("/items/{id}", response_model=Item,
+         response_model_exclude={"internal_id"})
+def get_item(id: int):
+    return {"name": "Laptop", "price": 999, "internal_id": "XYZ123"}
+# Response won't include internal_id!
+
+
+================================================================================
+                    SECTION 8: MODEL INHERITANCE
+================================================================================
+
+# Base model (shared fields)
+class ItemBase(BaseModel):
+    name: str
+    description: str = None
+    price: float
+
+# For creating (no id needed)
+class ItemCreate(ItemBase):
+    pass
+
+# For reading (includes id)
+class ItemResponse(ItemBase):
+    id: int
+    owner_id: int
+
+    class Config:
+        from_attributes = True   # For SQLAlchemy compatibility
+
+
+PATTERN: Base → Create → Update → Response
+- Base: Common fields
+- Create: Fields needed to create
+- Update: All fields optional (for PATCH)
+- Response: What API returns
+
+
+# Update model with all optional fields
+from typing import Optional
+
+class ItemUpdate(BaseModel):
+    name: Optional[str] = None
+    price: Optional[float] = None
+    description: Optional[str] = None
+    # All optional → perfect for PATCH endpoint
+
+
+================================================================================
+                    SECTION 9: MODEL EXAMPLES & CONFIG
+================================================================================
+
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+
+class ItemCreate(BaseModel):
+    name: str
+    price: float
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "name": "Laptop",
+                    "price": 999.99
+                }
+            ]
+        }
+    }
+# This shows example in Swagger UI!
+
+
+================================================================================
+                    SECTION 10: FULL EXAMPLE
+================================================================================
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field, field_validator
+from typing import Optional
+from datetime import datetime
+
+app = FastAPI()
+
+# ─── Schemas ───────────────────────────────────────────────
+
+class ProductCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=100)
+    price: float = Field(gt=0)
+    category: str
+    stock: int = Field(default=0, ge=0)
+
+    @field_validator('category')
+    def validate_category(cls, v):
+        allowed = ['electronics', 'clothing', 'food']
+        if v.lower() not in allowed:
+            raise ValueError(f'Category must be one of {allowed}')
+        return v.lower()
+
+class ProductResponse(BaseModel):
+    id: int
+    name: str
+    price: float
+    category: str
+    stock: int
+    created_at: datetime
+
+# ─── Fake DB ────────────────────────────────────────────────
+
+products_db = {}
+counter = 0
+
+# ─── Endpoints ──────────────────────────────────────────────
+
+@app.post("/products", response_model=ProductResponse, status_code=201)
+def create_product(product: ProductCreate):
+    global counter
+    counter += 1
+    new_product = {
+        "id": counter,
+        **product.model_dump(),
+        "created_at": datetime.now()
+    }
+    products_db[counter] = new_product
+    return new_product
+
+@app.get("/products/{product_id}", response_model=ProductResponse)
+def get_product(product_id: int):
+    if product_id not in products_db:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return products_db[product_id]
+
+
+================================================================================
+                    SECTION 11: INTERVIEW QUESTIONS
+================================================================================
+
+Q1: What is Pydantic and why does FastAPI use it?
+A: Pydantic is a data validation library using type hints. FastAPI uses it
+   for automatic request validation, serialization, and documentation.
+
+Q2: How does FastAPI validate request body?
+A: Define a Pydantic model as a function parameter. FastAPI automatically
+   parses JSON body, validates against model, returns 422 if invalid.
+
+Q3: How to hide sensitive fields in response?
+A: Use response_model with a separate response schema that excludes
+   sensitive fields like password. FastAPI filters automatically.
+
+Q4: Difference between Field() and Query()?
+A: Field() → for Pydantic model fields (request body validation)
+   Query() → for query parameter validation
+   Both support: gt, ge, lt, le, min_length, max_length
+
+Q5: How to make all fields optional for PATCH endpoint?
+A: Create a separate Update schema with Optional[type] = None for all
+   fields. This allows partial updates.
+
+Q6: What is response_model used for?
+A: Controls the shape of response data. FastAPI will:
+   - Filter out fields not in response_model
+   - Validate response data
+   - Generate accurate API docs
+
+
+================================================================================
+                    END OF REQUEST BODY & PYDANTIC
+================================================================================

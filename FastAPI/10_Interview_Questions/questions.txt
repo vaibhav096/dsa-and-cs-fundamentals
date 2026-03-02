@@ -1,0 +1,445 @@
+================================================================================
+                    FASTAPI - TOP INTERVIEW QUESTIONS
+================================================================================
+
+================================================================================
+                    SECTION 1: BASICS (MUST KNOW)
+================================================================================
+
+Q1: What is FastAPI? Why would you choose it over Flask/Django?
+──────────────────────────────────────────────────────────────
+A: FastAPI is a modern, high-performance Python web framework for
+   building APIs.
+
+   Over Flask:
+   - Automatic validation (Pydantic)
+   - Auto-generated docs (Swagger, ReDoc)
+   - Native async support
+   - Much faster
+
+   Over Django REST:
+   - Lighter weight, faster
+   - Better for microservices
+   - Less boilerplate
+   - No admin panel (if you don't need it)
+
+   Choose FastAPI for: APIs, microservices, high performance needs.
+   Choose Django for: Full-stack, admin panel, complex ORM.
+
+
+Q2: What is ASGI? How is it different from WSGI?
+──────────────────────────────────────────────────────────────
+A: WSGI (Web Server Gateway Interface): Synchronous. One request at a time
+   per thread. Used by Flask, Django. Older standard.
+
+   ASGI (Async Server Gateway Interface): Asynchronous. Supports
+   concurrent requests, WebSockets, long-lived connections.
+   Used by FastAPI (via Uvicorn server).
+
+   ASGI allows FastAPI to handle thousands of connections simultaneously
+   with a single thread using async/await.
+
+
+Q3: What is Uvicorn and why does FastAPI use it?
+──────────────────────────────────────────────────────────────
+A: Uvicorn is a lightning-fast ASGI server. FastAPI uses it because:
+   - Implements ASGI spec
+   - Based on uvloop and httptools (very fast)
+   - Supports HTTP/1.1, HTTP/2, WebSockets
+   - Hot reload during development (--reload)
+
+
+Q4: How does FastAPI generate documentation automatically?
+──────────────────────────────────────────────────────────────
+A: FastAPI generates OpenAPI schema from your route definitions,
+   type hints, and Pydantic models. This schema powers:
+   - /docs → Swagger UI (interactive testing)
+   - /redoc → ReDoc (clean documentation)
+   - /openapi.json → Raw OpenAPI JSON
+
+
+Q5: What is Pydantic and what role does it play?
+──────────────────────────────────────────────────────────────
+A: Pydantic is a data validation library using Python type hints.
+   In FastAPI it handles:
+   - Request body parsing and validation
+   - Response serialization
+   - Type conversion (string "42" → int 42)
+   - Automatic 422 errors for invalid data
+   - API schema generation
+
+
+================================================================================
+                    SECTION 2: ROUTING & PARAMETERS
+================================================================================
+
+Q6: Difference between path parameters and query parameters?
+──────────────────────────────────────────────────────────────
+A: Path parameters: Part of URL path. /users/{id} → always required.
+   Query parameters: After ? in URL. /users?skip=0 → can be optional.
+
+   @app.get("/users/{user_id}")      # user_id = path param
+   def get_user(user_id: int, active: bool = True):  # active = query param
+
+
+Q7: How do you make a query parameter required vs optional?
+──────────────────────────────────────────────────────────────
+A: No default = required:    def endpoint(q: str)
+   Has default = optional:   def endpoint(q: str = "default")
+   Optional with None:       def endpoint(q: Optional[str] = None)
+
+
+Q8: What is the purpose of Query() and Path()?
+──────────────────────────────────────────────────────────────
+A: Query() and Path() add extra validation and metadata:
+   - min_length, max_length (strings)
+   - ge, gt, le, lt (numbers)
+   - description (for docs)
+   - title
+
+   @app.get("/items")
+   def get(q: str = Query(min_length=3, max_length=50))
+
+
+================================================================================
+                    SECTION 3: REQUEST BODY & VALIDATION
+================================================================================
+
+Q9: How does FastAPI validate request bodies?
+──────────────────────────────────────────────────────────────
+A: Define a Pydantic BaseModel class and use it as a parameter:
+
+   class Item(BaseModel):
+       name: str
+       price: float
+
+   @app.post("/items")
+   def create(item: Item):   # FastAPI auto-parses + validates body
+       ...
+
+   If validation fails → 422 Unprocessable Entity with error details.
+
+
+Q10: What is response_model and why use it?
+──────────────────────────────────────────────────────────────
+A: response_model controls what data is returned to client:
+   - Filters out fields not in response model
+   - Prevents accidental exposure of sensitive data (passwords!)
+   - Generates accurate API documentation
+
+   @app.post("/users", response_model=UserResponse)
+   def create_user(user: UserCreate):
+       ...  # UserResponse doesn't include password
+
+
+Q11: Difference between PUT and PATCH?
+──────────────────────────────────────────────────────────────
+A: PUT: Full replace. All fields must be provided. Missing fields = null.
+   PATCH: Partial update. Only provided fields change.
+
+   For PATCH, use Optional fields + model_dump(exclude_unset=True)
+   to only update fields explicitly sent in request.
+
+
+Q12: What is model_dump(exclude_unset=True)?
+──────────────────────────────────────────────────────────────
+A: Returns only fields explicitly set in the request, ignoring
+   fields left as defaults. Critical for PATCH endpoints to avoid
+   overwriting existing data with None.
+
+
+================================================================================
+                    SECTION 4: DEPENDENCIES
+================================================================================
+
+Q13: What are dependencies in FastAPI?
+──────────────────────────────────────────────────────────────
+A: Reusable functions injected into route handlers using Depends().
+   Used for: authentication, database sessions, common parameters,
+   permission checks. Avoids code duplication (DRY principle).
+
+
+Q14: Why use yield in a dependency?
+──────────────────────────────────────────────────────────────
+A: yield enables setup and teardown:
+   - Code before yield: setup (open DB connection)
+   - Code after yield (in finally): teardown (close connection)
+   - Teardown happens even if route raises exception!
+
+   def get_db():
+       db = SessionLocal()
+       try:
+           yield db
+       finally:
+           db.close()
+
+
+Q15: Can dependencies be nested? How does it work?
+──────────────────────────────────────────────────────────────
+A: Yes! Dependencies can depend on other dependencies.
+   FastAPI resolves the dependency graph automatically.
+   A → B → C: FastAPI calls C first, then B, then A.
+
+
+Q16: Difference between dependency and middleware?
+──────────────────────────────────────────────────────────────
+A: Dependency: Per-route, selective, can return values, has access to
+   route parameters, uses Depends().
+
+   Middleware: Every request, global, wraps request/response.
+
+   Use dependency for route-specific logic (auth, DB).
+   Use middleware for global concerns (logging, CORS, timing).
+
+
+================================================================================
+                    SECTION 5: AUTHENTICATION
+================================================================================
+
+Q17: Explain JWT authentication flow in FastAPI.
+──────────────────────────────────────────────────────────────
+A: 1. User sends username/password to /token
+   2. Server verifies credentials
+   3. Server creates JWT with user info + expiry + signature
+   4. Client receives token, stores it
+   5. Client sends token in every request: Authorization: Bearer <token>
+   6. Server verifies signature, extracts user info
+   7. No database lookup needed per request (stateless)
+
+
+Q18: How do you hash passwords in FastAPI?
+──────────────────────────────────────────────────────────────
+A: Use passlib with bcrypt:
+
+   from passlib.context import CryptContext
+   pwd_context = CryptContext(schemes=["bcrypt"])
+   hashed = pwd_context.hash("plaintext")
+   valid = pwd_context.verify("plaintext", hashed)
+
+   Never store plain passwords. Bcrypt is slow (prevents brute force)
+   and includes salt (prevents rainbow table attacks).
+
+
+Q19: What is OAuth2PasswordBearer?
+──────────────────────────────────────────────────────────────
+A: FastAPI utility that:
+   - Extracts Bearer token from Authorization header
+   - Adds "Authorize" button to Swagger UI
+   - Marks endpoint as requiring authentication in docs
+   - Provides token string to dependency
+
+   oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+   def get_current_user(token: str = Depends(oauth2_scheme))
+
+
+Q20: How to implement role-based access control (RBAC)?
+──────────────────────────────────────────────────────────────
+A: Store role in JWT payload. Create dependency that checks role:
+
+   def require_role(*roles):
+       def dependency(user = Depends(get_current_user)):
+           if user["role"] not in roles:
+               raise HTTPException(403, "Forbidden")
+           return user
+       return dependency
+
+   @app.delete("/posts/{id}")
+   def delete(id: int, user = Depends(require_role("admin", "moderator"))):
+       ...
+
+
+Q21: How to logout with JWT (invalidate token)?
+──────────────────────────────────────────────────────────────
+A: JWT is stateless, can't be invalidated server-side normally.
+   Options:
+   1. Short expiry (15-30 min) - token expires soon anyway
+   2. Token blacklist in Redis - check if token is revoked
+   3. Rotate signing key - invalidates ALL tokens
+   4. Use refresh token pattern - short access + long refresh
+
+
+================================================================================
+                    SECTION 6: DATABASE
+================================================================================
+
+Q22: How does FastAPI integrate with SQLAlchemy?
+──────────────────────────────────────────────────────────────
+A: 1. Create engine with connection URL
+   2. Create SessionLocal (session factory)
+   3. Create get_db() dependency with yield
+   4. Define models inheriting from Base
+   5. Use Session = Depends(get_db) in routes
+
+   The yield pattern ensures session always closed.
+
+
+Q23: Difference between SQLAlchemy model and Pydantic schema?
+──────────────────────────────────────────────────────────────
+A: SQLAlchemy model: Defines database table structure. Used for DB ops.
+   Pydantic schema: Defines API request/response format. Used for validation.
+
+   Need from_attributes = True in Pydantic Config to read from
+   SQLAlchemy model attributes.
+
+
+Q24: What is Alembic and why use it?
+──────────────────────────────────────────────────────────────
+A: Database migration tool for SQLAlchemy. When you change your models,
+   Alembic generates migration scripts to update the database schema
+   without losing data. Like git for database schema.
+
+
+Q25: What is the N+1 query problem?
+──────────────────────────────────────────────────────────────
+A: When fetching N users + their posts:
+   1 query for users + N queries for each user's posts = N+1 total.
+   Very slow for large N!
+
+   Fix with eager loading:
+   from sqlalchemy.orm import joinedload
+   db.query(User).options(joinedload(User.posts)).all()
+   → 1 query with JOIN instead!
+
+
+================================================================================
+                    SECTION 7: MIDDLEWARE & PERFORMANCE
+================================================================================
+
+Q26: What is CORS and how to configure it?
+──────────────────────────────────────────────────────────────
+A: CORS = Cross-Origin Resource Sharing. Browser security that blocks
+   requests from different origins.
+
+   Frontend localhost:3000 → Backend localhost:8000 = Different origins.
+
+   Fix: Add CORSMiddleware with allowed origins.
+   For production: specify exact origins, not "*".
+
+
+Q27: How to implement rate limiting in FastAPI?
+──────────────────────────────────────────────────────────────
+A: Using middleware - track request count per IP in sliding window:
+   Store timestamps in memory/Redis, check count before processing.
+   Return 429 Too Many Requests if limit exceeded.
+
+   Production: Use slowapi library or nginx rate limiting.
+
+
+Q28: How does FastAPI handle concurrent requests?
+──────────────────────────────────────────────────────────────
+A: Via ASGI and async/await:
+   - Single event loop handles many connections
+   - When route uses await, releases control
+   - Other requests handled during I/O wait
+   - Multiple workers (--workers 4) for CPU-bound work
+   - Horizontal scaling with load balancer
+
+
+Q29: What is the difference between synchronous and async in FastAPI?
+──────────────────────────────────────────────────────────────
+A: async def: Runs in event loop. Can use await for I/O.
+   def (sync): FastAPI runs in threadpool automatically.
+
+   For I/O bound: use async def + await
+   For CPU bound: use def (async doesn't help, may hurt)
+   If using sync library: use def (avoids blocking event loop)
+
+
+================================================================================
+                    SECTION 8: TESTING
+================================================================================
+
+Q30: How do you test FastAPI applications?
+──────────────────────────────────────────────────────────────
+A: Use TestClient (synchronous wrapper):
+
+   from fastapi.testclient import TestClient
+   client = TestClient(app)
+
+   def test_create_user():
+       response = client.post("/users", json={...})
+       assert response.status_code == 201
+
+   Override dependencies for testing (use test DB):
+   app.dependency_overrides[get_db] = get_test_db
+
+
+================================================================================
+                    SECTION 9: QUICK REFERENCE CHEAT SHEET
+================================================================================
+
+DECORATORS:
+  @app.get("/path")              # GET request
+  @app.post("/path")             # POST request
+  @app.put("/path/{id}")         # PUT request
+  @app.patch("/path/{id}")       # PATCH request
+  @app.delete("/path/{id}")      # DELETE request
+
+STATUS CODES:
+  200 OK, 201 Created, 204 No Content
+  400 Bad Request, 401 Unauthorized, 403 Forbidden
+  404 Not Found, 422 Validation Error, 429 Too Many Requests
+  500 Internal Server Error
+
+PARAMETER TYPES:
+  Path:   /users/{user_id}  → def f(user_id: int)
+  Query:  /users?skip=0     → def f(skip: int = 0)
+  Body:   JSON body         → def f(user: UserCreate)
+  Header: Authorization     → def f(token: str = Header())
+
+COMMON PATTERNS:
+  Depends(get_db)            → Database session
+  Depends(get_current_user)  → Authentication
+  response_model=UserResponse → Filter response
+  status_code=201            → Custom status code
+  HTTPException(404, "msg")  → Error response
+
+
+================================================================================
+                    SECTION 10: SCENARIO-BASED QUESTIONS
+================================================================================
+
+SCENARIO 1: "How would you secure an API endpoint?"
+  1. Add JWT authentication with OAuth2PasswordBearer
+  2. Create get_current_user dependency
+  3. Add Depends(get_current_user) to route
+  4. Use role check if needed
+  5. Add HTTPS (HTTPSRedirectMiddleware)
+  6. Rate limiting to prevent abuse
+
+SCENARIO 2: "How would you handle slow DB queries in FastAPI?"
+  1. Use async SQLAlchemy for async routes
+  2. Add database indexes on queried columns
+  3. Eager load relationships (joinedload) to prevent N+1
+  4. Add caching (Redis) for frequently read data
+  5. Pagination to limit returned records
+
+SCENARIO 3: "How to build a file upload API?"
+  1. UploadFile parameter with File(...)
+  2. Validate file type (check content_type)
+  3. Validate file size
+  4. Save to disk or cloud (S3)
+  5. Return file URL/ID
+  6. Use Background Tasks if processing needed
+
+SCENARIO 4: "How would you design a real-time notification system?"
+  1. WebSocket endpoint for persistent connection
+  2. ConnectionManager class to track active connections
+  3. When event occurs → broadcast to relevant clients
+  4. Handle disconnections gracefully
+  5. For scale: Redis Pub/Sub to broadcast across workers
+
+SCENARIO 5: "How to deploy FastAPI in production?"
+  1. Uvicorn with multiple workers: uvicorn main:app --workers 4
+  2. Gunicorn as process manager
+  3. Nginx as reverse proxy (SSL termination, static files)
+  4. Docker container
+  5. Environment variables for config
+  6. Health check endpoint (/health)
+  7. Monitoring (Prometheus + Grafana)
+  8. Auto-restart on crash (systemd/supervisor)
+
+
+================================================================================
+                    END OF INTERVIEW QUESTIONS
+================================================================================
