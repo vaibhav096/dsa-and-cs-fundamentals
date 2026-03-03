@@ -1,0 +1,691 @@
+================================================================================
+         SQL INTERVIEW QUESTIONS  |  2-DAY PREP
+         Write queries, not just theory!
+================================================================================
+
+★★★ = Almost certain to be asked
+
+SAMPLE TABLES (used throughout):
+employees(id, name, dept, salary, manager_id, hire_date)
+departments(id, name, location)
+orders(id, user_id, amount, status, created_at)
+users(id, name, email, city, age)
+
+================================================================================
+                    BASIC SQL
+================================================================================
+
+★★★ Q1. SELECT with WHERE, ORDER BY, LIMIT
+─────────────────────────────────────────────────────────
+-- Get top 5 highest paid employees in Engineering
+SELECT name, salary
+FROM employees
+WHERE dept = 'Engineering'
+ORDER BY salary DESC
+LIMIT 5;
+
+-- Multiple conditions
+SELECT * FROM users
+WHERE age >= 18 AND city = 'Mumbai'
+ORDER BY name ASC;
+
+-- BETWEEN
+SELECT * FROM orders
+WHERE amount BETWEEN 100 AND 500;
+
+-- IN
+SELECT * FROM employees
+WHERE dept IN ('Engineering', 'Marketing', 'Sales');
+
+-- LIKE
+SELECT * FROM users
+WHERE email LIKE '%@gmail.com';    -- ends with
+WHERE name LIKE 'A%';              -- starts with
+WHERE name LIKE '%ali%';           -- contains
+
+
+★★★ Q2. Aggregate Functions
+─────────────────────────────────────────────────────────
+SELECT
+    COUNT(*) as total,             -- Count all rows
+    COUNT(DISTINCT dept) as depts, -- Count unique values
+    SUM(salary) as payroll,        -- Sum
+    AVG(salary) as avg_salary,     -- Average
+    MAX(salary) as highest,        -- Maximum
+    MIN(salary) as lowest          -- Minimum
+FROM employees;
+
+
+★★★ Q3. GROUP BY with HAVING
+─────────────────────────────────────────────────────────
+-- Department-wise employee count and avg salary
+-- Only show departments with avg salary > 50000
+SELECT
+    dept,
+    COUNT(*) as headcount,
+    AVG(salary) as avg_salary,
+    MAX(salary) as top_salary
+FROM employees
+GROUP BY dept
+HAVING AVG(salary) > 50000
+ORDER BY avg_salary DESC;
+
+-- RULE: Columns in SELECT must be in GROUP BY or be aggregate functions!
+
+
+★★★ Q4. All types of JOINs
+─────────────────────────────────────────────────────────
+-- INNER JOIN (only matching)
+SELECT u.name, o.amount
+FROM users u
+INNER JOIN orders o ON u.id = o.user_id;
+
+-- LEFT JOIN (all users, even without orders)
+SELECT u.name, COALESCE(COUNT(o.id), 0) as order_count
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+GROUP BY u.id, u.name;
+
+-- Self JOIN (employees and their managers)
+SELECT e.name as employee, m.name as manager
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.id;
+
+-- Multiple joins
+SELECT u.name, o.id as order_id, oi.product_name
+FROM users u
+JOIN orders o ON u.id = o.user_id
+JOIN order_items oi ON o.id = oi.order_id
+WHERE o.status = 'completed';
+
+
+================================================================================
+                    INTERMEDIATE SQL
+================================================================================
+
+★★★ Q5. Subqueries
+─────────────────────────────────────────────────────────
+-- Employees earning more than company average
+SELECT name, salary
+FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees);
+
+-- Users who placed at least one order
+SELECT name FROM users
+WHERE id IN (SELECT DISTINCT user_id FROM orders);
+
+-- Users who NEVER placed an order
+SELECT name FROM users
+WHERE id NOT IN (SELECT DISTINCT user_id FROM orders WHERE user_id IS NOT NULL);
+
+-- Subquery in FROM (derived table)
+SELECT dept, avg_sal
+FROM (
+    SELECT dept, AVG(salary) as avg_sal
+    FROM employees
+    GROUP BY dept
+) dept_stats
+WHERE avg_sal > 60000;
+
+
+★★★ Q6. Window Functions (Most asked advanced SQL topic!)
+─────────────────────────────────────────────────────────
+-- ROW_NUMBER: Unique row number per partition
+SELECT name, dept, salary,
+    ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC) as rank_in_dept
+FROM employees;
+
+-- RANK: Ranks with gaps (1,1,3,4)
+-- DENSE_RANK: Ranks without gaps (1,1,2,3)
+SELECT name, salary,
+    RANK() OVER (ORDER BY salary DESC) as rank,
+    DENSE_RANK() OVER (ORDER BY salary DESC) as dense_rank
+FROM employees;
+
+-- Running total
+SELECT name, salary, dept,
+    SUM(salary) OVER (PARTITION BY dept ORDER BY hire_date) as running_total
+FROM employees;
+
+-- LAG: Previous row value
+SELECT name, salary,
+    LAG(salary, 1) OVER (ORDER BY hire_date) as prev_salary,
+    salary - LAG(salary, 1) OVER (ORDER BY hire_date) as change
+FROM employees;
+
+-- LEAD: Next row value
+SELECT name, salary,
+    LEAD(salary, 1) OVER (ORDER BY hire_date) as next_salary
+FROM employees;
+
+
+★★★ Q7. Get Nth highest salary (Classic interview question!)
+─────────────────────────────────────────────────────────
+-- 2nd highest salary
+SELECT DISTINCT salary
+FROM employees
+ORDER BY salary DESC
+LIMIT 1 OFFSET 1;    -- Skip 1, take 1
+
+-- Nth highest (using subquery)
+SELECT MAX(salary) FROM employees
+WHERE salary < (SELECT MAX(salary) FROM employees);
+
+-- Using DENSE_RANK (most robust)
+SELECT salary FROM (
+    SELECT salary,
+        DENSE_RANK() OVER (ORDER BY salary DESC) as rnk
+    FROM employees
+) ranked
+WHERE rnk = 2;   -- Change 2 to N
+
+
+★★★ Q8. Find duplicates
+─────────────────────────────────────────────────────────
+-- Find duplicate emails
+SELECT email, COUNT(*) as count
+FROM users
+GROUP BY email
+HAVING COUNT(*) > 1;
+
+-- Get all rows with duplicate emails
+SELECT * FROM users
+WHERE email IN (
+    SELECT email
+    FROM users
+    GROUP BY email
+    HAVING COUNT(*) > 1
+);
+
+-- Delete duplicates, keep first occurrence
+DELETE FROM users
+WHERE id NOT IN (
+    SELECT MIN(id) FROM users GROUP BY email
+);
+
+
+★★★ Q9. CASE WHEN (Conditional logic in SQL)
+─────────────────────────────────────────────────────────
+-- Classify employees by salary
+SELECT name, salary,
+    CASE
+        WHEN salary >= 100000 THEN 'Senior'
+        WHEN salary >= 60000  THEN 'Mid'
+        WHEN salary >= 30000  THEN 'Junior'
+        ELSE 'Intern'
+    END as level
+FROM employees;
+
+-- Pivot-like query
+SELECT
+    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+    SUM(CASE WHEN status = 'pending'   THEN 1 ELSE 0 END) as pending,
+    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
+FROM orders;
+
+
+★★★ Q10. CTE (Common Table Expression) — WITH clause
+─────────────────────────────────────────────────────────
+-- Department stats using CTE
+WITH dept_stats AS (
+    SELECT
+        dept,
+        COUNT(*) as headcount,
+        AVG(salary) as avg_salary
+    FROM employees
+    GROUP BY dept
+),
+high_paying AS (
+    SELECT dept FROM dept_stats WHERE avg_salary > 70000
+)
+SELECT e.name, e.salary
+FROM employees e
+WHERE e.dept IN (SELECT dept FROM high_paying);
+
+-- CTEs are more readable than nested subqueries!
+
+-- Recursive CTE (for hierarchies)
+WITH RECURSIVE hierarchy AS (
+    SELECT id, name, manager_id, 0 as level
+    FROM employees
+    WHERE manager_id IS NULL    -- Start from top
+
+    UNION ALL
+
+    SELECT e.id, e.name, e.manager_id, h.level + 1
+    FROM employees e
+    JOIN hierarchy h ON e.manager_id = h.id
+)
+SELECT * FROM hierarchy ORDER BY level;
+
+
+================================================================================
+                    ADVANCED SQL SCENARIOS
+================================================================================
+
+★★★ Q11. Find employees who earn more than their manager
+─────────────────────────────────────────────────────────
+SELECT e.name as employee, e.salary,
+       m.name as manager, m.salary as manager_salary
+FROM employees e
+JOIN employees m ON e.manager_id = m.id
+WHERE e.salary > m.salary;
+
+
+★★★ Q12. Get top 3 salary earners per department
+─────────────────────────────────────────────────────────
+SELECT name, dept, salary FROM (
+    SELECT name, dept, salary,
+        DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) as rnk
+    FROM employees
+) ranked
+WHERE rnk <= 3;
+
+
+★★★ Q13. Users who placed orders in consecutive months
+─────────────────────────────────────────────────────────
+WITH monthly_orders AS (
+    SELECT user_id,
+           DATE_FORMAT(created_at, '%Y-%m') as month,
+           ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY DATE_FORMAT(created_at, '%Y-%m')) as rn
+    FROM orders
+    GROUP BY user_id, month
+)
+SELECT DISTINCT user_id
+FROM monthly_orders m1
+JOIN monthly_orders m2
+  ON m1.user_id = m2.user_id
+  AND m1.rn = m2.rn - 1
+  AND PERIOD_DIFF(m2.month, m1.month) = 1;
+
+
+★★★ Q14. Calculate running total and moving average
+─────────────────────────────────────────────────────────
+SELECT
+    created_at,
+    amount,
+    SUM(amount) OVER (ORDER BY created_at) as running_total,
+    AVG(amount) OVER (ORDER BY created_at ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) as moving_avg_3
+FROM orders;
+
+
+★★ Q15. COALESCE and NULLIF
+─────────────────────────────────────────────────────────
+-- COALESCE: Returns first non-NULL value
+SELECT name, COALESCE(phone, email, 'No contact') as contact
+FROM users;
+
+-- NULLIF: Returns NULL if two values are equal
+SELECT salary / NULLIF(hours_worked, 0) as hourly_rate  -- Avoid divide by zero!
+FROM employees;
+
+
+================================================================================
+                    DDL AND DML
+================================================================================
+
+★★★ Q16. CREATE TABLE with constraints
+─────────────────────────────────────────────────────────
+CREATE TABLE users (
+    id          INT PRIMARY KEY AUTO_INCREMENT,
+    name        VARCHAR(100) NOT NULL,
+    email       VARCHAR(255) UNIQUE NOT NULL,
+    age         INT CHECK (age >= 0 AND age <= 150),
+    city        VARCHAR(50) DEFAULT 'Unknown',
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE orders (
+    id          INT PRIMARY KEY AUTO_INCREMENT,
+    user_id     INT NOT NULL,
+    amount      DECIMAL(10, 2) NOT NULL,
+    status      ENUM('pending', 'completed', 'cancelled') DEFAULT 'pending',
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+★★ Q17. ALTER TABLE
+─────────────────────────────────────────────────────────
+-- Add column
+ALTER TABLE users ADD COLUMN phone VARCHAR(15);
+
+-- Modify column
+ALTER TABLE users MODIFY COLUMN name VARCHAR(200) NOT NULL;
+
+-- Add index
+ALTER TABLE users ADD INDEX idx_email (email);
+
+-- Drop column
+ALTER TABLE users DROP COLUMN phone;
+
+-- Add foreign key
+ALTER TABLE orders ADD CONSTRAINT fk_user
+FOREIGN KEY (user_id) REFERENCES users(id);
+
+
+★★ Q18. INSERT, UPDATE, DELETE
+─────────────────────────────────────────────────────────
+-- INSERT
+INSERT INTO users (name, email, age) VALUES ('Alice', 'alice@gmail.com', 25);
+
+-- INSERT multiple
+INSERT INTO users (name, email) VALUES
+    ('Bob', 'bob@gmail.com'),
+    ('Charlie', 'charlie@gmail.com');
+
+-- UPDATE with WHERE (ALWAYS use WHERE!)
+UPDATE users SET city = 'Mumbai', age = 26 WHERE id = 1;
+
+-- UPDATE with JOIN
+UPDATE employees e
+JOIN departments d ON e.dept_id = d.id
+SET e.dept = d.name;
+
+-- DELETE (ALWAYS use WHERE!)
+DELETE FROM users WHERE id = 1;
+
+
+★★★ Q19. UPSERT (INSERT OR UPDATE)
+─────────────────────────────────────────────────────────
+-- MySQL
+INSERT INTO users (id, name, email)
+VALUES (1, 'Alice', 'alice@new.com')
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    email = VALUES(email);
+
+-- PostgreSQL
+INSERT INTO users (id, name, email)
+VALUES (1, 'Alice', 'alice@new.com')
+ON CONFLICT (id) DO UPDATE
+    SET name = EXCLUDED.name,
+        email = EXCLUDED.email;
+
+
+★★ Q20. String functions
+─────────────────────────────────────────────────────────
+SELECT
+    UPPER(name),           -- Uppercase
+    LOWER(email),          -- Lowercase
+    LENGTH(name),          -- Length
+    TRIM(name),            -- Remove spaces
+    SUBSTRING(name, 1, 3), -- First 3 chars
+    CONCAT(name, ' - ', city),  -- Combine
+    REPLACE(email, '@gmail.com', ''),  -- Replace
+    LEFT(name, 5),         -- First 5 chars
+    RIGHT(name, 3)         -- Last 3 chars
+FROM users;
+
+
+★★ Q21. Date functions
+─────────────────────────────────────────────────────────
+SELECT
+    NOW(),                              -- Current datetime
+    CURDATE(),                          -- Current date
+    YEAR(hire_date),                    -- Extract year
+    MONTH(hire_date),                   -- Extract month
+    DAY(hire_date),                     -- Extract day
+    DATEDIFF(NOW(), hire_date) as days_worked,
+    DATE_ADD(created_at, INTERVAL 30 DAY) as expires_at,
+    DATE_FORMAT(created_at, '%Y-%m-%d') as formatted
+FROM employees;
+
+-- Orders from last 30 days
+SELECT * FROM orders
+WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY);
+
+
+================================================================================
+                    INTERVIEW SCENARIO QUERIES
+================================================================================
+
+★★★ Q22. Find the department with highest average salary
+─────────────────────────────────────────────────────────
+SELECT dept, AVG(salary) as avg_salary
+FROM employees
+GROUP BY dept
+ORDER BY avg_salary DESC
+LIMIT 1;
+
+-- Or using subquery (returns multiple if tied):
+SELECT dept, AVG(salary) as avg_salary
+FROM employees
+GROUP BY dept
+HAVING AVG(salary) = (
+    SELECT MAX(avg_sal) FROM (
+        SELECT AVG(salary) as avg_sal FROM employees GROUP BY dept
+    ) dept_avgs
+);
+
+
+★★★ Q23. Employees hired in the last year with salary > 50000
+─────────────────────────────────────────────────────────
+SELECT name, hire_date, salary
+FROM employees
+WHERE hire_date >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+  AND salary > 50000
+ORDER BY hire_date DESC;
+
+
+★★★ Q24. Find users with no orders (two ways)
+─────────────────────────────────────────────────────────
+-- Method 1: NOT IN
+SELECT name FROM users
+WHERE id NOT IN (SELECT DISTINCT user_id FROM orders);
+
+-- Method 2: LEFT JOIN (usually faster)
+SELECT u.name
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE o.id IS NULL;
+
+
+★★★ Q25. Monthly revenue report
+─────────────────────────────────────────────────────────
+SELECT
+    DATE_FORMAT(created_at, '%Y-%m') as month,
+    COUNT(*) as total_orders,
+    SUM(amount) as total_revenue,
+    AVG(amount) as avg_order_value
+FROM orders
+WHERE status = 'completed'
+GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+ORDER BY month;
+
+
+★★ Q26. Cumulative sum for each user
+─────────────────────────────────────────────────────────
+SELECT
+    user_id,
+    created_at,
+    amount,
+    SUM(amount) OVER (PARTITION BY user_id ORDER BY created_at) as cumulative_spend
+FROM orders;
+
+
+★★★ Q27. Find the second most recent order per user
+─────────────────────────────────────────────────────────
+SELECT user_id, amount, created_at FROM (
+    SELECT user_id, amount, created_at,
+        ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) as rn
+    FROM orders
+) ranked
+WHERE rn = 2;
+
+
+★★ Q28. Employees in same department earning more than average of their dept
+─────────────────────────────────────────────────────────
+SELECT e.name, e.dept, e.salary
+FROM employees e
+JOIN (
+    SELECT dept, AVG(salary) as avg_sal
+    FROM employees GROUP BY dept
+) dept_avg ON e.dept = dept_avg.dept
+WHERE e.salary > dept_avg.avg_sal;
+
+-- Cleaner with window function:
+SELECT name, dept, salary FROM (
+    SELECT name, dept, salary,
+        AVG(salary) OVER (PARTITION BY dept) as dept_avg
+    FROM employees
+) t
+WHERE salary > dept_avg;
+
+
+★★ Q29. Pivot query - show monthly totals per category
+─────────────────────────────────────────────────────────
+SELECT
+    DATE_FORMAT(created_at, '%Y-%m') as month,
+    SUM(CASE WHEN category = 'electronics' THEN amount ELSE 0 END) as electronics,
+    SUM(CASE WHEN category = 'clothing'    THEN amount ELSE 0 END) as clothing,
+    SUM(CASE WHEN category = 'food'        THEN amount ELSE 0 END) as food
+FROM orders
+GROUP BY month
+ORDER BY month;
+
+
+★★★ Q30. Update salary with percentage increase by department
+─────────────────────────────────────────────────────────
+UPDATE employees
+SET salary = salary * CASE
+    WHEN dept = 'Engineering' THEN 1.15   -- 15% raise
+    WHEN dept = 'Sales'       THEN 1.10   -- 10% raise
+    ELSE 1.05                              -- 5% for others
+END;
+
+
+================================================================================
+                    INDEX & PERFORMANCE
+================================================================================
+
+Q31. When does an index NOT get used?
+─────────────────────────────────────────────────────────
+1. Using function on indexed column:
+   WHERE YEAR(hire_date) = 2024     ← Index skipped!
+   WHERE hire_date >= '2024-01-01'  ← Index used!
+
+2. Leading wildcard:
+   WHERE name LIKE '%ali%'  ← Full scan
+   WHERE name LIKE 'ali%'   ← Index used!
+
+3. OR conditions (sometimes):
+   WHERE dept = 'Eng' OR salary > 50000
+
+4. NULL comparisons (IS NULL sometimes skips)
+
+5. Low cardinality (gender M/F — DB prefers full scan)
+
+
+Q32. EXPLAIN output - key things to check
+─────────────────────────────────────────────────────────
+EXPLAIN SELECT * FROM employees WHERE dept = 'Engineering';
+
+Key columns:
+- type: ALL (full scan!) vs ref/range (index used ✓)
+- key: Which index is used
+- rows: Estimated rows scanned (lower is better)
+- Extra: "Using filesort" / "Using index" signals
+
+
+================================================================================
+                    QUICK FIRE SQL Q&A
+================================================================================
+
+Q33. Difference between CHAR and VARCHAR?
+A: CHAR: Fixed length. CHAR(10) always uses 10 bytes.
+   VARCHAR: Variable length. VARCHAR(10) uses actual length + 1-2 bytes.
+   Use CHAR for fixed-size data (country codes, phone formats).
+
+Q34. What is AUTO_INCREMENT?
+A: Automatically generates unique integer for new rows.
+   Usually used with primary key. MySQL/SQLite feature.
+   PostgreSQL uses SERIAL or GENERATED ALWAYS AS IDENTITY.
+
+Q35. What is a Sequence in SQL?
+A: Object that generates sequential numbers.
+   PostgreSQL: CREATE SEQUENCE user_id_seq;
+   Alternative to AUTO_INCREMENT. More flexible.
+
+Q36. Difference between UNION and JOIN?
+A: JOIN: Combines COLUMNS from multiple tables (horizontal)
+   UNION: Combines ROWS from multiple queries (vertical)
+   Same number of columns required for UNION.
+
+Q37. What is a recursive query?
+A: Query that references itself. Used for hierarchical data
+   (org charts, categories, file systems). Uses WITH RECURSIVE.
+
+Q38. What are GRANT and REVOKE?
+A: GRANT: Give permissions to user.
+   GRANT SELECT, INSERT ON users TO 'app_user'@'localhost';
+   REVOKE: Take permissions away.
+
+Q39. What is a schema in PostgreSQL vs MySQL?
+A: PostgreSQL: Schema = namespace within database.
+               Can have multiple schemas per database.
+   MySQL: Schema ≈ Database (terms used interchangeably).
+
+Q40. What is DISTINCT?
+A: Returns unique rows only.
+   SELECT DISTINCT city FROM users;  -- No duplicate cities
+
+Q41. What is EXISTS?
+A: Returns TRUE if subquery returns any rows.
+   SELECT * FROM users u
+   WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id);
+   More efficient than IN for large datasets.
+
+Q42. What is ALL, ANY, SOME?
+A: salary > ALL(subquery) → Greater than all values
+   salary > ANY(subquery) → Greater than at least one value
+   SOME is synonym for ANY.
+
+Q43. What is the difference between NOW() and SYSDATE()?
+A: NOW(): Returns time when statement started
+   SYSDATE(): Returns current time dynamically (changes during query)
+   In most cases, they're equivalent. NOW() preferred.
+
+Q44. Can you GROUP BY without aggregate function?
+A: Yes. It returns one row per group (arbitrary row chosen).
+   Not recommended in strict SQL mode. Better to use DISTINCT.
+
+Q45. What is ROLLUP?
+A: Adds subtotals and grand total to GROUP BY.
+   SELECT dept, job, SUM(salary)
+   FROM employees
+   GROUP BY dept, job WITH ROLLUP;
+   Adds subtotals per dept and grand total row.
+
+Q46. What are the differences between MySQL and PostgreSQL?
+A: PostgreSQL: More feature-rich, strict SQL standards, better for complex queries,
+              supports JSON well, open source.
+   MySQL: Faster for simple reads, widely used, easier setup,
+          popular with web apps (LAMP stack).
+
+Q47. What is FOREIGN KEY vs CHECK constraint?
+A: FOREIGN KEY: Ensures value exists in another table's primary key.
+   CHECK: Ensures value meets a condition.
+   CHECK (salary > 0), CHECK (email LIKE '%@%')
+
+Q48. What is SAVEPOINT?
+A: Partial rollback within a transaction.
+   SAVEPOINT sp1;
+   -- do some work
+   ROLLBACK TO sp1;  -- Undo only to this point
+   -- Can continue from sp1
+
+Q49. What is the DUAL table in Oracle/MySQL?
+A: Special one-row, one-column table for testing expressions.
+   SELECT 1+1 FROM DUAL;  -- Returns 2
+   PostgreSQL doesn't need it: SELECT 1+1; works directly.
+
+Q50. How do you copy a table?
+A: CREATE TABLE new_table AS SELECT * FROM old_table;  -- With data
+   CREATE TABLE new_table LIKE old_table;  -- Just structure (MySQL)
+   CREATE TABLE new_table AS SELECT * FROM old_table WHERE 1=0; -- Empty copy
+
+
+================================================================================
+                    END — SQL IS PRACTICE! WRITE QUERIES DAILY!
+================================================================================

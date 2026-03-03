@@ -1,0 +1,569 @@
+================================================================================
+         DBMS INTERVIEW QUESTIONS  |  2-DAY PREP
+         Your level: Medium  |  Concepts + Examples
+================================================================================
+
+★★★ Q1. What is DBMS? Difference between DBMS and RDBMS?
+─────────────────────────────────────────────────────────
+DBMS  = Software to store and manage data. (e.g., file-based storage)
+RDBMS = Relational DBMS — stores data in tables with relationships.
+
+RDBMS extra features:
+- Tables with rows and columns
+- Primary key, foreign key
+- Relationships between tables
+- SQL as query language
+- ACID properties
+
+Examples:
+RDBMS: MySQL, PostgreSQL, Oracle, SQLite, SQL Server
+NoSQL: MongoDB, Redis, Cassandra (not RDBMS)
+
+
+★★★ Q2. What are ACID properties?
+─────────────────────────────────────────────────────────
+A - Atomicity:   Transaction is all or nothing.
+                 Transfer $100: Debit + Credit = one unit.
+                 If credit fails, debit is rolled back.
+
+C - Consistency: DB stays valid before and after transaction.
+                 Bank balance never goes negative if rules prevent it.
+
+I - Isolation:   Concurrent transactions don't interfere with each other.
+                 Two users booking last seat — only one succeeds.
+
+D - Durability:  Committed data is saved permanently.
+                 Even if system crashes after commit, data survives.
+
+
+★★★ Q3. What is a Primary Key? What is a Foreign Key?
+─────────────────────────────────────────────────────────
+Primary Key: Uniquely identifies each row. Cannot be NULL.
+             One PK per table. Can be composite (multiple columns).
+
+Foreign Key: References a primary key in another table.
+             Enforces referential integrity.
+
+users(id, name, email)           ← id is PRIMARY KEY
+orders(id, user_id, amount)      ← user_id is FOREIGN KEY → users.id
+
+If user_id in orders doesn't exist in users → Error!
+This is referential integrity.
+
+
+★★★ Q4. What is Normalization? Explain 1NF, 2NF, 3NF.
+─────────────────────────────────────────────────────────
+Normalization = Organize tables to reduce data redundancy.
+
+1NF (First Normal Form):
+- Each column has atomic (single) values
+- No repeating groups
+
+BAD:
+student_id | subjects
+1          | Math, Science, English   ← Multiple values!
+
+GOOD (1NF):
+student_id | subject
+1          | Math
+1          | Science
+1          | English
+
+
+2NF (Second Normal Form):
+- Must be in 1NF
+- No PARTIAL dependencies (non-key column depends on PART of composite key)
+
+BAD (composite key: student_id + subject):
+student_id | subject | student_name  ← student_name depends only on student_id!
+
+GOOD: Split into two tables
+students(student_id, student_name)
+enrollments(student_id, subject)
+
+
+3NF (Third Normal Form):
+- Must be in 2NF
+- No TRANSITIVE dependencies (non-key depends on another non-key)
+
+BAD:
+employee_id | department_id | department_name  ← dept_name depends on dept_id!
+
+GOOD: Split
+employees(employee_id, department_id)
+departments(department_id, department_name)
+
+
+★★★ Q5. What is a Transaction? How to handle it?
+─────────────────────────────────────────────────────────
+Transaction = Group of SQL operations that succeed or fail together.
+
+BEGIN TRANSACTION;
+    UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+    UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+COMMIT;   -- Both succeed → save
+
+-- If any error:
+ROLLBACK;  -- Undo everything
+
+In Python (SQLAlchemy):
+try:
+    db.query(...).update(...)
+    db.query(...).update(...)
+    db.commit()
+except:
+    db.rollback()
+    raise
+
+
+★★★ Q6. What is an Index? Why use it?
+─────────────────────────────────────────────────────────
+Index = Data structure that speeds up data retrieval.
+Like index in a book — go directly to page instead of reading all pages.
+
+Without index: Full table scan O(n)
+With index:    B-tree lookup O(log n)
+
+CREATE INDEX idx_email ON users(email);
+
+When to CREATE index:
+- Columns frequently used in WHERE clause
+- Columns used in JOIN conditions
+- Foreign keys
+
+When NOT to index:
+- Small tables (full scan is fine)
+- Columns rarely queried
+- Tables with many INSERT/UPDATE (index maintenance overhead)
+
+
+★★ Q7. What are the types of indexes?
+─────────────────────────────────────────────────────────
+Primary Index:   Auto-created on Primary Key
+Unique Index:    Ensures unique values (email column)
+Composite Index: Index on multiple columns
+Full-text Index: For text search (LIKE '%word%')
+Clustered:       Data physically sorted by index (one per table)
+Non-clustered:   Separate structure, points to data
+
+
+★★★ Q8. What is the difference between DELETE, TRUNCATE, DROP?
+─────────────────────────────────────────────────────────
+DELETE:    Removes specific rows. Can use WHERE. Can rollback.
+           Slower (logs each row). Maintains table structure.
+           DELETE FROM users WHERE id = 1;
+
+TRUNCATE:  Removes ALL rows. Cannot use WHERE. Faster.
+           Usually cannot rollback. Resets auto-increment.
+           TRUNCATE TABLE users;
+
+DROP:      Removes entire table (structure + data).
+           Cannot rollback. Table gone forever.
+           DROP TABLE users;
+
+MEMORY TRICK: Delete a person, Truncate empty room, Drop the building.
+
+
+★★★ Q9. What are Joins? Explain with examples.
+─────────────────────────────────────────────────────────
+INNER JOIN: Only matching rows from both tables.
+LEFT JOIN:  All from left + matching from right (NULL if no match).
+RIGHT JOIN: All from right + matching from left.
+FULL OUTER JOIN: All rows from both tables.
+
+Tables:
+users:   id=1 Alice, id=2 Bob, id=3 Charlie
+orders:  user_id=1 $100, user_id=1 $200, user_id=4 $50
+
+INNER JOIN (only users WITH orders):
+SELECT u.name, o.amount
+FROM users u
+INNER JOIN orders o ON u.id = o.user_id;
+Result: Alice $100, Alice $200
+
+LEFT JOIN (all users, even without orders):
+SELECT u.name, o.amount
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id;
+Result: Alice $100, Alice $200, Bob NULL, Charlie NULL
+
+FULL OUTER: Also includes orphan orders (user_id=4 doesn't exist)
+
+
+★★★ Q10. What is a View?
+─────────────────────────────────────────────────────────
+View = Saved SELECT query, acts like a virtual table.
+
+CREATE VIEW active_users AS
+SELECT id, name, email
+FROM users
+WHERE is_active = TRUE;
+
+-- Now use like a table:
+SELECT * FROM active_users;
+
+Benefits:
+- Security (hide sensitive columns)
+- Simplify complex queries
+- Reuse logic
+
+Materialized View: Actually stores data (refreshed periodically).
+Regular View: Executes query each time.
+
+
+★★★ Q11. What is Concurrency? What are common problems?
+─────────────────────────────────────────────────────────
+Concurrency = Multiple transactions running simultaneously.
+
+Problems:
+1. Dirty Read:      Read uncommitted data from another transaction.
+2. Non-repeatable Read: Same query returns different results in same transaction.
+3. Phantom Read:    New rows appear between two reads in same transaction.
+4. Lost Update:     Two transactions update same row, one overwrites other.
+
+Solved by Isolation Levels:
+READ UNCOMMITTED → READ COMMITTED → REPEATABLE READ → SERIALIZABLE
+(More isolation = fewer problems but slower)
+
+
+★★ Q12. What are Isolation Levels?
+─────────────────────────────────────────────────────────
+READ UNCOMMITTED:  Can read dirty data (no protection)
+READ COMMITTED:    Only read committed data (prevents dirty read)
+REPEATABLE READ:   Rows read don't change in transaction (default MySQL)
+SERIALIZABLE:      Full isolation, transactions run one by one (slowest)
+
+┌───────────────────┬──────────┬──────────────┬─────────┐
+│ Level             │ Dirty Rd │ Non-rep Read │ Phantom │
+├───────────────────┼──────────┼──────────────┼─────────┤
+│ Read Uncommitted  │ Yes      │ Yes          │ Yes     │
+│ Read Committed    │ No       │ Yes          │ Yes     │
+│ Repeatable Read   │ No       │ No           │ Yes     │
+│ Serializable      │ No       │ No           │ No      │
+└───────────────────┴──────────┴──────────────┴─────────┘
+
+
+★★★ Q13. What is a Stored Procedure?
+─────────────────────────────────────────────────────────
+Pre-compiled SQL code stored in the database.
+
+CREATE PROCEDURE GetUserOrders(IN user_id INT)
+BEGIN
+    SELECT * FROM orders WHERE user_id = user_id;
+END;
+
+CALL GetUserOrders(1);
+
+Benefits: Faster, reusable, security, less network traffic.
+Drawbacks: Hard to debug, DB vendor-specific.
+
+
+★★ Q14. What is a Trigger?
+─────────────────────────────────────────────────────────
+Automatically executes when INSERT/UPDATE/DELETE occurs.
+
+CREATE TRIGGER after_order_insert
+AFTER INSERT ON orders
+FOR EACH ROW
+BEGIN
+    UPDATE users SET order_count = order_count + 1
+    WHERE id = NEW.user_id;
+END;
+
+Types: BEFORE/AFTER INSERT/UPDATE/DELETE
+Use for: Audit logs, derived columns, enforcing rules
+
+
+★★★ Q15. Difference between WHERE and HAVING?
+─────────────────────────────────────────────────────────
+WHERE:  Filters rows BEFORE grouping. Cannot use aggregate functions.
+HAVING: Filters groups AFTER grouping. Can use aggregate functions.
+
+-- Get departments with average salary > 50000
+SELECT department, AVG(salary) as avg_sal
+FROM employees
+WHERE status = 'active'         -- Filter before grouping
+GROUP BY department
+HAVING AVG(salary) > 50000;    -- Filter after grouping
+
+
+★★★ Q16. What is a Subquery?
+─────────────────────────────────────────────────────────
+Query inside another query.
+
+-- Find users who placed orders above average
+SELECT name FROM users
+WHERE id IN (
+    SELECT user_id FROM orders
+    WHERE amount > (SELECT AVG(amount) FROM orders)
+);
+
+Types:
+- Scalar subquery: Returns single value
+- Row subquery: Returns single row
+- Table subquery: Returns multiple rows
+- Correlated subquery: References outer query
+
+
+★★ Q17. What is Denormalization?
+─────────────────────────────────────────────────────────
+Intentionally adding redundancy for performance.
+
+Normalized (3 joins needed):
+users → orders → order_items → products
+
+Denormalized (faster reads):
+orders table includes: user_name, product_name, category
+(even though redundant)
+
+Use when: Read-heavy systems, reporting, data warehouses.
+Tradeoff: Faster reads, but update anomalies.
+
+
+★★★ Q18. What is the difference between SQL and NoSQL?
+─────────────────────────────────────────────────────────
+SQL (Relational):
+- Structured, predefined schema
+- Tables, rows, columns
+- Strong ACID guarantees
+- Vertical scaling (bigger server)
+- Best for: Financial, transactional, structured data
+
+NoSQL:
+- Flexible schema
+- Document, key-value, graph, column stores
+- BASE properties (basically available, soft state, eventual consistency)
+- Horizontal scaling (more servers)
+- Best for: Big data, real-time, unstructured, flexible schema
+
+SQL Examples:  MySQL, PostgreSQL, SQLite
+NoSQL Examples: MongoDB (document), Redis (key-value), Cassandra (column)
+
+
+★★ Q19. What is B-Tree index?
+─────────────────────────────────────────────────────────
+Most common index type. Balanced tree structure.
+
+Properties:
+- Keeps data sorted
+- O(log n) search, insert, delete
+- Good for: =, <, >, BETWEEN, LIKE 'prefix%'
+
+Hash Index:
+- O(1) exact lookup
+- Only good for: = (equality)
+- Bad for: range queries
+
+
+★★★ Q20. What is the difference between clustered and non-clustered index?
+─────────────────────────────────────────────────────────
+Clustered Index:
+- Physically sorts and stores table data
+- Only ONE per table (usually the primary key)
+- Very fast for range queries
+- Data IS the index
+
+Non-clustered Index:
+- Separate structure pointing to row locations
+- Many per table
+- Slightly slower (two lookups: index → pointer → data)
+
+MySQL InnoDB: Primary key = clustered index (default)
+
+
+★★ Q21. What is query optimization?
+─────────────────────────────────────────────────────────
+EXPLAIN SELECT * FROM users WHERE email = 'a@b.com';
+-- Shows how DB executes query: index used? full scan? cost?
+
+Tips:
+1. Use indexes on WHERE/JOIN columns
+2. Avoid SELECT * (select only needed columns)
+3. Avoid functions on indexed columns: WHERE YEAR(date) = 2024
+4. Use LIMIT for pagination
+5. Avoid N+1 queries (use JOIN instead)
+
+
+★★★ Q22. What is a Deadlock?
+─────────────────────────────────────────────────────────
+Two transactions waiting for each other to release locks.
+
+T1: Locks row A, wants row B
+T2: Locks row B, wants row A
+→ Both wait forever = DEADLOCK!
+
+Detection: DB detects and kills one transaction.
+Prevention: Always acquire locks in same order.
+
+
+★★ Q23. What is Connection Pooling?
+─────────────────────────────────────────────────────────
+Creating DB connections is expensive.
+Pool maintains a set of pre-created connections.
+
+Request comes in → Borrow connection from pool
+Request done    → Return connection to pool (don't close)
+
+Benefits: Faster (no connection overhead), limits max connections.
+SQLAlchemy handles this automatically.
+
+pool_size=5  → Maintain 5 connections
+max_overflow=10 → Allow 10 extra during peak
+
+
+★★ Q24. What is an ER Diagram?
+─────────────────────────────────────────────────────────
+Entity-Relationship Diagram = Visual representation of DB structure.
+
+Entities: Tables (rectangle) → User, Product, Order
+Attributes: Columns (oval) → name, email, price
+Relationships: (diamond) → User PLACES Order
+Cardinality: 1:1, 1:N, M:N
+
+
+★★ Q25. What is Referential Integrity?
+─────────────────────────────────────────────────────────
+Foreign key must always point to existing primary key.
+
+ON DELETE CASCADE: Delete related rows automatically
+ON DELETE RESTRICT: Prevent deletion if referenced
+ON DELETE SET NULL: Set FK to NULL on parent delete
+
+orders.user_id → users.id ON DELETE CASCADE
+(Delete user → all their orders deleted too)
+
+
+================================================================================
+                    QUICK FIRE DBMS Q&A
+================================================================================
+
+Q26. What is a Composite Key?
+A: Primary key made of multiple columns.
+   (student_id, subject) together uniquely identify a row.
+
+Q27. What is a Candidate Key?
+A: Any column(s) that CAN be a primary key (unique + not null).
+   One is chosen as PK, rest are alternate keys.
+
+Q28. What is a Super Key?
+A: Any set of columns that uniquely identifies a row.
+   Superset of candidate keys. Can have extra columns.
+
+Q29. What is a Natural Key vs Surrogate Key?
+A: Natural: Exists in real world (email, SSN, passport number)
+   Surrogate: Auto-generated (id = 1,2,3...). Usually preferred.
+
+Q30. What is OLTP vs OLAP?
+A: OLTP: Online Transaction Processing. Daily operations. Normalized.
+         Fast reads/writes. Many small transactions.
+   OLAP: Online Analytical Processing. Data warehouse. Denormalized.
+         Complex queries on large data. Business intelligence.
+
+Q31. What is a Schema?
+A: Structure/blueprint of the database. Defines tables, columns, types,
+   constraints, relationships. Like a class definition for data.
+
+Q32. Difference between UNION and UNION ALL?
+A: UNION: Combines and removes duplicates. Slower.
+   UNION ALL: Combines including duplicates. Faster.
+
+Q33. What is a NULL value?
+A: Represents missing/unknown value. Not zero, not empty string.
+   NULL = NULL is FALSE! Use IS NULL / IS NOT NULL.
+   SELECT * FROM users WHERE phone IS NULL;
+
+Q34. What is a Self Join?
+A: Table joined to itself.
+   employees(id, name, manager_id)
+   SELECT e.name, m.name as manager
+   FROM employees e
+   JOIN employees m ON e.manager_id = m.id;
+
+Q35. What is a Cross Join?
+A: Cartesian product. Every row from left × every row from right.
+   3 rows × 3 rows = 9 rows result. Rarely used. No ON clause.
+
+Q36. What is a Window Function?
+A: Performs calculation across related rows without grouping.
+   ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC)
+   RANK(), DENSE_RANK(), LAG(), LEAD(), SUM() OVER()
+
+Q37. Difference between RANK and DENSE_RANK?
+A: RANK: Gaps after ties. 1,1,3,4 (skips 2 after two 1s)
+   DENSE_RANK: No gaps. 1,1,2,3
+
+Q38. What is sharding?
+A: Horizontal partitioning across multiple DB servers.
+   Users 1-1M on Server 1, Users 1M-2M on Server 2.
+   Scales write performance. Complex to implement.
+
+Q39. What is a Materialized View?
+A: View that stores result physically (like a table).
+   Refreshed periodically. Faster reads than regular view.
+   Used in data warehouses and reporting.
+
+Q40. What is the difference between IN and EXISTS?
+A: IN: Evaluates subquery first, then checks membership.
+       Good for small subquery results.
+   EXISTS: Stops when first match found. Good for large results.
+   EXISTS is generally faster for large datasets.
+
+Q41. What is a Cursor?
+A: Pointer to rows returned by a query. Allows row-by-row processing.
+   Expensive in terms of memory. Avoid when possible; use set-based SQL.
+
+Q42. What is Data Integrity?
+A: Accuracy and consistency of data.
+   Entity integrity: PK not null, unique
+   Referential integrity: FK references valid PK
+   Domain integrity: Values within valid range/type
+
+Q43. What is the difference between Vertical and Horizontal scaling?
+A: Vertical: Add more power to existing server (CPU, RAM). Has limits.
+   Horizontal: Add more servers. Needs sharding/replication.
+
+Q44. What is Replication?
+A: Copy of database on multiple servers.
+   Master-Slave: Writes to master, reads from slaves.
+   Benefits: High availability, read scaling.
+
+Q45. What is a Data Warehouse?
+A: Central repository of integrated data from multiple sources.
+   Optimized for analytics (OLAP).
+   Different from operational DB (OLTP).
+
+Q46. What is the CAP Theorem?
+A: Distributed systems can only guarantee 2 of 3:
+   C = Consistency (all nodes see same data)
+   A = Availability (every request gets response)
+   P = Partition Tolerance (works despite network failures)
+   SQL = CP (consistency + partition)
+   NoSQL often = AP (availability + partition)
+
+Q47. Explain BASE properties (NoSQL)?
+A: BA = Basically Available (system usually available)
+   S  = Soft state (state may change over time)
+   E  = Eventual Consistency (will become consistent eventually)
+   Opposite of ACID, used in NoSQL for scalability.
+
+Q48. What is an ORM?
+A: Object Relational Mapper. Maps classes to tables.
+   Lets you use Python objects instead of SQL.
+   SQLAlchemy for Python. Handles CRUD operations.
+   Pros: Less SQL, portable, safer. Cons: Less control, slower for complex queries.
+
+Q49. What is a Database Migration?
+A: Versioned changes to database schema.
+   Alembic for SQLAlchemy. Tracks changes like git.
+   alembic upgrade head / alembic downgrade -1
+
+Q50. What is data redundancy and why is it bad?
+A: Storing same data in multiple places.
+   Problems: Update anomaly (update one place, miss another)
+             Insertion anomaly, Deletion anomaly.
+   Solution: Normalization reduces redundancy.
+
+
+================================================================================
+                    END — DBMS IS UNDERSTANDING, NOT MEMORIZATION!
+================================================================================

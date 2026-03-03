@@ -1,0 +1,1001 @@
+================================================================================
+         OOP INTERVIEW QUESTIONS  |  2-DAY PREP
+         Your level: Medium  |  Explain with real examples!
+================================================================================
+
+★ = High probability  ★★ = Very high probability  ★★★ = Almost certain
+
+================================================================================
+                    THE 4 PILLARS — THESE WILL BE ASKED!
+================================================================================
+
+★★★ Q1. What are the 4 pillars of OOP?
+─────────────────────────────────────────────────────────
+1. Encapsulation  → Bundle data + methods, hide internals
+2. Abstraction    → Show only what's needed, hide how it works
+3. Inheritance    → Child class gets parent's properties
+4. Polymorphism   → Same interface, different behavior
+
+Real-world analogy:
+- Encapsulation:  Car hides engine complexity (just use steering/pedals)
+- Abstraction:    ATM hides banking logic (just press buttons)
+- Inheritance:    Car IS-A Vehicle (has all vehicle properties)
+- Polymorphism:   animal.speak() → Dog barks, Cat meows
+
+
+★★★ Q2. Explain Encapsulation with code.
+─────────────────────────────────────────────────────────
+Encapsulation = Wrap data + methods in a class, control access.
+
+class BankAccount:
+    def __init__(self, balance):
+        self.__balance = balance   # Private (name mangled to _BankAccount__balance)
+
+    def deposit(self, amount):
+        if amount > 0:
+            self.__balance += amount
+
+    def withdraw(self, amount):
+        if amount <= self.__balance:
+            self.__balance -= amount
+        else:
+            print("Insufficient funds")
+
+    def get_balance(self):
+        return self.__balance   # Controlled access
+
+acc = BankAccount(1000)
+acc.__balance = 99999       # Doesn't work! (name mangling)
+acc.deposit(500)
+print(acc.get_balance())    # 1500
+
+# Access modifiers in Python:
+self.name    = "public"      # Anyone can access
+self._name   = "protected"   # Convention: don't access outside class
+self.__name  = "private"     # Name mangled, truly hidden
+
+
+★★★ Q3. Explain Inheritance with example.
+─────────────────────────────────────────────────────────
+class Animal:
+    def __init__(self, name):
+        self.name = name
+
+    def speak(self):
+        return "Some sound"
+
+    def breathe(self):
+        return f"{self.name} is breathing"
+
+class Dog(Animal):           # Dog inherits from Animal
+    def speak(self):         # Override parent method
+        return f"{self.name} says Woof!"
+
+class Cat(Animal):
+    def speak(self):
+        return f"{self.name} says Meow!"
+
+dog = Dog("Rex")
+dog.breathe()    # From Animal class (inherited)
+dog.speak()      # From Dog class (overridden) → "Rex says Woof!"
+
+# super() - call parent's method
+class GoldenRetriever(Dog):
+    def speak(self):
+        parent_sound = super().speak()   # Dog's speak
+        return f"{parent_sound} (friendly!)"
+
+
+★★★ Q4. Explain Polymorphism with example.
+─────────────────────────────────────────────────────────
+Same interface, different behavior.
+
+# Method Overriding (runtime polymorphism)
+animals = [Dog("Rex"), Cat("Whiskers"), Dog("Buddy")]
+
+for animal in animals:
+    print(animal.speak())   # Each behaves differently!
+# Rex says Woof!
+# Whiskers says Meow!
+# Buddy says Woof!
+
+# Method Overloading doesn't exist in Python directly
+# But can simulate with default args:
+def add(a, b, c=0):
+    return a + b + c
+
+add(1, 2)      # 3
+add(1, 2, 3)   # 6
+
+
+★★★ Q5. Explain Abstraction. What is an abstract class?
+─────────────────────────────────────────────────────────
+Abstraction = Define WHAT to do, not HOW.
+Abstract class = Can't instantiate, just a blueprint.
+
+from abc import ABC, abstractmethod
+
+class Shape(ABC):          # Abstract class
+    @abstractmethod
+    def area(self):        # Must be implemented by children
+        pass
+
+    @abstractmethod
+    def perimeter(self):
+        pass
+
+    def describe(self):    # Concrete method (shared)
+        return f"I am a {self.__class__.__name__}"
+
+class Circle(Shape):
+    def __init__(self, radius):
+        self.radius = radius
+
+    def area(self):
+        return 3.14 * self.radius ** 2
+
+    def perimeter(self):
+        return 2 * 3.14 * self.radius
+
+# Shape()   → TypeError: Can't instantiate abstract class!
+c = Circle(5)   # Works
+c.area()        # 78.5
+c.describe()    # "I am a Circle"
+
+
+================================================================================
+                    CLASS FUNDAMENTALS
+================================================================================
+
+★★★ Q6. Difference between class variable and instance variable?
+─────────────────────────────────────────────────────────
+class Employee:
+    company = "TechCorp"     # Class variable (shared by ALL instances)
+    count = 0
+
+    def __init__(self, name, salary):
+        self.name = name         # Instance variable (unique per object)
+        self.salary = salary
+        Employee.count += 1
+
+e1 = Employee("Alice", 50000)
+e2 = Employee("Bob", 60000)
+
+Employee.company    # "TechCorp"
+e1.company          # "TechCorp" (same)
+e1.name             # "Alice"
+e2.name             # "Bob"
+Employee.count      # 2
+
+# GOTCHA:
+e1.company = "NewCorp"   # Creates INSTANCE variable for e1 only!
+e2.company               # Still "TechCorp"
+
+
+★★★ Q7. What is __init__? Is it a constructor?
+─────────────────────────────────────────────────────────
+__init__ is the INITIALIZER, not exactly a constructor.
+The constructor is __new__ (creates the object).
+__init__ initializes it after creation.
+
+class Person:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+p = Person("Alice", 25)
+# Python calls: Person.__new__(Person) → creates object
+# Then calls:   Person.__init__(p, "Alice", 25) → initializes
+
+
+★★ Q8. What are dunder (magic) methods?
+─────────────────────────────────────────────────────────
+Double underscore methods that define how objects behave.
+
+class Vector:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __str__(self):     # For print()
+        return f"Vector({self.x}, {self.y})"
+
+    def __repr__(self):    # For debugging, repr()
+        return f"Vector(x={self.x}, y={self.y})"
+
+    def __add__(self, other):   # v1 + v2
+        return Vector(self.x + other.x, self.y + other.y)
+
+    def __len__(self):     # len(v)
+        return 2
+
+    def __eq__(self, other):   # v1 == v2
+        return self.x == other.x and self.y == other.y
+
+v1 = Vector(1, 2)
+v2 = Vector(3, 4)
+print(v1)        # Vector(1, 2)  [uses __str__]
+v3 = v1 + v2    # Vector(4, 6)  [uses __add__]
+
+
+★★★ Q9. @classmethod vs @staticmethod vs instance method
+─────────────────────────────────────────────────────────
+class MyClass:
+    count = 0
+
+    def instance_method(self):       # Has self, accesses instance
+        return self
+
+    @classmethod
+    def class_method(cls):           # Has cls, accesses class
+        return cls.count
+
+    @staticmethod
+    def static_method(x, y):         # No self or cls, utility function
+        return x + y
+
+# When to use:
+# instance method: needs object data
+# classmethod: factory methods, access class variables
+# staticmethod: utility, doesn't need class or instance
+
+# Factory method pattern:
+class Date:
+    def __init__(self, year, month, day):
+        self.year, self.month, self.day = year, month, day
+
+    @classmethod
+    def from_string(cls, date_string):  # "2024-01-15"
+        year, month, day = map(int, date_string.split('-'))
+        return cls(year, month, day)    # Creates Date object
+
+d = Date.from_string("2024-01-15")
+
+
+★★ Q10. What is method resolution order (MRO)?
+─────────────────────────────────────────────────────────
+MRO = Order Python searches for a method in inheritance hierarchy.
+
+class A:
+    def hello(self): return "A"
+
+class B(A):
+    def hello(self): return "B"
+
+class C(A):
+    def hello(self): return "C"
+
+class D(B, C):   # Multiple inheritance
+    pass
+
+d = D()
+d.hello()    # "B" - Python uses C3 linearization
+
+print(D.__mro__)   # D → B → C → A → object
+# Left to right, depth first, each class only once
+
+
+================================================================================
+                    SOLID PRINCIPLES
+================================================================================
+
+★★★ Q11. What are SOLID principles?
+─────────────────────────────────────────────────────────
+S - Single Responsibility: One class, one job
+O - Open/Closed: Open for extension, closed for modification
+L - Liskov Substitution: Child can replace parent
+I - Interface Segregation: Small, specific interfaces
+D - Dependency Inversion: Depend on abstractions, not concretions
+
+
+★★★ Q12. Explain Single Responsibility with example
+─────────────────────────────────────────────────────────
+BAD:
+class User:
+    def save_to_db(self): ...      # Data access
+    def send_email(self): ...       # Email
+    def generate_report(self): ...  # Reporting
+# Too many responsibilities!
+
+GOOD:
+class User:
+    def __init__(self, name): self.name = name
+
+class UserRepository:
+    def save(self, user): ...   # Only handles DB
+
+class EmailService:
+    def send(self, user): ...   # Only handles email
+
+
+★★ Q13. Explain Open/Closed Principle
+─────────────────────────────────────────────────────────
+Open for EXTENSION, Closed for MODIFICATION.
+Add new features by adding new code, not changing existing.
+
+BAD:
+def get_area(shape):
+    if shape.type == "circle":
+        return 3.14 * shape.radius**2
+    if shape.type == "rectangle":   # Must modify to add new shape!
+        return shape.w * shape.h
+
+GOOD (using polymorphism):
+class Shape(ABC):
+    @abstractmethod
+    def area(self): pass
+
+class Circle(Shape):
+    def area(self): return 3.14 * self.radius**2
+
+class Triangle(Shape):  # New shape - no modification needed!
+    def area(self): return 0.5 * self.base * self.height
+
+
+★★ Q14. Explain Liskov Substitution Principle
+─────────────────────────────────────────────────────────
+Objects of child class should be substitutable for parent class.
+
+BAD:
+class Bird:
+    def fly(self): pass
+
+class Penguin(Bird):
+    def fly(self):
+        raise Exception("I can't fly!")  # Violates LSP!
+
+GOOD:
+class Bird:
+    def move(self): pass
+
+class FlyingBird(Bird):
+    def fly(self): pass
+
+class Penguin(Bird):     # Penguin doesn't extend FlyingBird
+    def move(self): return "swimming"
+
+
+================================================================================
+                    DESIGN PATTERNS
+================================================================================
+
+★★★ Q15. What is the Singleton pattern?
+─────────────────────────────────────────────────────────
+Ensure only ONE instance of a class exists.
+
+class Singleton:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+s1 = Singleton()
+s2 = Singleton()
+s1 is s2    # True — same object!
+
+USE CASES: Database connection, config manager, logger
+
+
+★★★ Q16. What is the Factory pattern?
+─────────────────────────────────────────────────────────
+Create objects without exposing creation logic.
+
+class Notification(ABC):
+    @abstractmethod
+    def send(self, msg): pass
+
+class EmailNotification(Notification):
+    def send(self, msg): print(f"Email: {msg}")
+
+class SMSNotification(Notification):
+    def send(self, msg): print(f"SMS: {msg}")
+
+class NotificationFactory:
+    @staticmethod
+    def create(type: str) -> Notification:
+        if type == "email": return EmailNotification()
+        if type == "sms":   return SMSNotification()
+        raise ValueError(f"Unknown type: {type}")
+
+notif = NotificationFactory.create("email")
+notif.send("Hello!")   # Email: Hello!
+
+
+★★★ Q17. What is the Observer pattern?
+─────────────────────────────────────────────────────────
+One object (Subject) notifies many observers when state changes.
+Like event subscription / pub-sub.
+
+class EventSystem:
+    def __init__(self):
+        self._subscribers = {}
+
+    def subscribe(self, event, callback):
+        self._subscribers.setdefault(event, []).append(callback)
+
+    def publish(self, event, data):
+        for callback in self._subscribers.get(event, []):
+            callback(data)
+
+events = EventSystem()
+events.subscribe("user_created", lambda u: print(f"Email to {u['email']}"))
+events.subscribe("user_created", lambda u: print(f"Log: {u['name']} created"))
+
+events.publish("user_created", {"name": "Alice", "email": "a@b.com"})
+
+
+★★ Q18. What is the Strategy pattern?
+─────────────────────────────────────────────────────────
+Define family of algorithms, make them interchangeable.
+
+class SortStrategy(ABC):
+    @abstractmethod
+    def sort(self, data): pass
+
+class BubbleSort(SortStrategy):
+    def sort(self, data): return sorted(data)  # simplified
+
+class QuickSort(SortStrategy):
+    def sort(self, data): return sorted(data)  # simplified
+
+class DataProcessor:
+    def __init__(self, strategy: SortStrategy):
+        self.strategy = strategy
+
+    def process(self, data):
+        return self.strategy.sort(data)
+
+processor = DataProcessor(QuickSort())
+processor.process([3,1,2])
+
+# Change strategy at runtime:
+processor.strategy = BubbleSort()
+
+
+★★ Q19. What is the Decorator pattern?
+─────────────────────────────────────────────────────────
+Add behavior to objects dynamically without modifying class.
+(Different from Python decorators but same concept!)
+
+class Coffee:
+    def cost(self): return 5
+    def description(self): return "Coffee"
+
+class MilkDecorator:
+    def __init__(self, coffee):
+        self.coffee = coffee
+
+    def cost(self): return self.coffee.cost() + 2
+
+    def description(self): return self.coffee.description() + ", Milk"
+
+coffee = Coffee()
+coffee_with_milk = MilkDecorator(coffee)
+print(coffee_with_milk.cost())          # 7
+print(coffee_with_milk.description())   # Coffee, Milk
+
+
+================================================================================
+                    INHERITANCE DEEP DIVE
+================================================================================
+
+★★★ Q20. Single vs Multiple Inheritance
+─────────────────────────────────────────────────────────
+Single: One parent
+class Dog(Animal): pass
+
+Multiple: Many parents
+class Mule(Horse, Donkey): pass   # Has traits of both
+
+DIAMOND PROBLEM in multiple inheritance:
+class A: def hello(self): return "A"
+class B(A): def hello(self): return "B"
+class C(A): def hello(self): return "C"
+class D(B, C): pass  # Which hello() to use?
+
+Python solves with MRO (C3 linearization): B → C → A
+D().hello()   # "B" (B comes first in D's definition)
+
+
+★★★ Q21. What is super() used for?
+─────────────────────────────────────────────────────────
+Calls the NEXT class in MRO chain (usually parent).
+
+class Animal:
+    def __init__(self, name):
+        self.name = name
+
+class Dog(Animal):
+    def __init__(self, name, breed):
+        super().__init__(name)   # Call Animal's __init__
+        self.breed = breed       # Add Dog-specific attribute
+
+d = Dog("Rex", "Labrador")
+d.name    # "Rex"  (from Animal)
+d.breed   # "Labrador" (from Dog)
+
+
+★★ Q22. Abstract class vs Interface (in Python)
+─────────────────────────────────────────────────────────
+Python doesn't have interfaces (unlike Java).
+Use Abstract Base Classes (ABC) for both purposes.
+
+Abstract class: Has some concrete methods
+"Interface": All methods are abstract
+
+from abc import ABC, abstractmethod
+
+# Like an interface (all abstract):
+class Serializable(ABC):
+    @abstractmethod
+    def serialize(self) -> str: pass
+
+    @abstractmethod
+    def deserialize(self, data: str): pass
+
+# Abstract class (mix of concrete and abstract):
+class Vehicle(ABC):
+    def start(self):          # Concrete
+        return "Starting..."
+
+    @abstractmethod
+    def fuel_type(self): pass  # Must implement
+
+
+================================================================================
+                    PYTHON-SPECIFIC OOP
+================================================================================
+
+★★★ Q23. What is @property decorator?
+─────────────────────────────────────────────────────────
+Makes a method act like an attribute (controlled access).
+
+class Temperature:
+    def __init__(self, celsius):
+        self._celsius = celsius
+
+    @property
+    def celsius(self):           # Getter
+        return self._celsius
+
+    @celsius.setter
+    def celsius(self, value):    # Setter
+        if value < -273.15:
+            raise ValueError("Temperature below absolute zero!")
+        self._celsius = value
+
+    @property
+    def fahrenheit(self):        # Computed property
+        return self._celsius * 9/5 + 32
+
+t = Temperature(25)
+t.celsius           # 25  (calls getter, no parentheses!)
+t.celsius = 30      # Calls setter with validation
+t.fahrenheit        # 86.0 (computed)
+t.celsius = -300    # ValueError!
+
+
+★★ Q24. What is __slots__?
+─────────────────────────────────────────────────────────
+Restricts instance variables to save memory.
+
+class Normal:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+class Optimized:
+    __slots__ = ['x', 'y']   # Only x and y allowed!
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+opt = Optimized(1, 2)
+opt.z = 3   # AttributeError! Not in __slots__
+
+# Benefits: Less memory (no __dict__), slightly faster attribute access
+
+
+★★★ Q25. What is composition vs inheritance?
+─────────────────────────────────────────────────────────
+Inheritance: "IS-A" relationship
+Composition: "HAS-A" relationship
+
+INHERITANCE:
+class Car(Vehicle):   # Car IS-A Vehicle
+
+COMPOSITION:
+class Car:
+    def __init__(self):
+        self.engine = Engine()    # Car HAS-A Engine
+        self.tires = [Tire() for _ in range(4)]
+
+PREFER COMPOSITION over inheritance (generally):
+- More flexible
+- Avoids tight coupling
+- Easier to change behavior
+
+"Favor composition over inheritance" - Gang of Four
+
+
+================================================================================
+                    COMMON INTERVIEW SCENARIOS
+================================================================================
+
+★★★ Q26. Design a class hierarchy for a school system
+─────────────────────────────────────────────────────────
+class Person:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+class Student(Person):
+    def __init__(self, name, age, student_id):
+        super().__init__(name, age)
+        self.student_id = student_id
+        self.grades = {}
+
+    def add_grade(self, subject, grade):
+        self.grades[subject] = grade
+
+    def gpa(self):
+        if not self.grades: return 0
+        return sum(self.grades.values()) / len(self.grades)
+
+class Teacher(Person):
+    def __init__(self, name, age, subject):
+        super().__init__(name, age)
+        self.subject = subject
+        self.students = []
+
+    def assign_student(self, student):
+        self.students.append(student)
+
+
+★★★ Q27. Implement a simple Stack class using OOP
+─────────────────────────────────────────────────────────
+class Stack:
+    def __init__(self):
+        self._data = []    # Protected
+
+    def push(self, item):
+        self._data.append(item)
+
+    def pop(self):
+        if self.is_empty():
+            raise IndexError("Stack is empty")
+        return self._data.pop()
+
+    def peek(self):
+        if self.is_empty():
+            raise IndexError("Stack is empty")
+        return self._data[-1]
+
+    def is_empty(self):
+        return len(self._data) == 0
+
+    def __len__(self):
+        return len(self._data)
+
+    def __repr__(self):
+        return f"Stack({self._data})"
+
+
+★★ Q28. What is duck typing?
+─────────────────────────────────────────────────────────
+"If it walks like a duck and quacks like a duck, it's a duck."
+Python doesn't check TYPE, it checks if the METHOD EXISTS.
+
+class Dog:
+    def speak(self): return "Woof"
+
+class Robot:
+    def speak(self): return "Beep boop"   # Not an Animal, but has speak!
+
+def make_speak(thing):
+    print(thing.speak())   # Works for anything with speak()!
+
+make_speak(Dog())     # Woof
+make_speak(Robot())   # Beep boop
+
+
+★★ Q29. What is method overriding? Is it same as overloading?
+─────────────────────────────────────────────────────────
+Overriding: Child redefines parent's method (same name, same signature).
+Overloading: Same method name, different parameters — NOT in Python!
+
+# Overriding:
+class Animal:
+    def sound(self): return "..."
+
+class Dog(Animal):
+    def sound(self): return "Woof"  # Overriding!
+
+# Python handles "overloading" with default args:
+def greet(name, greeting="Hello"):
+    return f"{greeting}, {name}!"
+
+greet("Alice")          # Hello, Alice!
+greet("Alice", "Hi")    # Hi, Alice!
+
+
+★★★ Q30. What is the difference between is-a and has-a?
+─────────────────────────────────────────────────────────
+IS-A = Inheritance:
+  Dog IS-A Animal → class Dog(Animal)
+
+HAS-A = Composition:
+  Car HAS-A Engine → class Car: self.engine = Engine()
+
+Rule: If you can say "X is a Y", use inheritance.
+      If you can say "X has a Y", use composition.
+
+WRONG:
+class Car(Engine): pass    # Car is NOT an Engine
+
+CORRECT:
+class Car:
+    def __init__(self):
+        self.engine = Engine()  # Car HAS an Engine
+
+
+================================================================================
+                    TRICKY QUESTIONS INTERVIEWERS LOVE
+================================================================================
+
+★★★ Q31. What happens when you do a = b for objects?
+─────────────────────────────────────────────────────────
+Both variables point to the SAME object (not a copy)!
+
+a = [1, 2, 3]
+b = a           # b points to same list!
+b.append(4)
+print(a)        # [1, 2, 3, 4]  ← a changed too!
+
+b = a.copy()    # Shallow copy - independent
+b.append(5)
+print(a)        # [1, 2, 3, 4]  ← a unchanged now
+
+
+★★★ Q32. Explain method chaining
+─────────────────────────────────────────────────────────
+Each method returns self, allowing chaining:
+
+class QueryBuilder:
+    def __init__(self):
+        self._query = "SELECT * FROM users"
+
+    def where(self, condition):
+        self._query += f" WHERE {condition}"
+        return self   # Return self for chaining!
+
+    def order_by(self, column):
+        self._query += f" ORDER BY {column}"
+        return self
+
+    def limit(self, n):
+        self._query += f" LIMIT {n}"
+        return self
+
+    def build(self):
+        return self._query
+
+# Method chaining:
+query = QueryBuilder().where("age > 18").order_by("name").limit(10).build()
+
+
+★★ Q33. What is __call__?
+─────────────────────────────────────────────────────────
+Makes an object callable like a function.
+
+class Multiplier:
+    def __init__(self, factor):
+        self.factor = factor
+
+    def __call__(self, value):
+        return value * self.factor
+
+double = Multiplier(2)
+triple = Multiplier(3)
+
+double(5)   # 10  (calling object like function!)
+triple(4)   # 12
+
+# FastAPI uses this pattern for dependencies!
+
+
+★★★ Q34. Mixin classes
+─────────────────────────────────────────────────────────
+Mixin = Class that provides methods to be inherited, but not standalone.
+
+class JSONMixin:
+    def to_json(self):
+        import json
+        return json.dumps(self.__dict__)
+
+class LogMixin:
+    def log(self):
+        print(f"{self.__class__.__name__} created: {self.__dict__}")
+
+class User(JSONMixin, LogMixin):
+    def __init__(self, name, email):
+        self.name = name
+        self.email = email
+
+u = User("Alice", "alice@gmail.com")
+u.to_json()   # '{"name": "Alice", "email": "alice@gmail.com"}'
+u.log()       # User created: {'name': 'Alice', 'email': '...'}
+
+
+★★ Q35. What is Dependency Injection?
+─────────────────────────────────────────────────────────
+Instead of creating dependencies inside, pass them from outside.
+
+BAD (tightly coupled):
+class OrderService:
+    def __init__(self):
+        self.db = MySQLDatabase()   # Hard dependency!
+
+GOOD (dependency injection):
+class OrderService:
+    def __init__(self, db):         # Injected from outside
+        self.db = db
+
+db = MySQLDatabase()
+service = OrderService(db)    # Can swap any DB!
+
+# For testing:
+service = OrderService(FakeDatabase())  # Easy to test!
+
+FastAPI uses Depends() for dependency injection!
+
+
+================================================================================
+                    QUICK FIRE OOP Q&A
+================================================================================
+
+Q36. Can you instantiate an abstract class?
+A: No. Raises TypeError. Child class must implement all abstract methods.
+
+Q37. What is the difference between __str__ and __repr__?
+A: __str__ → User-friendly string (for print())
+   __repr__ → Developer string (for debugging, repr())
+   If only __repr__ defined, print() uses it.
+
+Q38. What is a metaclass?
+A: Class of a class. Controls how classes are created.
+   type is the default metaclass. Advanced topic, rarely asked.
+
+Q39. What is the Liskov Substitution Principle in simple words?
+A: If Parent class works somewhere, Child class should work there too,
+   without breaking anything.
+
+Q40. Can a class inherit from multiple classes in Python?
+A: Yes! class MyClass(Parent1, Parent2, Parent3): pass
+   Python uses MRO to resolve method conflicts.
+
+Q41. What is object serialization?
+A: Converting object to format that can be stored/transmitted.
+   Python: pickle, json. JSON only works with basic types.
+   FastAPI's Pydantic model handles this automatically.
+
+Q42. What is the difference between class method and static method?
+A: classmethod: Takes cls (class), can access class variables.
+   staticmethod: Takes nothing, pure utility function.
+   Use classmethod for factory methods.
+   Use staticmethod for helper functions related to class.
+
+Q43. What is dataclass in Python?
+A: Auto-generates __init__, __repr__, __eq__ for you.
+
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    x: float
+    y: float
+    z: float = 0.0   # Default value
+
+p = Point(1.0, 2.0)
+p.x = 3.0
+print(p)   # Point(x=1.0, y=2.0, z=0.0)
+
+Q44. How to prevent a class from being inherited?
+A: Python doesn't have final keyword. Conventions:
+   - Document "don't inherit"
+   - Or use metaclass trick
+
+Q45. What is the __new__ vs __init__?
+A: __new__: Creates the object (allocates memory), returns instance
+   __init__: Initializes the object (sets attributes), returns None
+   __new__ is called first, then __init__ on the created instance.
+
+
+================================================================================
+                    OOP IN REAL BACKEND CONTEXT
+================================================================================
+
+★★★ Q46. How does OOP apply in backend development?
+─────────────────────────────────────────────────────────
+1. Models: User, Order, Product → each is a class
+2. Services: UserService, OrderService → business logic
+3. Repositories: UserRepository → DB operations
+4. Serializers: Convert objects to/from JSON
+5. Middleware: Classes that wrap request processing
+6. Design Patterns: Singleton (DB), Factory (responses), Observer (events)
+
+
+★★ Q47. What is Repository pattern?
+─────────────────────────────────────────────────────────
+Separate data access logic from business logic.
+
+class UserRepository:
+    def __init__(self, db_session):
+        self.db = db_session
+
+    def get_by_id(self, user_id):
+        return self.db.query(User).filter(User.id == user_id).first()
+
+    def get_by_email(self, email):
+        return self.db.query(User).filter(User.email == email).first()
+
+    def save(self, user):
+        self.db.add(user)
+        self.db.commit()
+        return user
+
+
+★★ Q48. What is Service layer pattern?
+─────────────────────────────────────────────────────────
+Business logic lives in service classes.
+
+class UserService:
+    def __init__(self, user_repo: UserRepository, email_service):
+        self.repo = user_repo
+        self.email = email_service
+
+    def register(self, name, email, password):
+        if self.repo.get_by_email(email):
+            raise ValueError("Email already exists")
+        user = User(name=name, email=email, password=hash(password))
+        saved_user = self.repo.save(user)
+        self.email.send_welcome(email)   # Side effect
+        return saved_user
+
+
+★★ Q49. How to implement a simple event system using OOP?
+─────────────────────────────────────────────────────────
+Already covered in Observer pattern (Q17). Key points:
+- Publisher doesn't know about subscribers
+- Loose coupling
+- Add/remove subscribers at runtime
+
+
+★★★ Q50. Design a parking lot system (common interview question)
+─────────────────────────────────────────────────────────
+Classes needed:
+- ParkingLot (manages floors)
+- ParkingFloor (manages spots)
+- ParkingSpot (available/occupied, size)
+- Vehicle (abstract) → Car, Motorcycle, Bus
+- Ticket (entry time, spot)
+
+Key OOP concepts used:
+- Inheritance: Vehicle → Car, Motorcycle
+- Encapsulation: ParkingSpot hides availability state
+- Abstraction: Abstract Vehicle with get_size()
+- Polymorphism: Different vehicles fit different spots
+
+Key methods:
+- park_vehicle(vehicle) → finds spot, issues ticket
+- unpark_vehicle(ticket) → frees spot, calculates fee
+- get_available_spots() → returns count
+
+This system covered in Python/15_OOP_Real_World_Problems folder!
+
+
+================================================================================
+                    END - GOOD LUCK! OOP IS YOUR FRIEND!
+================================================================================

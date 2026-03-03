@@ -1,0 +1,832 @@
+================================================================================
+         PYTHON + DSA INTERVIEW QUESTIONS  |  2-DAY PREP
+         Your level: Medium  |  Focus: Understand, don't memorize
+================================================================================
+
+★ = High probability  ★★ = Very high probability  ★★★ = Almost certain
+
+================================================================================
+                    PYTHON FUNDAMENTALS
+================================================================================
+
+★★★ Q1. What is the difference between a list and a tuple?
+─────────────────────────────────────────────────────────
+List:  Mutable (can change), uses [], slightly slower
+Tuple: Immutable (cannot change), uses (), slightly faster
+
+my_list  = [1, 2, 3]   # Can do my_list[0] = 99
+my_tuple = (1, 2, 3)   # my_tuple[0] = 99 → TypeError!
+
+Use tuple when data should NOT change (coordinates, DB rows).
+Use list when you need to add/remove/change items.
+
+
+★★★ Q2. What is the difference between list, set, and dict?
+─────────────────────────────────────────────────────────
+list  → Ordered, allows duplicates, indexed. [1,2,2,3]
+set   → Unordered, NO duplicates, no index.  {1,2,3}
+dict  → Key-value pairs, keys unique.         {"a":1}
+
+When to use:
+- Need to check "is X present?" quickly → set (O(1))
+- Need key-value mapping               → dict
+- Need ordered sequence                → list
+
+
+★★★ Q3. What is a Python decorator? Give an example.
+─────────────────────────────────────────────────────────
+Decorator = function that wraps another function to add behavior.
+
+def timer(func):
+    def wrapper(*args, **kwargs):
+        import time
+        start = time.time()
+        result = func(*args, **kwargs)       # Call original
+        print(f"Took {time.time()-start:.2f}s")
+        return result
+    return wrapper
+
+@timer                    # Same as: greet = timer(greet)
+def greet(name):
+    print(f"Hello {name}")
+
+FastAPI uses decorators: @app.get("/"), @app.post("/users")
+
+
+★★ Q4. What is *args and **kwargs?
+─────────────────────────────────────────────────────────
+*args   = variable number of positional arguments (tuple)
+**kwargs = variable number of keyword arguments (dict)
+
+def func(*args, **kwargs):
+    print(args)    # (1, 2, 3)
+    print(kwargs)  # {'name': 'Alice', 'age': 25}
+
+func(1, 2, 3, name="Alice", age=25)
+
+
+★★ Q5. What is a generator? How is it different from a list?
+─────────────────────────────────────────────────────────
+Generator: Produces values one at a time, lazy (saves memory).
+List: Stores all values in memory at once.
+
+# List - loads ALL in memory
+squares = [x**2 for x in range(1000000)]  # 8MB+ memory!
+
+# Generator - one at a time
+squares = (x**2 for x in range(1000000))  # barely any memory
+
+def countdown(n):
+    while n > 0:
+        yield n    # Pauses here, resumes next call
+        n -= 1
+
+for x in countdown(3):   # 3, 2, 1
+
+
+★★★ Q6. Mutable vs Immutable in Python?
+─────────────────────────────────────────────────────────
+Mutable:   Can change after creation. list, dict, set
+Immutable: Cannot change. int, str, tuple, float
+
+# Gotcha:
+def add_to(item, lst=[]):   # DEFAULT MUTABLE ARGUMENT!
+    lst.append(item)
+    return lst
+
+add_to(1)   # [1]
+add_to(2)   # [1, 2]  ← BUG! lst persists between calls!
+
+Fix: use lst=None, then lst = [] inside function.
+
+
+★★ Q7. What is list comprehension?
+─────────────────────────────────────────────────────────
+Concise way to create lists.
+
+# Normal way
+squares = []
+for x in range(10):
+    squares.append(x**2)
+
+# List comprehension
+squares = [x**2 for x in range(10)]
+
+# With condition
+evens = [x for x in range(20) if x % 2 == 0]
+
+# Nested
+matrix = [[i*j for j in range(3)] for i in range(3)]
+
+
+★★★ Q8. Deep copy vs Shallow copy?
+─────────────────────────────────────────────────────────
+Shallow copy: Copies structure, but nested objects are SHARED.
+Deep copy:    Copies everything recursively, fully independent.
+
+import copy
+original = [[1,2],[3,4]]
+
+shallow = original.copy()     # or list(original)
+shallow[0][0] = 99
+print(original)   # [[99, 2], [3, 4]] ← CHANGED! (shared inner list)
+
+deep = copy.deepcopy(original)
+deep[0][0] = 99
+print(original)   # [[1, 2], [3, 4]] ← Unchanged (fully separate)
+
+
+★★ Q9. What is the GIL (Global Interpreter Lock)?
+─────────────────────────────────────────────────────────
+GIL = Mutex that allows only ONE Python thread to execute at a time.
+
+This means: Python threads don't give true parallelism for CPU tasks.
+
+For CPU-bound: Use multiprocessing (separate processes, no GIL)
+For I/O-bound: Threads work fine (GIL released during I/O wait)
+              OR use async/await (even better for I/O)
+
+
+★★ Q10. What is the difference between == and is?
+─────────────────────────────────────────────────────────
+==  checks VALUE equality
+is  checks IDENTITY (same object in memory)
+
+a = [1, 2, 3]
+b = [1, 2, 3]
+a == b   # True  (same values)
+a is b   # False (different objects)
+
+c = a
+a is c   # True  (same object!)
+
+# Common trap:
+x = None
+if x is None:   # CORRECT way to check None
+if x == None:   # Works but not Pythonic
+
+
+================================================================================
+                    PYTHON IMPORTANT CONCEPTS
+================================================================================
+
+★★ Q11. What are Python's built-in data types?
+─────────────────────────────────────────────────────────
+Numbers:   int, float, complex
+Sequence:  list, tuple, str, range
+Mapping:   dict
+Set:       set, frozenset
+Boolean:   bool
+None:      NoneType
+Binary:    bytes, bytearray
+
+
+★★★ Q12. Explain map(), filter(), reduce()
+─────────────────────────────────────────────────────────
+map(func, iterable)    → Apply function to each element
+filter(func, iterable) → Keep elements where func returns True
+reduce(func, iterable) → Aggregate to single value
+
+from functools import reduce
+
+nums = [1, 2, 3, 4, 5]
+
+doubled = list(map(lambda x: x*2, nums))        # [2,4,6,8,10]
+evens   = list(filter(lambda x: x%2==0, nums))  # [2,4]
+total   = reduce(lambda x,y: x+y, nums)         # 15
+
+
+★★ Q13. What is a lambda function?
+─────────────────────────────────────────────────────────
+Anonymous (nameless) one-line function.
+
+square = lambda x: x**2
+add    = lambda x, y: x + y
+
+# Common use: as key in sort
+students = [{"name": "Bob", "grade": 85}, {"name": "Alice", "grade": 92}]
+students.sort(key=lambda s: s["grade"], reverse=True)
+
+
+★★★ Q14. What is the difference between append() and extend()?
+─────────────────────────────────────────────────────────
+append(): Adds item AS IS to end
+extend(): Adds each element of iterable
+
+a = [1, 2, 3]
+a.append([4, 5])   # [1, 2, 3, [4, 5]] ← Nested list!
+a.extend([4, 5])   # [1, 2, 3, 4, 5]   ← Flat!
+
+
+★★ Q15. What is exception handling in Python?
+─────────────────────────────────────────────────────────
+try:
+    result = 10 / 0
+except ZeroDivisionError:
+    print("Can't divide by zero")
+except (TypeError, ValueError) as e:
+    print(f"Error: {e}")
+else:
+    print("No exception occurred")    # Runs if NO exception
+finally:
+    print("Always runs")              # Cleanup code
+
+
+================================================================================
+                    DSA - TIME COMPLEXITY
+================================================================================
+
+★★★ Q16. What is Big O notation? Explain common complexities.
+─────────────────────────────────────────────────────────
+Big O = Describes how algorithm's time grows with input size.
+
+O(1)      Constant   → Dictionary lookup, array index
+O(log n)  Logarithmic→ Binary search
+O(n)      Linear     → Loop through array
+O(n log n)→           Merge sort, efficient sorts
+O(n²)     Quadratic  → Nested loops
+O(2ⁿ)     Exponential→ Recursive Fibonacci (bad!)
+
+MEMORIZE PYTHON OPERATIONS:
+list.append()     O(1)
+list[i]           O(1)
+x in list         O(n)   ← Linear search!
+x in set          O(1)   ← Hash lookup!
+x in dict         O(1)   ← Hash lookup!
+dict[key]         O(1)
+list.sort()       O(n log n)
+
+
+★★★ Q17. When is O(n) better than O(n log n)?
+─────────────────────────────────────────────────────────
+When n is very small, constants matter more than complexity.
+For n=10: O(n log n) ≈ 33 ops, O(n²) ≈ 100 ops — difference is small.
+For n=1,000,000: O(n log n) ≈ 20M, O(n²) ≈ 1 Trillion — huge difference!
+
+Rule: For large inputs, always optimize. For small fixed inputs, readability wins.
+
+
+================================================================================
+                    DSA - ARRAYS & STRINGS
+================================================================================
+
+★★★ Q18. How to find duplicates in an array?
+─────────────────────────────────────────────────────────
+# Approach 1: Using set - O(n) time, O(n) space
+def find_duplicates(nums):
+    seen = set()
+    duplicates = []
+    for num in nums:
+        if num in seen:
+            duplicates.append(num)
+        seen.add(num)
+    return duplicates
+
+# Approach 2: Using Counter
+from collections import Counter
+def has_duplicate(nums):
+    return any(count > 1 for count in Counter(nums).values())
+
+
+★★★ Q19. How to reverse a string/array?
+─────────────────────────────────────────────────────────
+# String
+s = "hello"
+reversed_s = s[::-1]    # "olleh"  ← Pythonic!
+reversed_s = "".join(reversed(s))
+
+# Two pointer approach (good for interviews)
+def reverse(arr):
+    left, right = 0, len(arr) - 1
+    while left < right:
+        arr[left], arr[right] = arr[right], arr[left]
+        left += 1
+        right -= 1
+
+
+★★★ Q20. Two Sum problem (LeetCode 1)
+─────────────────────────────────────────────────────────
+Find two numbers that add up to target.
+
+def two_sum(nums, target):
+    seen = {}   # value → index
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in seen:
+            return [seen[complement], i]
+        seen[num] = i
+
+# O(n) time, O(n) space
+# Key insight: For each num, check if (target - num) exists
+
+
+★★ Q21. Find maximum subarray sum (Kadane's algorithm)
+─────────────────────────────────────────────────────────
+def max_subarray(nums):
+    max_sum = current_sum = nums[0]
+    for num in nums[1:]:
+        current_sum = max(num, current_sum + num)
+        max_sum = max(max_sum, current_sum)
+    return max_sum
+
+# [-2, 1, -3, 4, -1, 2, 1, -5, 4] → 6 (subarray [4,-1,2,1])
+
+
+★★ Q22. Check if string is a palindrome
+─────────────────────────────────────────────────────────
+def is_palindrome(s):
+    s = s.lower().replace(" ", "")
+    return s == s[::-1]
+
+# Two pointer (more interview-friendly):
+def is_palindrome(s):
+    left, right = 0, len(s) - 1
+    while left < right:
+        if s[left] != s[right]:
+            return False
+        left += 1; right -= 1
+    return True
+
+
+================================================================================
+                    DSA - LINKED LISTS
+================================================================================
+
+★★★ Q23. How do you reverse a linked list?
+─────────────────────────────────────────────────────────
+def reverse(head):
+    prev = None
+    curr = head
+    while curr:
+        next_node = curr.next   # Save next
+        curr.next = prev        # Reverse pointer
+        prev = curr             # Move prev forward
+        curr = next_node        # Move curr forward
+    return prev   # prev is new head
+
+# Remember: prev, curr, next_node - 3 pointer pattern
+
+
+★★★ Q24. Detect cycle in linked list (Floyd's algorithm)
+─────────────────────────────────────────────────────────
+def has_cycle(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next        # 1 step
+        fast = fast.next.next   # 2 steps
+        if slow == fast:        # They met → cycle!
+            return True
+    return False
+
+# Slow and fast pointer = tortoise and hare
+
+
+★★ Q25. Find middle of linked list
+─────────────────────────────────────────────────────────
+def find_middle(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+    return slow   # Slow is at middle when fast reaches end
+
+
+================================================================================
+                    DSA - STACKS & QUEUES
+================================================================================
+
+★★★ Q26. Valid Parentheses (Classic stack problem)
+─────────────────────────────────────────────────────────
+def is_valid(s):
+    stack = []
+    pairs = {')':'(', '}':'{', ']':'['}
+    for char in s:
+        if char in '({[':
+            stack.append(char)
+        elif char in ')}]':
+            if not stack or stack[-1] != pairs[char]:
+                return False
+            stack.pop()
+    return len(stack) == 0
+
+
+★★ Q27. Implement stack using list in Python
+─────────────────────────────────────────────────────────
+stack = []
+stack.append(1)    # push
+stack.append(2)
+top = stack[-1]    # peek
+stack.pop()        # pop
+
+# collections.deque is faster for large stacks
+from collections import deque
+stack = deque()
+stack.append(1)
+stack.pop()
+
+
+★★ Q28. Implement queue in Python
+─────────────────────────────────────────────────────────
+from collections import deque
+queue = deque()
+queue.append(1)     # enqueue (add to right)
+queue.append(2)
+front = queue[0]    # peek
+queue.popleft()     # dequeue (remove from left)
+
+# NEVER use list as queue → list.pop(0) is O(n)!
+# deque.popleft() is O(1)
+
+
+================================================================================
+                    DSA - TREES
+================================================================================
+
+★★★ Q29. Tree traversals - Inorder, Preorder, Postorder
+─────────────────────────────────────────────────────────
+class Node:
+    def __init__(self, val):
+        self.val = val
+        self.left = self.right = None
+
+def inorder(root):    # Left → Root → Right
+    if not root: return []
+    return inorder(root.left) + [root.val] + inorder(root.right)
+
+def preorder(root):   # Root → Left → Right
+    if not root: return []
+    return [root.val] + preorder(root.left) + preorder(root.right)
+
+def postorder(root):  # Left → Right → Root
+    if not root: return []
+    return postorder(root.left) + postorder(root.right) + [root.val]
+
+# KEY: Inorder of BST gives SORTED output!
+
+
+★★★ Q30. BFS (Level Order Traversal)
+─────────────────────────────────────────────────────────
+from collections import deque
+
+def level_order(root):
+    if not root: return []
+    result, queue = [], deque([root])
+    while queue:
+        node = queue.popleft()
+        result.append(node.val)
+        if node.left:  queue.append(node.left)
+        if node.right: queue.append(node.right)
+    return result
+
+# Use BFS for: shortest path, level-by-level processing
+
+
+★★★ Q31. Find height of a binary tree
+─────────────────────────────────────────────────────────
+def height(root):
+    if not root: return 0
+    return 1 + max(height(root.left), height(root.right))
+
+
+★★ Q32. Check if Binary Search Tree is valid
+─────────────────────────────────────────────────────────
+def is_valid_bst(root, min_val=float('-inf'), max_val=float('inf')):
+    if not root: return True
+    if root.val <= min_val or root.val >= max_val:
+        return False
+    return (is_valid_bst(root.left, min_val, root.val) and
+            is_valid_bst(root.right, root.val, max_val))
+
+
+================================================================================
+                    DSA - SORTING & SEARCHING
+================================================================================
+
+★★★ Q33. Explain sorting algorithms and their complexities
+─────────────────────────────────────────────────────────
+┌──────────────┬──────────┬──────────┬─────────┬────────┐
+│ Algorithm    │ Best     │ Average  │ Worst   │ Space  │
+├──────────────┼──────────┼──────────┼─────────┼────────┤
+│ Bubble Sort  │ O(n)     │ O(n²)    │ O(n²)   │ O(1)   │
+│ Selection    │ O(n²)    │ O(n²)    │ O(n²)   │ O(1)   │
+│ Insertion    │ O(n)     │ O(n²)    │ O(n²)   │ O(1)   │
+│ Merge Sort   │ O(nlogn) │ O(nlogn) │ O(nlogn)│ O(n)   │
+│ Quick Sort   │ O(nlogn) │ O(nlogn) │ O(n²)   │ O(logn)│
+│ Python sort()│ O(n)     │ O(nlogn) │ O(nlogn)│ O(n)   │
+└──────────────┴──────────┴──────────┴─────────┴────────┘
+
+Python's sorted() uses Timsort (hybrid merge+insertion).
+Stable: Merge, Insertion, Timsort
+Unstable: Quick Sort, Selection Sort
+
+
+★★★ Q34. Binary Search - when and how?
+─────────────────────────────────────────────────────────
+Use when: Array is SORTED.
+Time: O(log n) vs linear search O(n)
+
+def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1     # Target in right half
+        else:
+            right = mid - 1    # Target in left half
+    return -1
+
+
+================================================================================
+                    DSA - HASHING
+================================================================================
+
+★★★ Q35. Anagram check using hashmap
+─────────────────────────────────────────────────────────
+from collections import Counter
+
+def is_anagram(s, t):
+    return Counter(s) == Counter(t)
+
+# Manual approach:
+def is_anagram(s, t):
+    if len(s) != len(t): return False
+    count = {}
+    for c in s: count[c] = count.get(c, 0) + 1
+    for c in t:
+        if c not in count: return False
+        count[c] -= 1
+        if count[c] < 0: return False
+    return True
+
+
+★★ Q36. First non-repeating character
+─────────────────────────────────────────────────────────
+from collections import OrderedDict
+
+def first_non_repeating(s):
+    count = {}
+    for c in s:
+        count[c] = count.get(c, 0) + 1
+    for c in s:
+        if count[c] == 1:
+            return c
+    return None
+
+
+================================================================================
+                    DSA - DYNAMIC PROGRAMMING
+================================================================================
+
+★★★ Q37. What is Dynamic Programming?
+─────────────────────────────────────────────────────────
+DP = Break problem into subproblems, store results to avoid recomputation.
+
+Two approaches:
+1. Top-Down (Memoization): Recursion + cache
+2. Bottom-Up (Tabulation): Fill table iteratively
+
+WHEN TO USE DP:
+- Optimal substructure (optimal solution uses optimal sub-solutions)
+- Overlapping subproblems (same subproblems repeated)
+
+
+★★★ Q38. Fibonacci - recursion vs DP
+─────────────────────────────────────────────────────────
+# Naive recursion - O(2ⁿ) - terrible!
+def fib(n):
+    if n <= 1: return n
+    return fib(n-1) + fib(n-2)
+
+# Memoization - O(n)
+def fib(n, memo={}):
+    if n in memo: return memo[n]
+    if n <= 1: return n
+    memo[n] = fib(n-1, memo) + fib(n-2, memo)
+    return memo[n]
+
+# Bottom-up DP - O(n), O(1) space
+def fib(n):
+    if n <= 1: return n
+    a, b = 0, 1
+    for _ in range(2, n+1):
+        a, b = b, a + b
+    return b
+
+
+★★ Q39. Coin Change problem
+─────────────────────────────────────────────────────────
+# Min coins to make amount
+def coin_change(coins, amount):
+    dp = [float('inf')] * (amount + 1)
+    dp[0] = 0
+    for i in range(1, amount + 1):
+        for coin in coins:
+            if coin <= i:
+                dp[i] = min(dp[i], dp[i-coin] + 1)
+    return dp[amount] if dp[amount] != float('inf') else -1
+
+
+================================================================================
+                    DSA - GRAPHS
+================================================================================
+
+★★★ Q40. BFS vs DFS - when to use which?
+─────────────────────────────────────────────────────────
+BFS (Breadth First Search):
+- Use queue
+- Explores level by level
+- BEST FOR: Shortest path, nearest neighbor
+- Time: O(V+E)
+
+DFS (Depth First Search):
+- Use stack (or recursion)
+- Goes deep before backtracking
+- BEST FOR: Path existence, cycle detection, topological sort
+- Time: O(V+E)
+
+
+★★★ Q41. BFS implementation
+─────────────────────────────────────────────────────────
+from collections import deque
+
+def bfs(graph, start):
+    visited = set()
+    queue = deque([start])
+    visited.add(start)
+    result = []
+
+    while queue:
+        node = queue.popleft()
+        result.append(node)
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+    return result
+
+
+★★ Q42. DFS implementation
+─────────────────────────────────────────────────────────
+def dfs(graph, start, visited=None):
+    if visited is None: visited = set()
+    visited.add(start)
+    result = [start]
+    for neighbor in graph[start]:
+        if neighbor not in visited:
+            result += dfs(graph, neighbor, visited)
+    return result
+
+
+★★ Q43. Detect cycle in directed graph
+─────────────────────────────────────────────────────────
+def has_cycle(graph):
+    visited = set()
+    rec_stack = set()   # Nodes in current DFS path
+
+    def dfs(node):
+        visited.add(node)
+        rec_stack.add(node)
+        for neighbor in graph.get(node, []):
+            if neighbor not in visited:
+                if dfs(neighbor): return True
+            elif neighbor in rec_stack:
+                return True      # Back edge = cycle!
+        rec_stack.remove(node)
+        return False
+
+    for node in graph:
+        if node not in visited:
+            if dfs(node): return True
+    return False
+
+
+================================================================================
+                    TWO POINTERS & SLIDING WINDOW
+================================================================================
+
+★★★ Q44. Two pointer pattern - explain with example
+─────────────────────────────────────────────────────────
+Pattern: Use two pointers that move toward each other or same direction.
+
+# Check if sorted array has pair summing to target
+def has_pair(arr, target):
+    left, right = 0, len(arr) - 1
+    while left < right:
+        total = arr[left] + arr[right]
+        if total == target:
+            return True
+        elif total < target:
+            left += 1
+        else:
+            right -= 1
+    return False
+
+
+★★★ Q45. Sliding window - longest substring without repeating
+─────────────────────────────────────────────────────────
+def length_of_longest_substring(s):
+    char_index = {}
+    max_len = left = 0
+    for right, char in enumerate(s):
+        if char in char_index and char_index[char] >= left:
+            left = char_index[char] + 1   # Shrink window
+        char_index[char] = right
+        max_len = max(max_len, right - left + 1)
+    return max_len
+
+
+================================================================================
+                    RECURSION
+================================================================================
+
+★★★ Q46. What is recursion? Base case and recursive case.
+─────────────────────────────────────────────────────────
+Recursion = Function that calls itself.
+MUST have: 1. Base case (stop condition)
+           2. Recursive case (calls itself with smaller input)
+
+def factorial(n):
+    if n == 0: return 1      # Base case
+    return n * factorial(n-1) # Recursive case
+
+
+★★ Q47. What is the call stack in recursion?
+─────────────────────────────────────────────────────────
+Each recursive call adds a frame to the call stack.
+factorial(3):
+  factorial(3) → waits for factorial(2)
+    factorial(2) → waits for factorial(1)
+      factorial(1) → waits for factorial(0)
+        factorial(0) → returns 1  ← BASE CASE
+      ← returns 1*1 = 1
+    ← returns 2*1 = 2
+  ← returns 3*2 = 6
+
+Too deep → RecursionError: maximum recursion depth exceeded
+Python default limit: 1000
+
+
+================================================================================
+                    ADVANCED DSA
+================================================================================
+
+★★ Q48. What is a heap / priority queue?
+─────────────────────────────────────────────────────────
+Heap = Complete binary tree where parent ≤ children (min-heap).
+Used for: Always get min/max efficiently.
+
+import heapq
+heap = []
+heapq.heappush(heap, 5)
+heapq.heappush(heap, 1)
+heapq.heappush(heap, 3)
+min_val = heapq.heappop(heap)   # 1 (always gets minimum)
+
+# Get k largest elements:
+k_largest = heapq.nlargest(3, [5,1,9,3,7])   # [9,7,5]
+
+
+★★ Q49. What is a hash collision? How is it resolved?
+─────────────────────────────────────────────────────────
+Collision = Two keys hash to same index.
+
+Resolution:
+1. Chaining: Each slot has a linked list of items
+2. Open Addressing: Find next available slot (linear probing)
+
+Python dict uses open addressing with probing.
+Good hash functions minimize collisions.
+
+
+★★★ Q50. When would you use which data structure?
+─────────────────────────────────────────────────────────
+Need fast lookup/insert/delete?     → dict or set (O(1))
+Need ordered data?                  → list or sorted list
+Need FIFO (queue)?                  → collections.deque
+Need LIFO (stack)?                  → list with append/pop
+Need min/max repeatedly?            → heapq
+Need hierarchical data?             → tree
+Need shortest path?                 → BFS (graph)
+Need all paths / backtracking?      → DFS (graph)
+Need overlapping subproblems?       → Dynamic Programming
+
+
+================================================================================
+         QUICK REVISION TABLE - TIME COMPLEXITIES
+================================================================================
+
+OPERATION         ARRAY    LINKED LIST   DICT/SET
+─────────────────────────────────────────────────
+Access by index   O(1)     O(n)          -
+Search            O(n)     O(n)          O(1)
+Insert (end)      O(1)*    O(1)          O(1)
+Insert (front)    O(n)     O(1)          -
+Delete            O(n)     O(1)*         O(1)
+
+* amortized
+
+================================================================================
+                    END — GOOD LUCK! YOU'VE GOT THIS!
+================================================================================

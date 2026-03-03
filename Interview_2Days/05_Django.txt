@@ -1,0 +1,572 @@
+================================================================================
+         DJANGO INTERVIEW QUESTIONS  |  2-DAY PREP
+         Your level: Medium  |  Focus on concepts + how things work
+================================================================================
+
+★★★ Q1. What is Django? Why use it?
+─────────────────────────────────────────────────────────
+Django = High-level Python web framework. "Batteries included."
+
+Key features:
+- ORM (Object Relational Mapper) — No raw SQL needed
+- Admin panel — Auto-generated CRUD interface
+- Auth system — Users, login, permissions built-in
+- Templates — HTML rendering
+- Forms — Validation
+- Migrations — DB schema versioning
+- Security — CSRF, XSS, SQL injection protection built-in
+
+"Don't repeat yourself" (DRY) and "Convention over configuration"
+
+
+★★★ Q2. Explain Django's MVT architecture
+─────────────────────────────────────────────────────────
+Django uses MVT (Model-View-Template), similar to MVC.
+
+M = Model     → Data + Database logic (like M in MVC)
+V = View      → Business logic, handles requests (like C in MVC)
+T = Template  → Presentation, HTML rendering (like V in MVC)
+
+Request Flow:
+URL → URLconf → View → Model (DB) → Template → Response
+
+User Request → urls.py (routing) → views.py (logic) → models.py (data)
+→ templates/ (HTML) → HTTP Response
+
+
+★★★ Q3. What is ORM? How does Django ORM work?
+─────────────────────────────────────────────────────────
+ORM = Object Relational Mapper. Maps Python classes to DB tables.
+
+class User(models.Model):
+    name = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
+    age = models.IntegerField(default=0)
+
+# This creates a table automatically!
+# No SQL needed for basic CRUD
+
+# CREATE
+User.objects.create(name="Alice", email="a@b.com", age=25)
+
+# READ
+User.objects.all()
+User.objects.filter(age__gte=18)
+User.objects.get(id=1)
+
+# UPDATE
+user = User.objects.get(id=1)
+user.name = "Alice Updated"
+user.save()
+
+# DELETE
+User.objects.filter(id=1).delete()
+
+
+★★★ Q4. What are Django Migrations?
+─────────────────────────────────────────────────────────
+Migrations = Version control for database schema.
+
+Workflow:
+1. Change models.py
+2. python manage.py makemigrations  → Creates migration file
+3. python manage.py migrate         → Applies to database
+
+# Migration file auto-generated (0001_initial.py):
+# Shows what SQL changes will be made
+
+Key commands:
+python manage.py makemigrations          # Create migration
+python manage.py migrate                  # Apply migrations
+python manage.py migrate app 0001        # Migrate to specific version
+python manage.py showmigrations          # See all migrations
+python manage.py sqlmigrate app 0001     # See SQL for migration
+
+
+★★★ Q5. What is Django Admin? How to register models?
+─────────────────────────────────────────────────────────
+Auto-generated CRUD interface for your models.
+
+# admin.py
+from django.contrib import admin
+from .models import User, Order
+
+# Simple registration
+admin.site.register(User)
+
+# Customized registration
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'amount', 'status', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['user__name', 'user__email']
+    ordering = ['-created_at']
+
+# Access at: http://localhost:8000/admin
+# Create superuser: python manage.py createsuperuser
+
+
+★★★ Q6. What are Django models? Explain common field types.
+─────────────────────────────────────────────────────────
+from django.db import models
+
+class Product(models.Model):
+    name = models.CharField(max_length=200)         # String with max length
+    description = models.TextField()                # Long text, no max
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    in_stock = models.BooleanField(default=True)
+    quantity = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)  # Set on create
+    updated_at = models.DateTimeField(auto_now=True)       # Update on save
+    image = models.ImageField(upload_to='products/', null=True, blank=True)
+    email = models.EmailField(unique=True)
+    category = models.ForeignKey('Category', on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ['-created_at']   # Default ordering
+        db_table = 'products'        # Custom table name
+
+    def __str__(self):
+        return self.name
+
+
+★★★ Q7. Explain ForeignKey, OneToOneField, ManyToManyField
+─────────────────────────────────────────────────────────
+ForeignKey (Many-to-One):
+class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # Many orders → One user
+
+OneToOneField:
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    # One profile ↔ One user (extends User model)
+
+ManyToManyField:
+class Post(models.Model):
+    tags = models.ManyToManyField(Tag)
+    # One post → Many tags, One tag → Many posts
+
+on_delete options:
+- CASCADE:    Delete related objects (delete user → delete orders)
+- PROTECT:    Prevent deletion if related objects exist
+- SET_NULL:   Set FK to NULL (null=True required)
+- SET_DEFAULT: Set FK to default value
+
+
+★★★ Q8. What is a QuerySet? Key methods?
+─────────────────────────────────────────────────────────
+QuerySet = Lazy collection of DB objects. SQL executed when evaluated.
+
+# Basic operations
+User.objects.all()                    # SELECT *
+User.objects.filter(age__gte=18)      # WHERE age >= 18
+User.objects.exclude(city='Mumbai')   # WHERE NOT city = 'Mumbai'
+User.objects.get(id=1)               # Single object (raises if not found)
+
+# Ordering & limiting
+User.objects.order_by('-created_at')  # ORDER BY created_at DESC
+User.objects.order_by('name')[:10]    # LIMIT 10
+
+# Aggregation
+from django.db.models import Count, Sum, Avg
+User.objects.count()
+User.objects.aggregate(avg_age=Avg('age'))
+User.objects.values('city').annotate(count=Count('id'))
+
+# Related objects
+Order.objects.filter(user__name='Alice')    # Follow FK
+Order.objects.select_related('user')        # JOIN (eager load FK)
+User.objects.prefetch_related('orders')     # Prefetch M2M/reverse FK
+
+# Q objects for complex queries
+from django.db.models import Q
+User.objects.filter(Q(city='Mumbai') | Q(age__lt=25))  # OR
+User.objects.filter(Q(age__gte=18) & Q(is_active=True)) # AND
+
+
+★★★ Q9. What is Django REST Framework (DRF)?
+─────────────────────────────────────────────────────────
+DRF = Toolkit for building REST APIs with Django.
+
+Key components:
+- Serializer:     Convert models to/from JSON (like Pydantic)
+- APIView:        Class-based views for API endpoints
+- ViewSet:        CRUD operations in one class
+- Router:         Auto-URL generation for ViewSets
+- Permissions:    Who can do what
+- Authentication: How to identify users
+
+# Serializer
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'email']
+        # or: fields = '__all__'
+        # or: exclude = ['password']
+
+# ViewSet (handles all CRUD)
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+# Router auto-generates:
+# GET  /users/           → list
+# POST /users/           → create
+# GET  /users/{id}/      → retrieve
+# PUT  /users/{id}/      → update
+# DELETE /users/{id}/    → delete
+
+
+★★★ Q10. What is Django's request-response lifecycle?
+─────────────────────────────────────────────────────────
+1. Browser sends HTTP request
+2. Uvicorn/Gunicorn receives it
+3. Django Middleware (process_request)
+4. URL routing (urls.py) → finds matching view
+5. View function called with request object
+6. View queries models if needed
+7. View renders template or returns JSON
+8. Django Middleware (process_response)
+9. HTTP Response sent to browser
+
+
+★★★ Q11. What are Django Signals?
+─────────────────────────────────────────────────────────
+Signals = Events that let you run code when something happens in Django.
+
+from django.db.models.signals import post_save, pre_delete
+from django.dispatch import receiver
+
+@receiver(post_save, sender=User)
+def create_profile(sender, instance, created, **kwargs):
+    if created:   # Only when new user created
+        Profile.objects.create(user=instance)
+
+@receiver(post_save, sender=Order)
+def send_order_confirmation(sender, instance, created, **kwargs):
+    if created:
+        send_email(instance.user.email, "Order confirmed!")
+
+# Common signals:
+# pre_save, post_save
+# pre_delete, post_delete
+# m2m_changed
+
+# Like Observer pattern!
+
+
+★★ Q12. What is Django Middleware?
+─────────────────────────────────────────────────────────
+Code that runs before/after every request.
+
+Built-in middleware (settings.py):
+- SecurityMiddleware: HTTPS, XSS protection
+- SessionMiddleware: Session handling
+- AuthenticationMiddleware: Attaches user to request
+- CsrfViewMiddleware: CSRF protection
+
+Custom middleware:
+class TimingMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        import time
+        start = time.time()
+        response = self.get_response(request)
+        duration = time.time() - start
+        response['X-Time'] = str(duration)
+        return response
+
+Add to MIDDLEWARE in settings.py.
+
+
+★★★ Q13. Explain Django Authentication
+─────────────────────────────────────────────────────────
+Django has built-in auth system:
+
+# Login
+from django.contrib.auth import authenticate, login
+user = authenticate(request, username='alice', password='secret')
+if user:
+    login(request, user)   # Creates session
+
+# Logout
+from django.contrib.auth import logout
+logout(request)
+
+# Restrict view to logged-in users
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def dashboard(request):
+    return render(request, 'dashboard.html')
+
+# DRF Token Auth
+pip install djangorestframework-simplejwt
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+path('token/', TokenObtainPairView.as_view())
+
+
+★★★ Q14. What is select_related vs prefetch_related?
+─────────────────────────────────────────────────────────
+Both solve N+1 query problem!
+
+select_related: Uses SQL JOIN. For ForeignKey and OneToOne.
+# 1 query with JOIN
+orders = Order.objects.select_related('user').all()
+for order in orders:
+    print(order.user.name)   # No extra query!
+
+prefetch_related: Separate queries. For ManyToMany and reverse FK.
+# 2 queries (one for users, one for orders)
+users = User.objects.prefetch_related('orders').all()
+for user in users:
+    for order in user.orders.all():   # No extra query per user!
+        print(order.amount)
+
+# Without them: N+1 queries (1 for list + N for each related object)
+
+
+★★★ Q15. What is DRF Serializer? Types?
+─────────────────────────────────────────────────────────
+Serializer converts data to/from Python objects/JSON.
+
+# Serializer (manual)
+class UserSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    email = serializers.EmailField()
+
+    def create(self, validated_data):
+        return User.objects.create(**validated_data)
+
+# ModelSerializer (auto from model)
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'email', 'created_at']
+        read_only_fields = ['id', 'created_at']
+        extra_kwargs = {
+            'password': {'write_only': True}  # Never return password!
+        }
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already taken")
+        return value
+
+
+================================================================================
+                    QUICK FIRE DJANGO Q&A
+================================================================================
+
+Q16. What is manage.py?
+A: CLI utility for Django project. Run server, create migrations,
+   create superuser, shell, run tests, etc.
+   python manage.py runserver / makemigrations / shell / test
+
+Q17. What is settings.py?
+A: Central config file. Database, installed apps, middleware,
+   templates, static files, secret key, debug mode, etc.
+
+Q18. What is Django's SECRET_KEY?
+A: Random string used for cryptographic signing.
+   Never expose in production! Use environment variables.
+   from django.conf import settings; settings.SECRET_KEY
+
+Q19. What is CSRF? How does Django handle it?
+A: Cross-Site Request Forgery. Tricks user into making requests.
+   Django uses CSRF tokens. {% csrf_token %} in forms.
+   CsrfViewMiddleware validates token on POST/PUT/PATCH requests.
+
+Q20. Difference between FBV and CBV in Django?
+A: FBV (Function-Based View): Simple functions.
+   @require_http_methods(["GET"])
+   def user_list(request): ...
+
+   CBV (Class-Based View): OOP approach.
+   class UserListView(ListView):
+       model = User
+       template_name = 'users.html'
+
+   CBV: Less code for CRUD, reusable mixins.
+   FBV: More explicit, easier to understand.
+
+Q21. What is Django's context in templates?
+A: Dictionary passed from view to template.
+   return render(request, 'template.html', {'users': User.objects.all()})
+   In template: {% for user in users %}{{ user.name }}{% endfor %}
+
+Q22. What is the difference between null=True and blank=True?
+A: null=True: Database column can be NULL (database-level)
+   blank=True: Field can be empty in forms (validation-level)
+   For strings, prefer blank=True (not null=True — use empty string).
+   For non-strings (int, date), use null=True if optional.
+
+Q23. What is Django's reverse()?
+A: Gets URL from view name (opposite of url resolution).
+   from django.urls import reverse
+   reverse('user-detail', kwargs={'pk': 1})  → '/users/1/'
+   Better than hardcoding URLs.
+
+Q24. What is a Django App vs Project?
+A: Project: The whole website. Contains settings, URLs, multiple apps.
+   App: Reusable component with specific functionality.
+   One project = many apps (users app, orders app, products app).
+
+Q25. What is Django's ORM F() expression?
+A: Reference column value in queries without fetching from DB.
+   Product.objects.update(price=F('price') * 1.10)  # 10% increase
+   Safer for concurrent updates (atomic at DB level).
+
+Q26. What is Django's Q() object?
+A: Complex queries with OR/AND/NOT.
+   User.objects.filter(Q(city='Mumbai') | Q(age__gt=30))
+   Without Q, .filter() chains are always AND.
+
+Q27. What is a Django mixin?
+A: Reusable class added to CBVs for extra functionality.
+   class MyView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+   Mixins add behavior (check login, check permission, etc.)
+
+Q28. How do you handle file uploads in Django?
+A: Set MEDIA_ROOT and MEDIA_URL in settings.
+   Use FileField or ImageField in model.
+   In view: file = request.FILES['file']
+   In template: enctype="multipart/form-data"
+
+Q29. What is Django's cache framework?
+A: Multiple backends: in-memory, Redis, Memcached, file, DB.
+   from django.core.cache import cache
+   cache.set('key', value, timeout=300)
+   cache.get('key')
+
+Q30. What is a Django app's apps.py?
+A: Configuration class for the app. Used to define app name,
+   signals connection (ready() method).
+
+Q31. How does Django protect against SQL injection?
+A: ORM uses parameterized queries automatically.
+   User.objects.filter(name=user_input)  → Safe!
+   Never use .raw() or .extra() with unsanitized input.
+
+Q32. What is pagination in DRF?
+A: Breaks large results into pages.
+   REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', 'PAGE_SIZE': 10}
+   Returns next/previous URLs automatically.
+
+Q33. What are DRF Permissions?
+A: Controls who can access what.
+   IsAuthenticated, IsAdminUser, AllowAny, IsAuthenticatedOrReadOnly
+   Can combine: permission_classes = [IsAuthenticated, IsAdminUser]
+   Custom: override has_permission() and has_object_permission()
+
+Q34. What is DRF ViewSet?
+A: Class that provides list, create, retrieve, update, destroy actions.
+   Combined with Router for auto URL generation.
+   ModelViewSet = all actions. ReadOnlyModelViewSet = only GET.
+
+Q35. What are DRF Routers?
+A: Automatically generate URL patterns for ViewSets.
+   router = DefaultRouter()
+   router.register('users', UserViewSet)
+   urlpatterns += router.urls
+   Generates /users/, /users/{id}/, etc.
+
+Q36. What is Django ORM's annotate()?
+A: Adds calculated field to each object in QuerySet.
+   User.objects.annotate(order_count=Count('orders'))
+   Each user gets order_count attribute.
+
+Q37. What is aggregate() vs annotate()?
+A: aggregate(): Single value for entire queryset.
+               User.objects.aggregate(total=Count('id'))
+   annotate(): Per-object value.
+               User.objects.annotate(order_count=Count('orders'))
+
+Q38. What is Django's get_or_create()?
+A: Get object if exists, else create it. Returns (object, created).
+   user, created = User.objects.get_or_create(email='a@b.com', defaults={'name': 'Alice'})
+   Atomic operation, avoids race conditions.
+
+Q39. What is update_or_create()?
+A: Update if exists, else create.
+   User.objects.update_or_create(email='a@b.com', defaults={'name': 'Updated'})
+
+Q40. What is Django's bulk_create() and bulk_update()?
+A: Create/update multiple objects in one DB query. Much faster.
+   User.objects.bulk_create([User(name='A'), User(name='B')])
+   User.objects.bulk_update(users, ['name', 'email'])
+
+Q41. What is Django testing?
+A: from django.test import TestCase, Client
+   class UserTests(TestCase):
+       def test_create_user(self):
+           response = self.client.post('/users/', {'name': 'Alice'})
+           self.assertEqual(response.status_code, 201)
+
+Q42. What is Django Channels?
+A: Extends Django to handle WebSockets and async protocols.
+   For real-time features: chat, notifications, live updates.
+
+Q43. What is Django's __str__ method importance?
+A: Defines human-readable string representation.
+   def __str__(self): return self.name
+   Used in admin panel, shell, error messages.
+
+Q44. What is lazy loading in Django ORM?
+A: QuerySets are lazy — SQL not executed until data is needed.
+   qs = User.objects.all()   # No DB call yet!
+   for user in qs:           # DB called here
+       print(user.name)
+
+Q45. What is Django's transaction.atomic()?
+A: Wraps code in transaction. Rollback if exception.
+   from django.db import transaction
+   with transaction.atomic():
+       user = User.objects.create(...)
+       Profile.objects.create(user=user)
+   # If Profile creation fails, User creation also rolls back!
+
+Q46. What is the difference between GET and POST in Django views?
+A: def my_view(request):
+       if request.method == 'GET':
+           return render(request, 'form.html')
+       elif request.method == 'POST':
+           data = request.POST.get('name')
+           # process and save
+
+Q47. What is HttpResponse vs JsonResponse?
+A: HttpResponse: Return HTML/text content
+   JsonResponse: Return JSON, sets Content-Type automatically
+   from django.http import JsonResponse
+   return JsonResponse({'status': 'ok', 'user_id': 1})
+
+Q48. What are custom model managers?
+A: Custom QuerySet methods for common queries.
+   class ActiveUserManager(models.Manager):
+       def get_queryset(self):
+           return super().get_queryset().filter(is_active=True)
+   class User(models.Model):
+       active_users = ActiveUserManager()
+   User.active_users.all()  → Only active users
+
+Q49. What is __init__.py in Django apps?
+A: Makes folder a Python package. Usually empty.
+   Required for imports to work across the project.
+
+Q50. What is the difference between Django and FastAPI?
+A: Django: Full-stack, batteries included, built-in ORM/admin/auth,
+          synchronous (mostly), DRF for APIs, mature ecosystem.
+   FastAPI: API-only, lightweight, native async, Pydantic validation,
+           auto docs, faster, newer.
+   Choose Django for full web apps with admin.
+   Choose FastAPI for high-performance APIs and microservices.
+
+
+================================================================================
+                    END — DJANGO IS VAST, FOCUS ON ORM + DRF + AUTH!
+================================================================================

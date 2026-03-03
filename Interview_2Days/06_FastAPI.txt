@@ -1,0 +1,1325 @@
+================================================================================
+          FASTAPI INTERVIEW QUESTIONS — 50 HIGH-PROBABILITY Q&A
+          [More Focus — Study This File Carefully!]
+================================================================================
+
+★★★ = Almost certain to be asked
+★★☆ = Very likely
+★☆☆ = Good to know
+
+================================================================================
+                    SECTION 1: FASTAPI BASICS (Q1–Q10)
+================================================================================
+
+Q1 ★★★ What is FastAPI? How is it different from Flask and Django?
+------------------------------------------------------------------------
+FastAPI is a modern Python web framework for building APIs, based on Python
+type hints. Key differences:
+
+Feature          | FastAPI          | Flask            | Django
+-----------------|------------------|------------------|------------------
+Speed            | Very fast (ASGI) | Moderate (WSGI)  | Moderate (WSGI)
+Type hints       | Built-in         | No               | No
+Auto docs        | Yes (Swagger)    | No               | No (DRF has it)
+Async support    | Native           | Partial          | Partial
+Data validation  | Pydantic         | Manual           | Forms/Serializers
+Best for         | APIs             | Small apps/APIs  | Full-stack apps
+
+FastAPI is fastest because:
+- ASGI (async) vs WSGI (sync)
+- Pydantic for fast data validation
+- Starlette for HTTP handling
+
+
+Q2 ★★★ What is ASGI? How is it different from WSGI?
+------------------------------------------------------------------------
+WSGI (Web Server Gateway Interface) — OLD, synchronous:
+- One request at a time per worker
+- Blocks while waiting for DB, file, network
+- Flask, Django are WSGI
+
+ASGI (Asynchronous Server Gateway Interface) — NEW, async:
+- Handles many requests concurrently
+- While waiting for DB, handles other requests
+- FastAPI (via Starlette), Django Channels are ASGI
+
+Example difference:
+WSGI: 10 requests × 1 sec DB wait = 10 seconds total
+ASGI: 10 requests × 1 sec DB wait = ~1 second total (concurrent)
+
+FastAPI runs on Uvicorn (ASGI server):
+  uvicorn main:app --reload
+
+
+Q3 ★★★ What is Pydantic? Why does FastAPI use it?
+------------------------------------------------------------------------
+Pydantic = Python library for data validation using type hints.
+
+FastAPI uses Pydantic to:
+1. Validate request body automatically
+2. Parse/convert data types
+3. Generate JSON Schema (used for auto docs)
+4. Serialize response data
+
+Example:
+  from pydantic import BaseModel
+
+  class User(BaseModel):
+      name: str
+      age: int
+      email: str
+
+  # FastAPI auto-validates incoming JSON against this model
+  @app.post("/users")
+  def create_user(user: User):
+      return user   # Also auto-serializes to JSON
+
+If request sends age = "25" (string), Pydantic converts to int = 25.
+If request sends age = "abc", Pydantic raises validation error → 422 response.
+
+
+Q4 ★★★ How do you create a basic FastAPI app and run it?
+------------------------------------------------------------------------
+  # main.py
+  from fastapi import FastAPI
+
+  app = FastAPI()
+
+  @app.get("/")
+  def root():
+      return {"message": "Hello World"}
+
+  @app.get("/items/{item_id}")
+  def get_item(item_id: int):
+      return {"item_id": item_id}
+
+Run: uvicorn main:app --reload
+  - main: file name
+  - app: FastAPI instance
+  - --reload: auto-reload on code change (dev only)
+
+Docs auto-generated at:
+  http://localhost:8000/docs      ← Swagger UI
+  http://localhost:8000/redoc     ← ReDoc
+
+
+Q5 ★★★ What is the difference between path parameters and query parameters?
+------------------------------------------------------------------------
+PATH PARAMETERS — Part of the URL path:
+  @app.get("/users/{user_id}")
+  def get_user(user_id: int):
+      ...
+  # Call: GET /users/42
+
+QUERY PARAMETERS — After ? in URL:
+  @app.get("/users")
+  def get_users(skip: int = 0, limit: int = 10):
+      ...
+  # Call: GET /users?skip=0&limit=10
+
+COMBINED:
+  @app.get("/users/{user_id}/posts")
+  def get_posts(user_id: int, published: bool = True):
+      ...
+  # Call: GET /users/42/posts?published=true
+
+Rule: Path params are REQUIRED (part of route).
+      Query params are OPTIONAL (have defaults).
+
+
+Q6 ★★★ How does request body work in FastAPI?
+------------------------------------------------------------------------
+Use Pydantic model as function parameter:
+
+  from pydantic import BaseModel
+
+  class Item(BaseModel):
+      name: str
+      price: float
+      in_stock: bool = True    # Optional with default
+
+  @app.post("/items")
+  def create_item(item: Item):
+      return item
+
+FastAPI:
+1. Reads JSON body from request
+2. Validates against Item model
+3. Injects as 'item' parameter
+4. Returns serialized JSON
+
+Rule: If param type is Pydantic model → body
+      If param type is basic (int, str) → path or query
+
+
+Q7 ★★★ What is response_model in FastAPI? Why is it important?
+------------------------------------------------------------------------
+response_model controls what gets RETURNED to the client:
+
+  class UserCreate(BaseModel):
+      username: str
+      password: str       # SENSITIVE!
+
+  class UserResponse(BaseModel):
+      id: int
+      username: str
+      # No password field!
+
+  @app.post("/users", response_model=UserResponse)
+  def create_user(user: UserCreate):
+      new_user = save_to_db(user)
+      return new_user    # Even if new_user has password, it's stripped!
+
+Benefits:
+1. Filters sensitive fields (password, internal IDs)
+2. Documents what API returns (in Swagger)
+3. Validates response structure
+4. Converts SQLAlchemy model → Pydantic automatically
+
+
+Q8 ★★☆ What is status_code in FastAPI routes?
+------------------------------------------------------------------------
+  @app.post("/users", status_code=201)     # 201 Created
+  @app.delete("/users/{id}", status_code=204)  # 204 No Content
+
+HTTP status codes:
+  200 - OK (default GET)
+  201 - Created (POST success)
+  204 - No Content (DELETE success)
+  400 - Bad Request
+  401 - Unauthorized
+  403 - Forbidden
+  404 - Not Found
+  422 - Unprocessable Entity (validation error)
+  500 - Internal Server Error
+
+To raise errors:
+  from fastapi import HTTPException
+  raise HTTPException(status_code=404, detail="User not found")
+
+
+Q9 ★★★ What is HTTPException and how do you raise errors?
+------------------------------------------------------------------------
+  from fastapi import HTTPException
+
+  @app.get("/users/{user_id}")
+  def get_user(user_id: int):
+      user = db.get(user_id)
+      if not user:
+          raise HTTPException(
+              status_code=404,
+              detail="User not found"
+          )
+      return user
+
+  # Response: {"detail": "User not found"} with 404 status
+
+Custom exception handler:
+  from fastapi import Request
+  from fastapi.responses import JSONResponse
+
+  @app.exception_handler(404)
+  async def not_found_handler(request: Request, exc: HTTPException):
+      return JSONResponse({"error": "Not found", "path": str(request.url)}, 404)
+
+
+Q10 ★★☆ How does FastAPI handle data validation errors?
+------------------------------------------------------------------------
+When request data is invalid, FastAPI automatically returns 422:
+
+  {
+    "detail": [
+      {
+        "loc": ["body", "age"],
+        "msg": "value is not a valid integer",
+        "type": "type_error.integer"
+      }
+    ]
+  }
+
+You don't need to write this — Pydantic + FastAPI handle it automatically.
+This is one of FastAPI's biggest advantages over Flask.
+
+
+================================================================================
+                    SECTION 2: PYDANTIC & VALIDATION (Q11–Q18)
+================================================================================
+
+Q11 ★★★ How do you validate fields in Pydantic?
+------------------------------------------------------------------------
+  from pydantic import BaseModel, Field, validator
+
+  class User(BaseModel):
+      name: str = Field(..., min_length=2, max_length=50)
+      age: int = Field(..., ge=18, le=120)    # ge=>=, le=<=
+      email: str = Field(..., pattern=r".+@.+\..+")
+
+  # OR use @validator (Pydantic v1) / @field_validator (Pydantic v2):
+  from pydantic import field_validator
+
+  class Product(BaseModel):
+      price: float
+      discount: float = 0.0
+
+      @field_validator("discount")
+      @classmethod
+      def discount_must_be_valid(cls, v, values):
+          if v < 0 or v > 100:
+              raise ValueError("Discount must be 0-100")
+          return v
+
+Field() params: min_length, max_length, ge, gt, le, lt, pattern, default
+
+
+Q12 ★★★ What is Optional in FastAPI/Pydantic and how do you use it?
+------------------------------------------------------------------------
+  from typing import Optional
+
+  class UpdateUser(BaseModel):
+      name: Optional[str] = None    # Can be string or None
+      age: Optional[int] = None
+      email: Optional[str] = None
+
+  @app.patch("/users/{user_id}")
+  def update_user(user_id: int, updates: UpdateUser):
+      # Only update provided fields
+      user = db.get(user_id)
+      if updates.name is not None:
+          user["name"] = updates.name
+      if updates.age is not None:
+          user["age"] = updates.age
+      return user
+
+Pattern: Use Optional for PATCH (partial updates), required fields for POST
+
+
+Q13 ★★★ What is from_attributes = True in Pydantic Config?
+------------------------------------------------------------------------
+  class UserResponse(BaseModel):
+      id: int
+      username: str
+
+      class Config:
+          from_attributes = True    # Was orm_mode=True in Pydantic v1
+
+WHY NEEDED:
+- SQLAlchemy returns ORM objects (not dicts)
+- Pydantic by default only reads dicts
+- from_attributes=True tells Pydantic: "also read object attributes"
+
+Without it: ValidationError when returning SQLAlchemy model
+With it:    Works perfectly
+
+  user_from_db = db.query(User).first()    # SQLAlchemy object
+  return UserResponse.from_orm(user_from_db)  # Works!
+
+
+Q14 ★★☆ How do you create nested Pydantic models?
+------------------------------------------------------------------------
+  class Address(BaseModel):
+      street: str
+      city: str
+      pin: str
+
+  class User(BaseModel):
+      name: str
+      address: Address        # Nested model
+      tags: list[str] = []    # List of strings
+
+  # Request body:
+  {
+    "name": "Alice",
+    "address": {"street": "MG Road", "city": "Bangalore", "pin": "560001"},
+    "tags": ["python", "backend"]
+  }
+
+FastAPI validates the nested structure automatically.
+
+
+Q15 ★★☆ What is model inheritance in Pydantic and why use it?
+------------------------------------------------------------------------
+  class PostBase(BaseModel):
+      title: str
+      content: str
+
+  class PostCreate(PostBase):
+      pass              # Inherits title + content (for creating)
+
+  class PostUpdate(PostBase):
+      published: bool = False   # Extra field for updates
+
+  class PostResponse(PostBase):
+      id: int
+      created_at: datetime
+
+      class Config:
+          from_attributes = True
+
+WHY: DRY principle — don't repeat common fields.
+     PostCreate = what user sends, PostResponse = what we return.
+     Never return the same schema for input and output!
+
+
+Q16 ★★☆ Difference between PUT and PATCH in FastAPI?
+------------------------------------------------------------------------
+PUT — Full replacement. All fields required:
+  @app.put("/users/{id}")
+  def update_user(id: int, user: UserCreate):
+      # Replace entire user
+
+PATCH — Partial update. Only send changed fields:
+  @app.patch("/users/{id}")
+  def partial_update(id: int, user: UserUpdate):
+      # user has Optional fields
+      # Update only what was provided
+
+In practice:
+  PUT /users/1   body: {name: "Bob", age: 25, email: "bob@..."}   → replace all
+  PATCH /users/1 body: {age: 26}                                   → update age only
+
+
+Q17 ★★★ How do you use Query() and Path() for validation?
+------------------------------------------------------------------------
+  from fastapi import Query, Path
+
+  @app.get("/users/{user_id}/items")
+  def get_items(
+      user_id: int = Path(..., ge=1, title="The user ID"),
+      limit: int = Query(10, ge=1, le=100, description="Max items"),
+      search: str = Query(None, min_length=3)
+  ):
+      ...
+
+  # URL: /users/5/items?limit=20&search=abc
+
+Benefits:
+- Built-in validation without extra code
+- Auto-documents in Swagger (title, description show up)
+- Clear intent (Path vs Query)
+
+
+Q18 ★★☆ How do you handle list query parameters?
+------------------------------------------------------------------------
+  from typing import List
+
+  @app.get("/items")
+  def get_items(tags: List[str] = Query([])):
+      return {"tags": tags}
+
+  # URL: /items?tags=python&tags=fastapi&tags=backend
+  # tags = ["python", "fastapi", "backend"]
+
+
+================================================================================
+                    SECTION 3: DEPENDENCY INJECTION (Q19–Q24)
+================================================================================
+
+Q19 ★★★ What is Depends() in FastAPI? Explain with example.
+------------------------------------------------------------------------
+Depends() = FastAPI's dependency injection system.
+Run a function BEFORE your route handler, inject its result.
+
+  from fastapi import Depends
+
+  def get_db():
+      db = SessionLocal()
+      try:
+          yield db
+      finally:
+          db.close()
+
+  def verify_token(token: str = Header(...)):
+      user = decode_token(token)
+      if not user:
+          raise HTTPException(401, "Invalid token")
+      return user
+
+  @app.get("/posts")
+  def get_posts(
+      db = Depends(get_db),           # DB session injected
+      user = Depends(verify_token)    # Auth injected
+  ):
+      return db.query(Post).all()
+
+FastAPI:
+1. Calls get_db() → injects db
+2. Calls verify_token() → injects user
+3. Then calls get_posts()
+
+
+Q20 ★★★ What is the difference between yield and return in dependencies?
+------------------------------------------------------------------------
+RETURN — Simple, no cleanup:
+  def get_setting():
+      return {"max_items": 100}
+
+YIELD — With cleanup (teardown):
+  def get_db():
+      db = SessionLocal()
+      try:
+          yield db        # ← code BEFORE yield = setup
+      finally:
+          db.close()     # ← code AFTER yield = teardown (always runs)
+
+Use yield when you need to clean up resources after the request is done.
+The finally block runs even if the request raises an exception.
+This is why database sessions are always properly closed.
+
+
+Q21 ★★★ How do you apply a dependency to all routes (global)?
+------------------------------------------------------------------------
+  # Option 1: Router level
+  from fastapi import APIRouter
+
+  router = APIRouter(dependencies=[Depends(verify_token)])
+
+  @router.get("/posts")   # verify_token runs automatically
+  def get_posts(): ...
+
+  # Option 2: App level
+  app = FastAPI(dependencies=[Depends(verify_token)])
+
+  # Option 3: Include router with dependencies
+  app.include_router(router, prefix="/api", dependencies=[Depends(rate_limiter)])
+
+
+Q22 ★★★ What is class-based dependency in FastAPI?
+------------------------------------------------------------------------
+  class Pagination:
+      def __init__(self, skip: int = 0, limit: int = 10):
+          self.skip = skip
+          self.limit = limit
+
+  @app.get("/items")
+  def get_items(pagination: Pagination = Depends()):
+      # URL: /items?skip=0&limit=10
+      return {
+          "skip": pagination.skip,
+          "limit": pagination.limit
+      }
+
+WHY USE CLASS:
+- Group related parameters together
+- Reuse same query params across multiple routes
+- Can have methods and state
+
+
+Q23 ★★☆ How do you nest dependencies?
+------------------------------------------------------------------------
+  def get_db():
+      db = SessionLocal()
+      try:
+          yield db
+      finally:
+          db.close()
+
+  def get_current_user(token: str = Depends(oauth2_scheme),
+                        db = Depends(get_db)):
+      # Uses get_db dependency!
+      user = db.query(User).filter(User.token == token).first()
+      return user
+
+  @app.get("/profile")
+  def get_profile(user = Depends(get_current_user)):
+      # get_db and get_current_user both run automatically
+      return user
+
+FastAPI resolves the dependency tree automatically.
+get_db() runs once and is shared if multiple deps need it (caching).
+
+
+Q24 ★★☆ Does FastAPI cache dependencies? How to control it?
+------------------------------------------------------------------------
+YES — By default, dependencies run ONCE per request and are cached.
+
+  def get_db():
+      print("Creating DB session")  # Prints ONCE even if multiple routes use it
+      db = SessionLocal()
+      try:
+          yield db
+      finally:
+          db.close()
+
+To disable caching (run every time):
+  @app.get("/items")
+  def get_items(
+      db1 = Depends(get_db),                          # Cached
+      db2 = Depends(get_db, use_cache=False)          # New instance
+  ):
+      ...
+
+
+================================================================================
+                    SECTION 4: AUTHENTICATION & JWT (Q25–Q33)
+================================================================================
+
+Q25 ★★★ How does JWT authentication work in FastAPI? Explain end-to-end.
+------------------------------------------------------------------------
+SETUP:
+  pip install python-jose[cryptography] passlib[bcrypt]
+
+FLOW:
+1. User POST /token with username + password
+2. Server verifies credentials
+3. Server creates JWT: jwt.encode({"user_id": 1, "exp": ...}, SECRET_KEY)
+4. Client gets token, stores it
+5. Client sends: Authorization: Bearer <token> in every request
+6. Server decodes: jwt.decode(token, SECRET_KEY) → gets user_id
+7. No DB lookup needed for identity!
+
+CODE:
+  SECRET_KEY = "your-secret"
+  ALGORITHM = "HS256"
+
+  def create_access_token(data: dict):
+      to_encode = data.copy()
+      expire = datetime.utcnow() + timedelta(minutes=30)
+      to_encode["exp"] = expire
+      return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+  def verify_token(token: str):
+      try:
+          payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+          return payload
+      except JWTError:
+          return None
+
+
+Q26 ★★★ What is OAuth2PasswordBearer in FastAPI?
+------------------------------------------------------------------------
+  from fastapi.security import OAuth2PasswordBearer
+
+  oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+  def get_current_user(token: str = Depends(oauth2_scheme)):
+      # token is extracted from Authorization: Bearer <token> header
+      payload = verify_token(token)
+      if not payload:
+          raise HTTPException(401, "Invalid credentials")
+      return payload
+
+OAuth2PasswordBearer does:
+1. Extracts token from Authorization header automatically
+2. Shows "Authorize" button in Swagger UI
+3. Returns 401 if no token provided
+
+OAuth2PasswordRequestForm — for login endpoint:
+  @app.post("/token")
+  def login(form: OAuth2PasswordRequestForm = Depends()):
+      # form.username, form.password available
+      ...
+
+
+Q27 ★★★ What is the JWT structure? What can you put in payload?
+------------------------------------------------------------------------
+JWT = header.payload.signature (base64 encoded)
+
+HEADER: {"alg": "HS256", "typ": "JWT"}
+
+PAYLOAD (claims):
+  {
+    "user_id": 1,
+    "username": "alice",
+    "role": "admin",
+    "exp": 1699999999,    # Expiry (Unix timestamp)
+    "iat": 1699996399     # Issued at
+  }
+
+SIGNATURE: HMAC_SHA256(base64(header) + "." + base64(payload), SECRET_KEY)
+
+IMPORTANT:
+- Payload is base64 encoded, NOT encrypted — anyone can read it!
+- Never put passwords or sensitive data in payload
+- Signature ensures payload hasn't been tampered with
+- Only server with SECRET_KEY can create valid signatures
+
+
+Q28 ★★★ How do you hash passwords? Why not encrypt?
+------------------------------------------------------------------------
+  from passlib.context import CryptContext
+
+  pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+  def hash_password(password: str) -> str:
+      return pwd_context.hash(password)   # One-way
+
+  def verify_password(plain: str, hashed: str) -> bool:
+      return pwd_context.verify(plain, hashed)
+
+WHY HASH NOT ENCRYPT:
+- Encryption is reversible. If key stolen → all passwords exposed.
+- Hashing is one-way. Even if hash stolen → can't get original.
+
+WHY BCRYPT:
+- Slow by design → brute force takes forever
+- Built-in salt → prevents rainbow table attacks
+- Work factor → can increase difficulty as hardware gets faster
+
+
+Q29 ★★★ How do you implement RBAC (Role-Based Access Control)?
+------------------------------------------------------------------------
+  from enum import Enum
+
+  class Role(str, Enum):
+      USER = "user"
+      ADMIN = "admin"
+      MODERATOR = "moderator"
+
+  def require_role(*roles: Role):
+      def check(user = Depends(get_current_user)):
+          if user["role"] not in [r.value for r in roles]:
+              raise HTTPException(403, "Insufficient permissions")
+          return user
+      return check
+
+  # Usage:
+  @app.delete("/users/{id}")
+  def delete_user(id: int, user = Depends(require_role(Role.ADMIN))):
+      ...   # Only admin can delete
+
+  @app.put("/posts/{id}")
+  def update_post(id: int, user = Depends(require_role(Role.ADMIN, Role.MODERATOR))):
+      ...   # Admin OR moderator can update
+
+
+Q30 ★★★ How do you invalidate a JWT token (logout)?
+------------------------------------------------------------------------
+JWT is STATELESS — server doesn't store tokens, so you can't
+"delete" a token on the server.
+
+SOLUTIONS:
+
+1. SHORT EXPIRY (Simplest):
+   - Set exp to 15-30 minutes
+   - Token becomes invalid soon anyway
+   - Downside: forced re-login frequently
+
+2. TOKEN BLACKLIST (Redis):
+   - On logout, store token in Redis with TTL = remaining expiry
+   - On every request, check if token is blacklisted
+   - Downside: adds state (not truly stateless)
+
+3. ROTATE SECRET KEY (Nuclear option):
+   - Change SECRET_KEY → invalidates ALL tokens
+   - Use for security breach
+
+4. REFRESH TOKEN PATTERN:
+   - Short-lived access token (15 min)
+   - Long-lived refresh token (7 days, stored in DB)
+   - On logout, delete refresh token from DB
+   - Access token still valid briefly, but can't renew
+
+
+Q31 ★★★ Access token vs Refresh token — explain.
+------------------------------------------------------------------------
+ACCESS TOKEN:
+- Short-lived: 15-30 minutes
+- Used for actual API calls
+- Stateless, stored in memory/localStorage
+- Small payload, fast verification
+
+REFRESH TOKEN:
+- Long-lived: 7-30 days
+- Used ONLY to get new access token
+- Often stored in HttpOnly cookie (XSS safe)
+- Can be stored in DB (allows revocation)
+
+FLOW:
+  Login → {access_token: "...", refresh_token: "..."}
+  Use access_token for requests → expires in 30 min
+  Send refresh_token to /refresh → get new access_token
+  Refresh token expires → must login again
+
+WHY TWO TOKENS:
+  If access_token stolen → valid max 30 min (damage limited)
+  Can revoke refresh_token (stored in DB) without invalidating all tokens
+
+
+Q32 ★★☆ Where should you store JWT on the client side?
+------------------------------------------------------------------------
+1. localStorage:
+   + Easy to use
+   - Vulnerable to XSS (any JS can read it)
+   - Don't use for sensitive apps
+
+2. sessionStorage:
+   + Cleared when tab closes
+   - Still XSS vulnerable
+
+3. HttpOnly Cookie (BEST):
+   + JS cannot access it (XSS safe)
+   + Automatically sent with every request
+   - Vulnerable to CSRF (use CSRF token to mitigate)
+   - Slightly more complex setup
+
+RECOMMENDATION: HttpOnly Cookie for web apps, localStorage for mobile/desktop
+
+
+Q33 ★★☆ How to send JWT in FastAPI using cookies?
+------------------------------------------------------------------------
+  from fastapi import Cookie
+  from fastapi.responses import Response
+
+  @app.post("/login")
+  def login(response: Response, form: OAuth2PasswordRequestForm = Depends()):
+      token = create_access_token(...)
+      response.set_cookie(
+          key="access_token",
+          value=f"Bearer {token}",
+          httponly=True,       # JS can't read
+          secure=True,         # HTTPS only
+          samesite="lax"       # CSRF protection
+      )
+      return {"message": "Logged in"}
+
+  @app.get("/profile")
+  def profile(access_token: str = Cookie(None)):
+      if not access_token:
+          raise HTTPException(401, "Not authenticated")
+      token = access_token.replace("Bearer ", "")
+      user = verify_token(token)
+      return user
+
+
+================================================================================
+                    SECTION 5: DATABASE & SQLALCHEMY (Q34–Q40)
+================================================================================
+
+Q34 ★★★ How do you integrate SQLAlchemy with FastAPI?
+------------------------------------------------------------------------
+  # database.py
+  from sqlalchemy import create_engine
+  from sqlalchemy.ext.declarative import declarative_base
+  from sqlalchemy.orm import sessionmaker
+
+  DATABASE_URL = "sqlite:///./app.db"
+  engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+  SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+  Base = declarative_base()
+
+  def get_db():
+      db = SessionLocal()
+      try:
+          yield db
+      finally:
+          db.close()
+
+  # models.py
+  class User(Base):
+      __tablename__ = "users"
+      id = Column(Integer, primary_key=True)
+      username = Column(String, unique=True)
+
+  # main.py
+  Base.metadata.create_all(bind=engine)   # Create tables
+
+  @app.get("/users/{id}")
+  def get_user(id: int, db = Depends(get_db)):
+      return db.query(User).filter(User.id == id).first()
+
+
+Q35 ★★★ What is the difference between SQLAlchemy model and Pydantic schema?
+------------------------------------------------------------------------
+SQLALCHEMY MODEL:
+- Defines database TABLE structure
+- Maps to actual DB columns
+- Used for CRUD operations (db.query(), db.add(), etc.)
+- Lives in models.py
+
+PYDANTIC SCHEMA:
+- Defines API request/response SHAPE
+- Used for validation and serialization
+- Has no DB connection
+- Lives in schemas.py
+
+EXAMPLE:
+  # SQLAlchemy (models.py) — DB table
+  class User(Base):
+      __tablename__ = "users"
+      id = Column(Integer, primary_key=True)
+      username = Column(String)
+      hashed_password = Column(String)  # Stored in DB
+
+  # Pydantic (schemas.py) — API shape
+  class UserCreate(BaseModel):
+      username: str
+      password: str             # Raw password from client
+
+  class UserResponse(BaseModel):
+      id: int
+      username: str             # No password! Never return this
+      class Config:
+          from_attributes = True
+
+
+Q36 ★★★ Why use yield in get_db()? What happens if we use return?
+------------------------------------------------------------------------
+WITH yield:
+  def get_db():
+      db = SessionLocal()
+      try:
+          yield db          # Route handler runs here
+      finally:
+          db.close()        # Always closes, even on exception!
+
+WITH return:
+  def get_db():
+      db = SessionLocal()
+      return db             # Route uses db...
+      # BUT db.close() is never called! → connection leak!
+
+yield creates a context: everything before yield = setup, after = teardown.
+The finally block guarantees cleanup even if an exception occurs.
+This is the same as "with" statement pattern.
+
+
+Q37 ★★★ What is the N+1 query problem and how do you solve it?
+------------------------------------------------------------------------
+PROBLEM:
+  users = db.query(User).all()       # 1 query
+  for user in users:
+      print(user.posts)              # 1 query per user! → N+1 total
+
+For 100 users → 101 DB queries!
+
+SOLUTION — Eager loading with joinedload:
+  from sqlalchemy.orm import joinedload
+
+  users = db.query(User).options(joinedload(User.posts)).all()
+  # 1 query with JOIN → gets users AND posts together
+
+This is the most common SQLAlchemy interview question!
+
+
+Q38 ★★★ How do you do CRUD with SQLAlchemy in FastAPI?
+------------------------------------------------------------------------
+  # CREATE
+  def create_user(db: Session, user: UserCreate):
+      db_user = User(username=user.username, email=user.email)
+      db.add(db_user)
+      db.commit()
+      db.refresh(db_user)    # Get generated id, created_at etc.
+      return db_user
+
+  # READ
+  def get_user(db: Session, user_id: int):
+      return db.query(User).filter(User.id == user_id).first()
+
+  # UPDATE
+  def update_user(db: Session, user_id: int, new_name: str):
+      user = db.query(User).filter(User.id == user_id).first()
+      if user:
+          user.username = new_name
+          db.commit()
+          db.refresh(user)
+      return user
+
+  # DELETE
+  def delete_user(db: Session, user_id: int):
+      user = db.query(User).filter(User.id == user_id).first()
+      if user:
+          db.delete(user)
+          db.commit()
+      return user
+
+
+Q39 ★★☆ What is db.refresh() and why do we need it?
+------------------------------------------------------------------------
+After db.commit(), the in-memory object doesn't have DB-generated values.
+
+  db_user = User(username="alice")
+  db.add(db_user)
+  db.commit()
+  print(db_user.id)         # None! Not refreshed yet
+  print(db_user.created_at) # None!
+
+  db.refresh(db_user)       # Reload from DB
+  print(db_user.id)         # 42 ✓
+  print(db_user.created_at) # 2024-01-01 10:00:00 ✓
+
+Use db.refresh() after db.commit() to get:
+- Auto-generated primary key (id)
+- Server-default timestamps (created_at)
+- Any other DB-generated values
+
+
+Q40 ★★☆ How do you do pagination in FastAPI with SQLAlchemy?
+------------------------------------------------------------------------
+  @app.get("/posts")
+  def get_posts(
+      skip: int = Query(0, ge=0),
+      limit: int = Query(10, ge=1, le=100),
+      db = Depends(get_db)
+  ):
+      total = db.query(Post).count()
+      posts = db.query(Post).offset(skip).limit(limit).all()
+      return {
+          "total": total,
+          "skip": skip,
+          "limit": limit,
+          "data": posts
+      }
+
+  # GET /posts?skip=0&limit=10    → first 10
+  # GET /posts?skip=10&limit=10   → next 10
+  # GET /posts?skip=20&limit=10   → next 10
+
+
+================================================================================
+                    SECTION 6: MIDDLEWARE & CORS (Q41–Q45)
+================================================================================
+
+Q41 ★★★ What is middleware in FastAPI? How does request flow work?
+------------------------------------------------------------------------
+Middleware = Code that runs BEFORE and AFTER every request.
+
+REQUEST FLOW:
+  Client → Middleware 1 → Middleware 2 → Route Handler
+  Client ← Middleware 1 ← Middleware 2 ← Route Handler
+
+CREATING MIDDLEWARE:
+  from fastapi import Request
+  import time
+
+  @app.middleware("http")
+  async def timing_middleware(request: Request, call_next):
+      start = time.time()
+
+      response = await call_next(request)    # Call route handler
+
+      duration = time.time() - start
+      response.headers["X-Process-Time"] = str(duration)
+      return response
+
+USE CASES: Logging, timing, auth, rate limiting, request ID, CORS
+
+
+Q42 ★★★ What is CORS and how do you configure it in FastAPI?
+------------------------------------------------------------------------
+CORS = Cross-Origin Resource Sharing.
+Browser blocks requests from different origins by default.
+
+Origin = Protocol + Domain + Port:
+  http://localhost:3000  (React frontend)
+  http://localhost:8000  (FastAPI backend)
+  → DIFFERENT origins → Browser blocks!
+
+SETUP:
+  from fastapi.middleware.cors import CORSMiddleware
+
+  # Development (allow all):
+  app.add_middleware(
+      CORSMiddleware,
+      allow_origins=["*"],
+      allow_methods=["*"],
+      allow_headers=["*"],
+  )
+
+  # Production (specific):
+  app.add_middleware(
+      CORSMiddleware,
+      allow_origins=["http://localhost:3000", "https://myapp.com"],
+      allow_credentials=True,
+      allow_methods=["GET", "POST", "PUT", "DELETE"],
+      allow_headers=["Authorization", "Content-Type"],
+  )
+
+NOTE: allow_credentials=True + allow_origins=["*"] is INVALID!
+When using credentials, you MUST specify exact origins.
+
+
+Q43 ★★★ What is the difference between middleware and dependency injection?
+------------------------------------------------------------------------
+MIDDLEWARE:
+- Runs for ALL requests automatically
+- Has access to raw request/response
+- Used for global concerns
+- Registered with app.add_middleware()
+- Cannot easily skip for specific routes
+
+DEPENDENCY (Depends()):
+- Applied to SPECIFIC routes
+- Injects values into route function
+- Used for route-specific logic
+- More testable and composable
+- Can skip per route
+
+WHEN TO USE WHAT:
+  Middleware: Logging, CORS, rate limiting, adding headers
+  Depends():  Auth (route-specific), DB session, pagination, validation
+
+
+Q44 ★★★ What are Background Tasks in FastAPI?
+------------------------------------------------------------------------
+BackgroundTasks = Run code AFTER sending response to client.
+Client doesn't wait → faster response time.
+
+  from fastapi import BackgroundTasks
+
+  def send_email(email: str, message: str):
+      # Runs AFTER response is sent
+      # Client doesn't wait for this
+      email_service.send(email, message)
+      time.sleep(5)   # Client doesn't feel this delay!
+
+  @app.post("/users")
+  def create_user(user: UserCreate, background_tasks: BackgroundTasks):
+      new_user = save_user(user)
+      background_tasks.add_task(send_email, user.email, "Welcome!")
+      return {"message": "Created! Email sending in background."}
+
+USE CASES: Welcome emails, report generation, file processing,
+           cache warming, analytics updates, notifications
+
+
+Q45 ★★☆ What is middleware order? Why does it matter?
+------------------------------------------------------------------------
+ORDER MATTERS — middleware added LAST runs FIRST for requests.
+
+  app.add_middleware(LoggingMiddleware)   # Added 1st
+  app.add_middleware(AuthMiddleware)      # Added 2nd
+  app.add_middleware(CORSMiddleware)      # Added 3rd
+
+REQUEST:  CORS → Auth → Logging → Route
+RESPONSE: Logging → Auth → CORS
+
+RECOMMENDED ORDER (add in this sequence):
+  1. app.add_middleware(LoggingMiddleware)       # Your custom
+  2. app.add_middleware(AuthMiddleware)          # Your custom
+  3. app.add_middleware(HTTPSRedirectMiddleware) # Force HTTPS
+  4. app.add_middleware(TrustedHostMiddleware)   # Block bad hosts
+  5. app.add_middleware(CORSMiddleware)          # Always first to handle preflight
+
+
+================================================================================
+                    SECTION 7: ASYNC, TESTING & ADVANCED (Q46–Q50)
+================================================================================
+
+Q46 ★★★ When do you use async def vs def in FastAPI?
+------------------------------------------------------------------------
+USE async def when:
+- Making async DB calls (with async SQLAlchemy, Motor for MongoDB)
+- Calling async HTTP clients (httpx.AsyncClient)
+- Using asyncio operations
+
+USE def (sync) when:
+- Using regular SQLAlchemy (synchronous)
+- CPU-bound operations
+- Simple business logic
+
+  # Sync — OK with regular SQLAlchemy
+  @app.get("/users")
+  def get_users(db = Depends(get_db)):
+      return db.query(User).all()
+
+  # Async — for async DB or HTTP calls
+  @app.get("/weather")
+  async def get_weather(city: str):
+      async with httpx.AsyncClient() as client:
+          response = await client.get(f"https://api.weather.com/{city}")
+          return response.json()
+
+COMMON MISTAKE: Using sync def with async libs → blocks everything!
+                Using async def with sync libs → no benefit but still works.
+
+
+Q47 ★★★ How do you test FastAPI applications?
+------------------------------------------------------------------------
+  from fastapi.testclient import TestClient
+  from main import app
+  import pytest
+
+  client = TestClient(app)
+
+  def test_create_user():
+      response = client.post("/users", json={
+          "username": "alice",
+          "email": "alice@example.com",
+          "password": "secret123"
+      })
+      assert response.status_code == 201
+      assert response.json()["username"] == "alice"
+
+  def test_get_missing_user():
+      response = client.get("/users/9999")
+      assert response.status_code == 404
+
+  # Test with auth:
+  def test_protected_route():
+      # Get token
+      token_response = client.post("/token", data={
+          "username": "alice", "password": "secret123"
+      })
+      token = token_response.json()["access_token"]
+
+      # Use token
+      response = client.get("/profile",
+                            headers={"Authorization": f"Bearer {token}"})
+      assert response.status_code == 200
+
+TestClient uses requests library internally — no actual server needed.
+
+
+Q48 ★★☆ How does APIRouter work in FastAPI?
+------------------------------------------------------------------------
+APIRouter = Split routes into separate files (like Django apps).
+
+  # routes/users.py
+  from fastapi import APIRouter
+
+  router = APIRouter(prefix="/users", tags=["users"])
+
+  @router.get("/")           # Full path: GET /users/
+  def get_users(): ...
+
+  @router.get("/{user_id}")  # Full path: GET /users/{user_id}
+  def get_user(user_id: int): ...
+
+  @router.post("/")          # Full path: POST /users/
+  def create_user(): ...
+
+
+  # main.py
+  from routes import users, posts, auth
+
+  app = FastAPI()
+  app.include_router(users.router)
+  app.include_router(posts.router)
+  app.include_router(auth.router, prefix="/auth")
+
+  # With global auth:
+  app.include_router(users.router, dependencies=[Depends(verify_token)])
+
+
+Q49 ★★☆ How do you handle file uploads in FastAPI?
+------------------------------------------------------------------------
+  from fastapi import File, UploadFile
+  import shutil
+
+  @app.post("/upload")
+  async def upload_file(file: UploadFile = File(...)):
+      # Read file content
+      contents = await file.read()
+
+      # Save to disk
+      with open(f"uploads/{file.filename}", "wb") as f:
+          shutil.copyfileobj(file.file, f)
+
+      return {
+          "filename": file.filename,
+          "content_type": file.content_type,
+          "size": len(contents)
+      }
+
+  # Multiple files
+  @app.post("/upload-many")
+  async def upload_many(files: list[UploadFile] = File(...)):
+      return [{"filename": f.filename} for f in files]
+
+UploadFile attributes: filename, content_type, file (SpooledTemporaryFile)
+
+
+Q50 ★★★ SCENARIO: How would you design a secure REST API with FastAPI?
+------------------------------------------------------------------------
+This is a common "design question" in senior interviews. Walk through:
+
+1. PROJECT STRUCTURE:
+   main.py, database.py, models.py, schemas.py, crud.py, routes/
+
+2. AUTHENTICATION:
+   - JWT with short expiry (30 min) + refresh token (7 days)
+   - Passwords hashed with bcrypt
+   - oauth2_scheme + get_current_user dependency
+
+3. DATABASE:
+   - SQLAlchemy ORM
+   - get_db() with yield for session management
+   - Separate schemas for Create/Update/Response (never return passwords)
+
+4. VALIDATION:
+   - Pydantic models with Field() constraints
+   - Custom validators for business rules
+
+5. ERROR HANDLING:
+   - HTTPException for client errors
+   - Global exception handlers for unexpected errors
+   - Never leak stack traces to client
+
+6. CORS:
+   - Restrict to specific frontend origins in production
+   - Never allow_origins=["*"] with credentials
+
+7. MIDDLEWARE:
+   - Logging middleware (log all requests)
+   - Rate limiting (prevent abuse)
+   - Request ID (for debugging)
+
+8. SECURITY:
+   - Store secrets in environment variables (python-dotenv)
+   - HTTPS in production (HTTPSRedirectMiddleware)
+   - Validate and sanitize all inputs
+   - Never trust client data
+
+
+================================================================================
+              QUICK REFERENCE — KEY CONCEPTS SUMMARY
+================================================================================
+
+CONCEPT                 | KEY POINT
+------------------------|--------------------------------------------------
+ASGI vs WSGI            | ASGI = async (FastAPI), WSGI = sync (Flask/Django)
+Pydantic                | Validates + serializes data using type hints
+Depends()               | Dependency injection — run before route handler
+yield in deps           | Ensures cleanup (like DB session close)
+response_model          | Filters response — never return passwords!
+from_attributes=True    | Lets Pydantic read SQLAlchemy ORM objects
+JWT                     | Stateless auth — header.payload.signature
+OAuth2PasswordBearer    | Extracts Bearer token from Authorization header
+bcrypt                  | One-way hash for passwords (slow = secure)
+N+1 problem             | Solve with joinedload() in SQLAlchemy
+db.refresh()            | Reload object after commit to get generated IDs
+Background tasks        | Run code after response is sent to client
+CORS                    | Browser security — configure per environment
+Middleware order        | Last added = first executed for requests
+APIRouter               | Split routes across files (like Django apps)
+async def vs def        | Use async only when actually doing async I/O
+
+
+================================================================================
+                LAST MINUTE TIPS FOR YOUR INTERVIEW
+================================================================================
+
+1. MOST ASKED FASTAPI QUESTIONS:
+   - ASGI vs WSGI
+   - How Pydantic works
+   - Depends() and dependency injection
+   - JWT auth flow end-to-end
+   - N+1 problem and joinedload()
+   - Middleware vs Dependency
+
+2. ALWAYS MENTION when asked about any endpoint:
+   - What HTTP method
+   - What status code
+   - What validation
+   - What auth required
+
+3. DRAW the request flow if asked about middleware:
+   Client → CORS → Auth → Logging → Route → Logging → Auth → CORS → Client
+
+4. PATTERN to answer any "how to implement X" question:
+   - What library/tool
+   - Brief code snippet (3-5 lines)
+   - Why this approach
+
+5. SQLAlchemy — always say:
+   - SQLAlchemy model = DB table
+   - Pydantic schema = API shape
+   - yield in get_db() for cleanup
+   - from_attributes=True for ORM compatibility
+
+YOU GOT THIS! Your fundamentals are solid. Think out loud during the interview.
+If you don't know, say "I haven't used it but I'd approach it by..."
+
+================================================================================
+                        END OF FASTAPI INTERVIEW QUESTIONS
+================================================================================
